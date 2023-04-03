@@ -1,0 +1,7 @@
+version: 2 
+
+sources:
+  - name: src_proj_a
+    schema: dbt_dconnors 
+    tables:
+      - name: shared_model

@@ -1,0 +1,12 @@
+src_proj_b:
+  outputs:
+    dev:
+      dbname: postgres
+      host: localhost
+      password: dbt_dave
+      port: 5432
+      schema: dbt_dconnors
+      threads: 2
+      type: postgres
+      user: daveconnors
+  target: dev
