@@ -5,3 +5,23 @@ namespace_packages = true
 [tool.black]
 line-length = 99
 target-version = ['py38']
+
+[tool.poetry]
+name = "dbt-meshify"
+version = "0.1.0"
+description = "a package to upgrade dbt packages to the dbt mesh framework"
+authors = ["Dave Connors <dave.connors@fishtownanalytics.com>"]
+license = "Apache 2.0"
+readme = "README.md"
+packages = [{include = "dbt_meshify"}]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+dbtc = "^0.4.2"
+dbt-core = "^1.4.5"
+click = "^8.1.3"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

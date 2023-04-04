@@ -1,9 +1,0 @@
-Metadata-Version: 2.1
-Name: dbt-meshify
-Version: 0.0.1
-Summary: prepare dbt projects for multiproject deployments
-Home-page: https://github.com/dbt-labs/dbt-meshift
-Author: dbt Labs
-Author-email: info@dbtlabs.com
-Requires-Python: >=3.8.0
-Description-Content-Type: text/markdown
