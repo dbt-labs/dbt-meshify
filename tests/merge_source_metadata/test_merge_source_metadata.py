@@ -1,8 +1,7 @@
 import pytest
 from dbt.test.util import (
     get_manifest,
-    run_dbt,
-    get_artifact
+    run_dbt
 )
 # whatever this command actually becomes
 import dbt_meshify
@@ -58,8 +57,9 @@ where colleague = 'grace'
 
 class BaseProject:
     @pytest.fixture(scope="class")
-    def get_manifest(self, project):
+    def get_compiled_manifest(self, project):
         results = run_dbt(["compile"])
+        return get_manifest(project.project_root)
 
 
 class MergeSourceMetadataProjectA(BaseProject):
@@ -88,9 +88,9 @@ class BaseMergeSourceMetadataProjectBAfter(BaseProject):
 class TestMergeSourceMetadata:
     @pytest.fixture(scope="class")
     def test__merge_source_metadata(self):
-        compiled_project_a = MergeSourceMetadataProjectA.compile_project()
-        compiled_project_b_before = MergeSourceMetadataProjectBBefore.compile_project()
-        compiled_project_b_after = BaseMergeSourceMetadataProjectBAfter.compile_project()
+        compiled_project_a = MergeSourceMetadataProjectA.get_compiled_manifest()
+        compiled_project_b_before = MergeSourceMetadataProjectBBefore.get_compiled_manifest()
+        compiled_project_b_after = BaseMergeSourceMetadataProjectBAfter.get_compiled_manifest()
 
         merged_a, merged_b = dbt_meshify.merge(compiled_project_a, compiled_project_b_before)
 
