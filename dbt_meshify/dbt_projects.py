@@ -29,18 +29,17 @@ class LocalDbtProject:
         
 class LocalProjectHolder():
 
-    def __init__(self) -> List[str]:
-        self.paths = []
-        self.cwd = os.getcwd()
-    
+    def __init__(self) -> None:
+        self.relative_project_paths: List[str] = []
+
     def project_map(self) -> dict:
         project_map = {}
-        for path in self.paths:
-            project = LocalDbtProject(path)
-            project_map[path] = project
+        for relative_project_path in self.relative_project_paths:
+            project = LocalDbtProject(relative_project_path)
+            project_map[relative_project_path] = project
         return project_map 
 
     def add_relative_project_path(self, relative_project_path) -> None:
-        self.paths.append(self.cwd + '/' + relative_project_path)
+        self.relative_project_paths.append(relative_project_path)
 
 
