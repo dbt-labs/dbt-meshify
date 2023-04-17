@@ -43,14 +43,14 @@ class LocalDbtProject:
         for key in ["nodes", "sources", "exposures", "metrics", "sources", "macros"]:
             items = getattr(self.manifest, key)
             for key, item in items.items():
-                if item.package_name and item.package_name not in project_packages:
+                if item.package_name:
                     _hash = hashlib.md5()
                     _hash.update(item.package_name.encode('utf-8'))
                     project_packages.append(_hash.hexdigest())
-        return project_packages
+        return set(project_packages)
     
     def project_id(self) -> str:
-        return self.manifest.project_id
+        return self.manifest.metadata.project_id
     
     def installs(self, other) -> bool:
         return self.project_id in other.installed_packages()
@@ -58,8 +58,8 @@ class LocalDbtProject:
 class LocalProjectHolder():
 
     def __init__(self) -> None:
-
         self.relative_project_paths: List[str] = []
+
     def project_map(self) -> dict:
         project_map = {}
         for relative_project_path in self.relative_project_paths:
