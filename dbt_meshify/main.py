@@ -1,22 +1,28 @@
-import json 
 import click
-import os
-import subprocess
-
-REPO_A = os.getenv("REPO_A", "test-projects/source-hack/src_proj_a")
+from .dbt_projects import LocalProjectHolder
 
 @click.group()
 def cli():
     pass
 
+
 @cli.command(name="merge")
 def merge():
-    """This will navigate to repo_a, run dbt compile, load the manifest.json, and print the nodes"""
 
-    print("First navigate to " + REPO_A)
-    os.chdir(REPO_A)
-    subprocess.run(["dbt", "compile"])
-    repo_a_manifest = open(REPO_A + '/target/manifest.json')
-    manifest_a = json.load(repo_a_manifest)
+    holder = LocalProjectHolder()
+    while True:
+        path = input("Enter the relative path to a dbt project (enter 'done' to finish): ")
+        if path == "done":
+            break
+        holder.add_relative_project_path(path)
+    
+    print(holder.project_map())
 
-    print(manifest_a['nodes'])
+@cli.command(name="split")
+def split():
+    holder = LocalProjectHolder()
+    while True:
+        path = input("Enter the relative path to a dbt project (enter 'done' to finish): ")
+        if path == "done":
+            break
+        holder.add_relative_project_path(path)
