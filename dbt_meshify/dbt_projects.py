@@ -38,7 +38,7 @@ class LocalDbtProject:
             return manifest_result.result
         
     def get_subproject_resources(self, subproject_selector: str) -> List[str]:
-        ls_results = self.dbt_operation(["--quiet", "ls", "-s", subproject_selector])
+        ls_results = self.dbt_operation(["--log-level", "none", "ls", "-s", subproject_selector])
         if ls_results.success:
             return ls_results.result
         
@@ -105,7 +105,7 @@ class LocalDbtProject:
         """
         Returns true if this project depends on the other project as a package or via shared metadata
         """
-        return self.installs(other) or self.shared_source_metadata(other)
+        return self.installs(other) or self.shares_source_metadata(other)
 
 
 

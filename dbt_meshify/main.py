@@ -5,7 +5,6 @@ from .dbt_projects import LocalProjectHolder, LocalDbtProject
 def cli():
     pass
 
-
 @cli.command(name="merge")
 def merge():
 
