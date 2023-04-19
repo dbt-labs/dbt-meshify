@@ -20,7 +20,7 @@ class LocalDbtProject:
     def __init__(self, relative_path_to_project: str) -> None:
         self.relative_path_to_project = relative_path_to_project
         self.manifest = self.get_project_manifest()
-        self.subproject_selectors = []
+        self.subprojects = []
     
     def path_to_project(self) -> str:
         return os.getcwd() + '/' + self.relative_path_to_project
@@ -42,12 +42,11 @@ class LocalDbtProject:
         if ls_results.success:
             return ls_results.result
         
-    def add_subproject_selector(self, subproject_selector) -> None:
-        self.subproject_selectors.append(subproject_selector)
+    def add_subproject(self, subproject_dict: Dict[str, str]) -> None:
+        self.subprojects.append(subproject_dict)
     
-    def subprojects(self) -> List[str]:
-        subprojects = {selector: self.get_subproject_resources(selector) for selector in self.subproject_selectors}
-        return subprojects
+    def update_subprojects_with_resources(self) -> List[str]:
+        [subproject.update({"resources": self.get_subproject_resources(subproject["selector"])}) for subproject in self.subprojects]
 
     def sources(self) -> Dict[str, Dict[Any, Any]]:
         return self.manifest.sources
