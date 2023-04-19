@@ -22,8 +22,9 @@ class LocalDbtProject:
         self.manifest = self.get_project_manifest()
         self.subprojects = []
     
-    def path_to_project(self) -> str:
-        return os.getcwd() + '/' + self.relative_path_to_project
+    @property
+    def path(self) -> os.Pathlike:
+        return os.path.join(os.getcwd(), self.relative_path_to_project)
 
     def dbt_operation(self, operation: List[str]) -> dbtRunnerResult:
         start_wd = os.getcwd()
