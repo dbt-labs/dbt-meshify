@@ -22,9 +22,10 @@ packages = [{include = "dbt_meshify"}]
 python = "^3.9"
 dbt-core = "^1.5.0rc1"
 click = "^8.1.3"
+dbt-postgres = { version = "^1.5.0rc1", optional = true }
 
-
-
+[tool.poetry.extras]
+postgres = ['dbt-postgres']
 
 [build-system]
 requires = ["poetry-core"]
