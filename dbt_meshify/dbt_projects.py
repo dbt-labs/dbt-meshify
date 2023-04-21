@@ -5,7 +5,8 @@ import hashlib
 
 # third party
 try:
-    from dbt.cli.main import dbtRunner
+    from dbt.cli.main import dbtRunner, dbtRunnerResult
+    from dbt.contracts.graph.manifest import Manifest
 except ImportError:
     dbtRunner = None
 
@@ -19,17 +20,36 @@ class LocalDbtProject:
     def __init__(self, relative_path_to_project: str) -> None:
         self.relative_path_to_project = relative_path_to_project
         self.manifest = self.get_project_manifest()
+        self.subprojects = []
     
-    def path_to_project(self) -> str:
-        return os.getcwd() + '/' + self.relative_path_to_project
-    
-    def get_project_manifest(self) -> dict:
+    @property
+    def path(self) -> os.PathLike:
+        return os.path.join(os.getcwd(), self.relative_path_to_project)
+
+    def dbt_operation(self, operation: List[str]) -> dbtRunnerResult:
         start_wd = os.getcwd()
-        os.chdir(self.path_to_project())
-        result = dbt_runner.invoke(["--log-level", "none", "parse"])
+        os.chdir(self.path)
+        result = dbt_runner.invoke(operation)
         os.chdir(start_wd)
-        if result.success:
-            return result.result
+        if not result.success:
+            raise Exception(result.exception)
+        return result
+    
+    def get_project_manifest(self) -> Manifest:
+        manifest_result = self.dbt_operation(["--quiet", "parse"])
+        if manifest_result.success:
+            return manifest_result.result
+        
+    def get_subproject_resources(self, subproject_selector: str) -> List[str]:
+        ls_results = self.dbt_operation(["--log-level", "none", "ls", "-s", subproject_selector])
+        if ls_results.success:
+            return ls_results.result
+        
+    def add_subproject(self, subproject_dict: Dict[str, str]) -> None:
+        self.subprojects.append(subproject_dict)
+    
+    def update_subprojects_with_resources(self) -> List[str]:
+        [subproject.update({"resources": self.get_subproject_resources(subproject["selector"])}) for subproject in self.subprojects]
 
     def sources(self) -> Dict[str, Dict[Any, Any]]:
         return self.manifest.sources
@@ -87,7 +107,7 @@ class LocalDbtProject:
         """
         Returns true if this project depends on the other project as a package or via shared metadata
         """
-        return self.installs(other) or self.shared_source_metadata(other)
+        return self.installs(other) or self.shares_source_metadata(other)
 
 
 
@@ -100,6 +120,7 @@ class LocalProjectHolder():
         project_map = {}
         for relative_project_path in self.relative_project_paths:
             project = LocalDbtProject(relative_project_path)
+            project_map[project.project_id()] = project
         return project_map 
 
     def add_relative_project_path(self, relative_project_path) -> None:
