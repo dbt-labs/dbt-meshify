@@ -23,12 +23,12 @@ class LocalDbtProject:
         self.subprojects = []
     
     @property
-    def path(self) -> os.Pathlike:
+    def path(self) -> os.PathLike:
         return os.path.join(os.getcwd(), self.relative_path_to_project)
 
     def dbt_operation(self, operation: List[str]) -> dbtRunnerResult:
         start_wd = os.getcwd()
-        os.chdir(self.path_to_project())
+        os.chdir(self.path)
         result = dbt_runner.invoke(operation)
         os.chdir(start_wd)
         return result
