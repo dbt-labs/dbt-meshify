@@ -31,6 +31,8 @@ class LocalDbtProject:
         os.chdir(self.path)
         result = dbt_runner.invoke(operation)
         os.chdir(start_wd)
+        if not result.success:
+            raise Exception(result.exception)
         return result
     
     def get_project_manifest(self) -> Manifest:
