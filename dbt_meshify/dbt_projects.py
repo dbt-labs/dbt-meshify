@@ -1,7 +1,8 @@
 # first party
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 import os
 import hashlib
+import yaml
 
 # third party
 try:
@@ -15,35 +16,55 @@ if dbtRunner is not None:
 else:
     dbt_runner = None
 
-class LocalDbtProject:
+class Dbt: 
 
-    def __init__(self, relative_path_to_project: str) -> None:
-        self.relative_path_to_project = relative_path_to_project
-        self.manifest = self.get_project_manifest()
+    def __init__(self):
+      self.dbt_runner = dbtRunner()
+   
+    def invoke(self, directory: Optional[os.PathLike] = None, runner_args: Optional[List[str]] = None):
+        starting_directory = os.getcwd()
+        if directory:
+            os.chdir(directory)
+        result = self.dbt_runner.invoke(runner_args if runner_args else [])
+        os.chdir(starting_directory)
+
+        if not result.success:
+            raise result.exception
+        return result.result
+
+    def parse(self, directory: os.PathLike):
+        return self.invoke(directory, ['--quiet', 'parse'])
+
+    def ls(self, directory: os.PathLike, arguments: List[str] = []):
+        """ 
+        Excute dbt ls with the given arguments and return the result as a list of strings. 
+        Log level is set to none to prevent dbt from printing to stdout.
+        """
+        args = ["--log-format", "json", "--log-level", "none", "ls"] + arguments
+        return self.invoke(directory, args)
+
+class DbtProject:
+
+    def __init__(self, relative_path: str) -> None:
+        self.relative_path = relative_path
+        self.dbt = Dbt()
+        # self.manifest = self._load_manifest()
         self.subprojects = []
     
     @property
     def path(self) -> os.PathLike:
-        return os.path.join(os.getcwd(), self.relative_path_to_project)
+        return os.path.join(os.getcwd(), self.relative_path)
 
-    def dbt_operation(self, operation: List[str]) -> dbtRunnerResult:
-        start_wd = os.getcwd()
-        os.chdir(self.path)
-        result = dbt_runner.invoke(operation)
-        os.chdir(start_wd)
-        if not result.success:
-            raise Exception(result.exception)
-        return result
-    
-    def get_project_manifest(self) -> Manifest:
-        manifest_result = self.dbt_operation(["--quiet", "parse"])
-        if manifest_result.success:
-            return manifest_result.result
+    def _load_project(self):
+        """Load a dbt Project configuration"""
+        return yaml.load(open(os.path.join(self.path, 'dbt_project.yml')),  Loader=yaml.Loader)
+
+    def _load_manifest(self):
+        """Load a manifest for a project."""
+        return self.dbt.parse(self.path)
         
     def get_subproject_resources(self, subproject_selector: str) -> List[str]:
-        ls_results = self.dbt_operation(["--log-level", "none", "ls", "-s", subproject_selector])
-        if ls_results.success:
-            return ls_results.result
+        return self.dbt.ls(self.path, ["-s", subproject_selector])
         
     def add_subproject(self, subproject_dict: Dict[str, str]) -> None:
         self.subprojects.append(subproject_dict)
@@ -111,7 +132,7 @@ class LocalDbtProject:
 
 
 
-class LocalProjectHolder():
+class DbtProjectHolder():
 
     def __init__(self) -> None:
         self.relative_project_paths: List[str] = []
@@ -119,7 +140,7 @@ class LocalProjectHolder():
     def project_map(self) -> dict:
         project_map = {}
         for relative_project_path in self.relative_project_paths:
-            project = LocalDbtProject(relative_project_path)
+            project = DbtProject(relative_project_path)
             project_map[project.project_id()] = project
         return project_map 
 

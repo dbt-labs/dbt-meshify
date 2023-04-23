@@ -1,5 +1,5 @@
 import click
-from .dbt_projects import LocalProjectHolder, LocalDbtProject
+from .dbt_projects import DbtProjectHolder, DbtProject
 
 @click.group()
 def cli():
@@ -8,7 +8,7 @@ def cli():
 @cli.command(name="connect")
 def connect():
 
-    holder = LocalProjectHolder()
+    holder = DbtProjectHolder()
     while True:
         path = input("Enter the relative path to a dbt project (enter 'done' to finish): ")
         if path == "done":
@@ -20,7 +20,7 @@ def connect():
 @cli.command(name="split")
 def split():
     path = input("Enter the relative path to a dbt project you'd like to split: ")
-    project = LocalDbtProject(path)
+    project = DbtProject(path)
     while True:
         subproject_name = input("Enter the name for your subproject ('done' to finish): ")
         if subproject_name == "done":
