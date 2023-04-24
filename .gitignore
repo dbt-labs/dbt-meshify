@@ -1,2 +1,6 @@
+# Environments
 env/
 venv/
+
+# IDEs
+.idea/
