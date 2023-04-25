@@ -156,18 +156,3 @@ class DbtSubProject(BaseDbtProject):
         results = self.parent.dbt.ls(self.parent.path, args)
 
         return set(results) - self.resources
-
-
-class DbtProjectHolder:
-    def __init__(self) -> None:
-        self.relative_project_paths: List[str] = []
-
-    def project_map(self) -> dict:
-        project_map = {}
-        for relative_project_path in self.relative_project_paths:
-            project = DbtProject(relative_project_path)
-            project_map[project.project_id()] = project
-        return project_map
-
-    def add_relative_project_path(self, relative_project_path) -> None:
-        self.relative_project_paths.append(relative_project_path)
