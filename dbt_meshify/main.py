@@ -1,6 +1,8 @@
 import click
 from pathlib import Path
-from .dbt_projects import DbtProjectHolder, DbtProject
+
+from .dbt_meshify import Meshify
+from .dbt_projects import DbtProjectHolder, DbtProject, DbtSubProject
 
 
 @click.group()
@@ -27,6 +29,8 @@ def split():
     path = Path(path_string).expanduser().resolve()
     project = DbtProject.from_directory(path)
 
+    meshify = Meshify()
+
     while True:
         subproject_name = input("Enter the name for your subproject ('done' to finish): ")
         if subproject_name == "done":
@@ -34,9 +38,8 @@ def split():
         subproject_selector = input(
             f"Enter the selector that represents the subproject {subproject_name}: "
         )
-        subproject = project.create_subproject(
-            project_name=subproject_name, select=subproject_selector
+        subproject: DbtSubProject = meshify.create_subproject(
+            dbt_project=project, project_name=subproject_name, select=subproject_selector
         )
-        # subproject.select_resources('*')
 
-    print(project.subprojects)
+    print(meshify.relationships)

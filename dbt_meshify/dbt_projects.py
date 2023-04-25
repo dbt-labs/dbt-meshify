@@ -1,98 +1,26 @@
 import copy
-import logging
-from typing import List, Dict, Any, Optional, Self, MutableMapping, Set
-import os
 import hashlib
+import logging
+import os
+from typing import List, Dict, Any, Optional, Self, MutableMapping, Set
+
 import yaml
 from dbt.contracts.graph.manifest import Manifest
 from dbt.contracts.graph.nodes import SourceDefinition
 from dbt.contracts.project import Project
-from dbt.graph import UniqueId
 
 from dbt_meshify.dbt import Dbt
-from dbt_meshify.utilities.manifest import prune_manifest
 
 logger = logging.getLogger()
 
 
-class DbtProject:
-    @staticmethod
-    def _load_project(path) -> Project:
-        """Load a dbt Project configuration"""
-        project_dict = yaml.load(open(os.path.join(path, "dbt_project.yml")), Loader=yaml.Loader)
-        return Project.from_dict(project_dict)
+class BaseDbtProject:
+    """A base-level representation of a dbt project."""
 
-    @classmethod
-    def from_directory(cls, directory: os.PathLike) -> Self:
-        """Create a new DbtProject using a dbt project directory"""
-
-        dbt = Dbt()
-
-        return DbtProject(
-            manifest=dbt.parse(directory),
-            project=cls._load_project(directory),
-            dbt=dbt,
-            path=directory,
-        )
-
-    def __init__(
-        self,
-        manifest: Manifest,
-        project: Project,
-        dbt: Dbt,
-        path: Optional[os.PathLike] = None,
-        name: Optional[str] = None,
-    ) -> None:
-        self.path = path
-        self.dbt = dbt
+    def __init__(self, manifest: Manifest, project: Project, name: Optional[str] = None) -> None:
         self.manifest = manifest
         self.project = project
-        self.subprojects: Dict[str, Set[UniqueId]] = {}
         self.name = name if name else project.name
-
-    def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
-        args = ["--select", select]
-        if exclude:
-            args.extend(["--exclude", exclude])
-
-        results = self.dbt.ls(self.path, args)
-
-        return set(results)
-
-    def create_subproject(
-        self,
-        project_name: str,
-        select: str,
-        exclude: Optional[str] = None,
-        target_directory: Optional[os.PathLike] = None,
-    ) -> Self:
-        """Create a new DbtProject using NodeSelection syntax."""
-
-        # Update project parameters
-        if target_directory is None:
-            target_directory = os.path.join(os.getcwd(), project_name)
-
-        manifest = self.manifest.deepcopy()
-        project = copy.deepcopy(self.project)
-
-        # Prune the project manifest.
-        logger.warning("Project manifest pruning has not been implemented yet.")
-        subproject_resources = self.select_resources(select, exclude)
-        pruned_manifest: Manifest = prune_manifest(manifest, subproject_resources)
-
-        # Construct a new project and inject the new manifest
-        subproject = DbtProject(
-            name=project_name,
-            manifest=pruned_manifest,
-            project=project,
-            dbt=Dbt(manifest=pruned_manifest),
-            path=target_directory,
-        )
-
-        # Record the subproject to create a cross-project dependency graph
-        self.subprojects[project_name] = subproject_resources
-
-        return subproject
 
     def sources(self) -> MutableMapping[str, SourceDefinition]:
         return self.manifest.sources
@@ -152,6 +80,82 @@ class DbtProject:
         Returns true if this project depends on the other project as a package or via shared metadata
         """
         return self.installs(other) or self.shares_source_metadata(other)
+
+
+class DbtProject(BaseDbtProject):
+    @staticmethod
+    def _load_project(path) -> Project:
+        """Load a dbt Project configuration"""
+        project_dict = yaml.load(open(os.path.join(path, "dbt_project.yml")), Loader=yaml.Loader)
+        return Project.from_dict(project_dict)
+
+    @classmethod
+    def from_directory(cls, directory: os.PathLike) -> Self:
+        """Create a new DbtProject using a dbt project directory"""
+
+        dbt = Dbt()
+
+        return DbtProject(
+            manifest=dbt.parse(directory),
+            project=cls._load_project(directory),
+            dbt=dbt,
+            path=directory,
+        )
+
+    def __init__(
+        self,
+        manifest: Manifest,
+        project: Project,
+        dbt: Dbt,
+        path: Optional[os.PathLike] = None,
+        name: Optional[str] = None,
+    ) -> None:
+        super().__init__(manifest, project, name)
+        self.path = path
+        self.dbt = dbt
+        self.subprojects: Dict[str, Set[str]] = {}
+
+    def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
+        """Select dbt resources using NodeSelection syntax"""
+
+        args = ["--select", select]
+        if exclude:
+            args.extend(["--exclude", exclude])
+
+        results = self.dbt.ls(self.path, args)
+
+        return set(results)
+
+
+class DbtSubProject(BaseDbtProject):
+    """
+    DbtSubProjects are a filtered representation of a dbt project that leverage
+    a parent DbtProject for their manifest and project definitions until a real DbtProject
+    is created on disk.
+    """
+
+    def __init__(self, name: str, parent_project: DbtProject, resources: Set[str]):
+        self.name = name
+        self.resources = resources
+        self.parent = parent_project
+
+        self.manifest = parent_project.manifest.deepcopy()
+        self.project = copy.deepcopy(parent_project.project)
+
+        super().__init__(self.manifest, self.project)
+
+    def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
+        """
+        Select resources using the parent DbtProject and filtering down to only include resources in this
+        subproject.
+        """
+        args = ["--select", select]
+        if exclude:
+            args.extend(["--exclude", exclude])
+
+        results = self.parent.dbt.ls(self.parent.path, args)
+
+        return set(results) - self.resources
 
 
 class DbtProjectHolder:
