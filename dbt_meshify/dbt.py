@@ -2,21 +2,13 @@
 import os
 from typing import Optional, List
 
-try:
-    from dbt.cli.main import dbtRunner, dbtRunnerResult
-    from dbt.contracts.graph.manifest import Manifest
-except ImportError:
-    dbtRunner = None
-
-if dbtRunner is not None:
-    dbt_runner = dbtRunner()
-else:
-    dbt_runner = None
+from dbt.cli.main import dbtRunner
+from dbt.contracts.graph.manifest import Manifest
 
 
 class Dbt:
-    def __init__(self):
-        self.dbt_runner = dbtRunner()
+    def __init__(self, manifest: Optional[Manifest] = None):
+        self.dbt_runner = dbtRunner(manifest=manifest)
 
     def invoke(
         self, directory: Optional[os.PathLike] = None, runner_args: Optional[List[str]] = None
@@ -40,6 +32,8 @@ class Dbt:
         Log level is set to none to prevent dbt from printing to stdout.
         """
         args = ["--log-format", "json", "--log-level", "none", "ls"]
+
         if arguments:
             args.extend(arguments)
+
         return self.invoke(directory, args)

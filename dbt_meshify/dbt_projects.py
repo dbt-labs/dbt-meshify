@@ -10,6 +10,7 @@ from dbt.contracts.project import Project
 from dbt.graph import UniqueId
 
 from dbt_meshify.dbt import Dbt
+from dbt_meshify.utilities.manifest import prune_manifest
 
 logger = logging.getLogger()
 
@@ -35,13 +36,19 @@ class DbtProject:
         )
 
     def __init__(
-        self, manifest: Manifest, project: Project, dbt: Dbt, path: Optional[os.PathLike] = None
+        self,
+        manifest: Manifest,
+        project: Project,
+        dbt: Dbt,
+        path: Optional[os.PathLike] = None,
+        name: Optional[str] = None,
     ) -> None:
         self.path = path
         self.dbt = dbt
         self.manifest = manifest
         self.project = project
         self.subprojects: Dict[str, Set[UniqueId]] = {}
+        self.name = name if name else project.name
 
     def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
         args = ["--select", select]
@@ -61,17 +68,26 @@ class DbtProject:
     ) -> Self:
         """Create a new DbtProject using NodeSelection syntax."""
 
-        subproject = copy.deepcopy(self)
-
         # Update project parameters
         if target_directory is None:
             target_directory = os.path.join(os.getcwd(), project_name)
-        subproject.path = target_directory
-        subproject.project.name = project_name
+
+        manifest = self.manifest.deepcopy()
+        project = copy.deepcopy(self.project)
 
         # Prune the project manifest.
         logger.warning("Project manifest pruning has not been implemented yet.")
         subproject_resources = self.select_resources(select, exclude)
+        pruned_manifest: Manifest = prune_manifest(manifest, subproject_resources)
+
+        # Construct a new project and inject the new manifest
+        subproject = DbtProject(
+            name=project_name,
+            manifest=pruned_manifest,
+            project=project,
+            dbt=Dbt(manifest=pruned_manifest),
+            path=target_directory,
+        )
 
         # Record the subproject to create a cross-project dependency graph
         self.subprojects[project_name] = subproject_resources

@@ -24,7 +24,7 @@ def connect():
 def split():
     path_string = input("Enter the relative path to a dbt project you'd like to split: ")
 
-    path = Path(path_string)
+    path = Path(path_string).expanduser().resolve()
     project = DbtProject.from_directory(path)
 
     while True:
@@ -34,6 +34,9 @@ def split():
         subproject_selector = input(
             f"Enter the selector that represents the subproject {subproject_name}: "
         )
-        project.create_subproject(project_name=subproject_name, select=subproject_selector)
+        subproject = project.create_subproject(
+            project_name=subproject_name, select=subproject_selector
+        )
+        # subproject.select_resources('*')
 
     print(project.subprojects)
