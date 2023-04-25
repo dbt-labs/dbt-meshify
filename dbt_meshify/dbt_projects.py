@@ -121,7 +121,6 @@ class DbtProject(BaseDbtProject):
         super().__init__(manifest, project, name)
         self.path = path
         self.dbt = dbt
-        self.subprojects: Dict[str, Set[str]] = {}
 
     def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
         """Select dbt resources using NodeSelection syntax"""
@@ -184,6 +183,28 @@ class DbtSubProject(BaseDbtProject):
         results = self.parent.dbt.ls(self.parent.path, args)
 
         return set(results) - self.resources
+
+    def split(
+        self,
+        project_name: str,
+        select: str,
+        exclude: Optional[str] = None,
+    ) -> "DbtSubProject":
+        """Create a new DbtSubProject using NodeSelection syntax."""
+
+        subproject_resources = self.select_resources(select, exclude)
+
+        # Construct a new project and inject the new manifest
+        subproject = DbtSubProject(
+            name=project_name,
+            parent_project=copy.deepcopy(self.parent),
+            resources=subproject_resources,
+        )
+
+        # Record the subproject to create a cross-project dependency edge list
+        self.register_relationship(project_name, subproject_resources)
+
+        return subproject
 
     def initialize(self, target_directory: os.PathLike):
         """Initialize this subproject as a full dbt project at the provided `target_directory`."""
