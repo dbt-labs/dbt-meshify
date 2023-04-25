@@ -3,6 +3,8 @@ from typing import List, Dict, Any, Optional
 import os
 import hashlib
 import yaml
+from dbt_meshify.file_manager import DbtFileManager
+from dbt_meshify.dbt_meshify import DbtMeshConfigEditor
 
 # third party
 try:
@@ -21,7 +23,7 @@ class Dbt:
     def __init__(self):
       self.dbt_runner = dbtRunner()
    
-    def invoke(self, directory: Optional[os.PathLike] = None, runner_args: Optional[List[str]] = None):
+    def invoke(self, directory: Optional[os.PathLike] = None, runner_args: Optional[List[str]] = None) -> dbtRunnerResult:
         starting_directory = os.getcwd()
         if directory:
             os.chdir(directory)
@@ -35,7 +37,7 @@ class Dbt:
     def parse(self, directory: os.PathLike):
         return self.invoke(directory, ['--quiet', 'parse'])
 
-    def ls(self, directory: os.PathLike, arguments: List[str] = []):
+    def ls(self, directory: os.PathLike, arguments: List[str] = []) -> dbtRunnerResult:
         """ 
         Excute dbt ls with the given arguments and return the result as a list of strings. 
         Log level is set to none to prevent dbt from printing to stdout.
@@ -43,12 +45,23 @@ class Dbt:
         args = ["--log-format", "json", "--log-level", "none", "ls"] + arguments
         return self.invoke(directory, args)
 
+    def docs_generate(self, directory: os.PathLike) -> dbtRunnerResult:
+        """ 
+        Excute dbt docs generate with the given arguments
+        """
+        args = ["--quiet", "docs", "generate"]
+        return self.invoke(directory, args)
+
 class DbtProject:
 
     def __init__(self, relative_path: str) -> None:
         self.relative_path = relative_path
         self.dbt = Dbt()
-        # self.manifest = self._load_manifest()
+        self.file_manager = DbtFileManager()
+        self.meshify = DbtMeshConfigEditor()
+        self.config_editor = DbtMeshConfigEditor()
+        self.manifest = self._load_manifest()
+        self.catalog = self._load_catalog()
         self.subprojects = []
     
     @property
@@ -59,9 +72,13 @@ class DbtProject:
         """Load a dbt Project configuration"""
         return yaml.load(open(os.path.join(self.path, 'dbt_project.yml')),  Loader=yaml.Loader)
 
-    def _load_manifest(self):
+    def _load_manifest(self) -> Manifest:
         """Load a manifest for a project."""
         return self.dbt.parse(self.path)
+
+    def _load_catalog(self):
+        """Load a catalog for a project."""
+        return self.dbt.docs_generate(self.path)
         
     def get_subproject_resources(self, subproject_selector: str) -> List[str]:
         return self.dbt.ls(self.path, ["-s", subproject_selector])
@@ -71,12 +88,38 @@ class DbtProject:
     
     def update_subprojects_with_resources(self) -> List[str]:
         [subproject.update({"resources": self.get_subproject_resources(subproject["selector"])}) for subproject in self.subprojects]
+    
+    def get_catalog_entry(self, unique_id: str) -> Dict[str, Any]:
+        """Returns the catalog entry for a model in the dbt project's catalog"""
+        return self.catalog.nodes.get(unique_id, {})
+    
+    def get_manifest_node(self, unique_id: str) -> Dict[str, Any]:
+        """Returns the catalog entry for a model in the dbt project's catalog"""
+        return self.manifest.nodes.get(unique_id, {})
 
     def sources(self) -> Dict[str, Dict[Any, Any]]:
         return self.manifest.sources
     
     def models(self) -> Dict[str, Dict[Any, Any]]:
         return {node_name: node for node_name, node in self.manifest.nodes.items() if node.resource_type == 'model'}
+    
+    def add_model_contract(self, unique_id: str) -> None:
+        """Adds a model contract to the model's yaml"""
+        
+        # get the patch path for the model
+        node = self.get_manifest_node(unique_id)
+        yml_path = node.patch_path.split("://")[1] if node.patch_path else None
+        # if the model doesn't have a patch path, create a new yml file in the models directory
+        # TODO - should we check if there's a model yml file in the models directory and append to it?
+        if not yml_path:
+            yml_path = "/".join(node.original_file_path.split(".")[0].split("/")[:-1]) + "_models.yml"
+            self.create_file(yml_path)
+        model_catalog = self.get_catalog_entry(unique_id)
+        # read the yml file
+        full_yml_dict = self.file_manager.read_file(yml_path)
+        updated_yml = self.meshify.add_model_contract_to_yml(full_yml_dict, model_catalog, node.name)
+        # write the updated yml to the file
+        self.file_manager.write_file(yml_path, updated_yml)
     
     def installed_packages(self) -> List[str]:
         project_packages = []
