@@ -2,7 +2,7 @@ import copy
 import hashlib
 import logging
 import os
-from typing import List, Dict, Any, Optional, Self, MutableMapping, Set
+from typing import Dict, Any, Optional, Self, MutableMapping, Set
 
 import yaml
 from dbt.contracts.graph.manifest import Manifest
@@ -21,6 +21,14 @@ class BaseDbtProject:
         self.manifest = manifest
         self.project = project
         self.name = name if name else project.name
+
+        self.relationships: Dict[str, Set[str]] = {}
+
+    def register_relationship(self, project: str, resources: Set[str]) -> None:
+        """Register the relationship between two projects"""
+        logger.debug(f"Registering the relationship between {project} and its resources")
+        entry = self.relationships.get(project, set())
+        self.relationships[project] = entry.union(resources)
 
     def sources(self) -> MutableMapping[str, SourceDefinition]:
         return self.manifest.sources
@@ -126,6 +134,26 @@ class DbtProject(BaseDbtProject):
 
         return set(results)
 
+    def split(
+        self,
+        project_name: str,
+        select: str,
+        exclude: Optional[str] = None,
+    ) -> "DbtSubProject":
+        """Create a new DbtSubProject using NodeSelection syntax."""
+
+        subproject_resources = self.select_resources(select, exclude)
+
+        # Construct a new project and inject the new manifest
+        subproject = DbtSubProject(
+            name=project_name, parent_project=copy.deepcopy(self), resources=subproject_resources
+        )
+
+        # Record the subproject to create a cross-project dependency edge list
+        self.register_relationship(project_name, subproject_resources)
+
+        return subproject
+
 
 class DbtSubProject(BaseDbtProject):
     """
@@ -156,3 +184,21 @@ class DbtSubProject(BaseDbtProject):
         results = self.parent.dbt.ls(self.parent.path, args)
 
         return set(results) - self.resources
+
+    def initialize(self, target_directory: os.PathLike):
+        """Initialize this subproject as a full dbt project at the provided `target_directory`."""
+
+        # TODO: Implement project initialization
+
+        raise NotImplementedError
+
+
+class DbtProjectHolder:
+    def __init__(self) -> None:
+        self.projects: Dict[str, BaseDbtProject] = {}
+
+    def project_map(self) -> dict:
+        return self.projects
+
+    def register_project(self, project: BaseDbtProject) -> None:
+        self.projects[project.project_id()] = project

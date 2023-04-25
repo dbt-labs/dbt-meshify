@@ -1,8 +1,10 @@
+from typing import Dict
+
 import click
 from pathlib import Path
 
 from .dbt_meshify import Meshify
-from .dbt_projects import DbtProjectHolder, DbtProject, DbtSubProject
+from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
 
 
 @click.group()
@@ -13,11 +15,15 @@ def cli():
 @cli.command(name="connect")
 def connect():
     holder = DbtProjectHolder()
+
     while True:
-        path = input("Enter the relative path to a dbt project (enter 'done' to finish): ")
-        if path == "done":
+        path_string = input("Enter the relative path to a dbt project (enter 'done' to finish): ")
+        if path_string == "done":
             break
-        holder.add_relative_project_path(path)
+
+        path = Path(path_string).expanduser().resolve()
+        project = DbtProject.from_directory(path)
+        holder.register_project(project)
 
     print(holder.project_map())
 
@@ -26,10 +32,11 @@ def connect():
 def split():
     path_string = input("Enter the relative path to a dbt project you'd like to split: ")
 
+    holder = DbtProjectHolder()
+
     path = Path(path_string).expanduser().resolve()
     project = DbtProject.from_directory(path)
-
-    meshify = Meshify()
+    holder.register_project(project)
 
     while True:
         subproject_name = input("Enter the name for your subproject ('done' to finish): ")
@@ -38,8 +45,10 @@ def split():
         subproject_selector = input(
             f"Enter the selector that represents the subproject {subproject_name}: "
         )
-        subproject: DbtSubProject = meshify.create_subproject(
-            dbt_project=project, project_name=subproject_name, select=subproject_selector
-        )
 
-    print(meshify.relationships)
+        subproject: DbtSubProject = project.split(
+            project_name=subproject_name, select=subproject_selector
+        )
+        holder.register_project(subproject)
+
+    print(holder.project_map())
