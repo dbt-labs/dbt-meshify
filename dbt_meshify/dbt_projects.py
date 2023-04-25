@@ -1,85 +1,68 @@
-# first party
-from typing import List, Dict, Any
-import os
+import copy
 import hashlib
+import logging
+import os
+from typing import Dict, Any, Optional, Self, MutableMapping, Set
 
-# third party
-try:
-    from dbt.cli.main import dbtRunner, dbtRunnerResult
-    from dbt.contracts.graph.manifest import Manifest
-except ImportError:
-    dbtRunner = None
+import yaml
+from dbt.contracts.graph.manifest import Manifest
+from dbt.contracts.graph.nodes import SourceDefinition
+from dbt.contracts.project import Project
 
-if dbtRunner is not None:
-    dbt_runner = dbtRunner()
-else:
-    dbt_runner = None
+from dbt_meshify.dbt import Dbt
 
-class LocalDbtProject:
+logger = logging.getLogger()
 
-    def __init__(self, relative_path_to_project: str) -> None:
-        self.relative_path_to_project = relative_path_to_project
-        self.manifest = self.get_project_manifest()
-        self.subprojects = []
-    
-    @property
-    def path(self) -> os.PathLike:
-        return os.path.join(os.getcwd(), self.relative_path_to_project)
 
-    def dbt_operation(self, operation: List[str]) -> dbtRunnerResult:
-        start_wd = os.getcwd()
-        os.chdir(self.path)
-        result = dbt_runner.invoke(operation)
-        os.chdir(start_wd)
-        if not result.success:
-            raise Exception(result.exception)
-        return result
-    
-    def get_project_manifest(self) -> Manifest:
-        manifest_result = self.dbt_operation(["--quiet", "parse"])
-        if manifest_result.success:
-            return manifest_result.result
-        
-    def get_subproject_resources(self, subproject_selector: str) -> List[str]:
-        ls_results = self.dbt_operation(["--log-level", "none", "ls", "-s", subproject_selector])
-        if ls_results.success:
-            return ls_results.result
-        
-    def add_subproject(self, subproject_dict: Dict[str, str]) -> None:
-        self.subprojects.append(subproject_dict)
-    
-    def update_subprojects_with_resources(self) -> List[str]:
-        [subproject.update({"resources": self.get_subproject_resources(subproject["selector"])}) for subproject in self.subprojects]
+class BaseDbtProject:
+    """A base-level representation of a dbt project."""
 
-    def sources(self) -> Dict[str, Dict[Any, Any]]:
+    def __init__(self, manifest: Manifest, project: Project, name: Optional[str] = None) -> None:
+        self.manifest = manifest
+        self.project = project
+        self.name = name if name else project.name
+
+        self.relationships: Dict[str, Set[str]] = {}
+
+    def register_relationship(self, project: str, resources: Set[str]) -> None:
+        """Register the relationship between two projects"""
+        logger.debug(f"Registering the relationship between {project} and its resources")
+        entry = self.relationships.get(project, set())
+        self.relationships[project] = entry.union(resources)
+
+    def sources(self) -> MutableMapping[str, SourceDefinition]:
         return self.manifest.sources
-    
+
     def models(self) -> Dict[str, Dict[Any, Any]]:
-        return {node_name: node for node_name, node in self.manifest.nodes.items() if node.resource_type == 'model'}
-    
-    def installed_packages(self) -> List[str]:
+        return {
+            node_name: node
+            for node_name, node in self.manifest.nodes.items()
+            if node.resource_type == "model"
+        }
+
+    def installed_packages(self) -> Set[str]:
         project_packages = []
         for key in ["nodes", "sources", "exposures", "metrics", "sources", "macros"]:
             items = getattr(self.manifest, key)
             for key, item in items.items():
                 if item.package_name:
                     _hash = hashlib.md5()
-                    _hash.update(item.package_name.encode('utf-8'))
+                    _hash.update(item.package_name.encode("utf-8"))
                     project_packages.append(_hash.hexdigest())
         return set(project_packages)
-    
+
     def project_id(self) -> str:
         return self.manifest.metadata.project_id
-    
+
     def installs(self, other) -> bool:
         """
         Returns true if this project installs the other project as a package
         """
         return self.project_id in other.installed_packages()
-    
+
     def get_model_by_relation_name(self, relation_name: str) -> Dict[str, Dict[Any, Any]]:
         return {k: v for k, v in self.models().items() if v.relation_name == relation_name}
-    
+
     def shares_source_metadata(self, other) -> bool:
         """
         Returns true if there is any shared metadata between this project's sources and the models in the other project
@@ -87,8 +70,8 @@ class LocalDbtProject:
         my_sources = {k: v.relation_name for k, v in self.sources().items()}
         their_models = {k: v.relation_name for k, v in other.models().items()}
         return any(item in set(their_models.values()) for item in my_sources.values())
-    
-    def overlapping_sources(self, other) -> bool:
+
+    def overlapping_sources(self, other) -> dict[str, dict[str, SourceDefinition | Any]]:
         """
         Returns any shared metadata between this sources in this project and the models in the other  project
         """
@@ -96,10 +79,7 @@ class LocalDbtProject:
         for source_id, source in self.sources().items():
             relation_name = source.relation_name
             upstream_model = other.get_model_by_relation_name(relation_name)
-            shared_sources[source_id] = {
-                    "source": source,
-                    "upstream_model": upstream_model
-                }
+            shared_sources[source_id] = {"source": source, "upstream_model": upstream_model}
 
         return shared_sources
 
@@ -110,20 +90,136 @@ class LocalDbtProject:
         return self.installs(other) or self.shares_source_metadata(other)
 
 
+class DbtProject(BaseDbtProject):
+    @staticmethod
+    def _load_project(path) -> Project:
+        """Load a dbt Project configuration"""
+        project_dict = yaml.load(open(os.path.join(path, "dbt_project.yml")), Loader=yaml.Loader)
+        return Project.from_dict(project_dict)
 
-class LocalProjectHolder():
+    @classmethod
+    def from_directory(cls, directory: os.PathLike) -> Self:
+        """Create a new DbtProject using a dbt project directory"""
 
+        dbt = Dbt()
+
+        return DbtProject(
+            manifest=dbt.parse(directory),
+            project=cls._load_project(directory),
+            dbt=dbt,
+            path=directory,
+        )
+
+    def __init__(
+        self,
+        manifest: Manifest,
+        project: Project,
+        dbt: Dbt,
+        path: Optional[os.PathLike] = None,
+        name: Optional[str] = None,
+    ) -> None:
+        super().__init__(manifest, project, name)
+        self.path = path
+        self.dbt = dbt
+
+    def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
+        """Select dbt resources using NodeSelection syntax"""
+
+        args = ["--select", select]
+        if exclude:
+            args.extend(["--exclude", exclude])
+
+        results = self.dbt.ls(self.path, args)
+
+        return set(results)
+
+    def split(
+        self,
+        project_name: str,
+        select: str,
+        exclude: Optional[str] = None,
+    ) -> "DbtSubProject":
+        """Create a new DbtSubProject using NodeSelection syntax."""
+
+        subproject_resources = self.select_resources(select, exclude)
+
+        # Construct a new project and inject the new manifest
+        subproject = DbtSubProject(
+            name=project_name, parent_project=copy.deepcopy(self), resources=subproject_resources
+        )
+
+        # Record the subproject to create a cross-project dependency edge list
+        self.register_relationship(project_name, subproject_resources)
+
+        return subproject
+
+
+class DbtSubProject(BaseDbtProject):
+    """
+    DbtSubProjects are a filtered representation of a dbt project that leverage
+    a parent DbtProject for their manifest and project definitions until a real DbtProject
+    is created on disk.
+    """
+
+    def __init__(self, name: str, parent_project: DbtProject, resources: Set[str]):
+        self.name = name
+        self.resources = resources
+        self.parent = parent_project
+
+        self.manifest = parent_project.manifest.deepcopy()
+        self.project = copy.deepcopy(parent_project.project)
+
+        super().__init__(self.manifest, self.project)
+
+    def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
+        """
+        Select resources using the parent DbtProject and filtering down to only include resources in this
+        subproject.
+        """
+        args = ["--select", select]
+        if exclude:
+            args.extend(["--exclude", exclude])
+
+        results = self.parent.dbt.ls(self.parent.path, args)
+
+        return set(results) - self.resources
+
+    def split(
+        self,
+        project_name: str,
+        select: str,
+        exclude: Optional[str] = None,
+    ) -> "DbtSubProject":
+        """Create a new DbtSubProject using NodeSelection syntax."""
+
+        subproject_resources = self.select_resources(select, exclude)
+
+        # Construct a new project and inject the new manifest
+        subproject = DbtSubProject(
+            name=project_name,
+            parent_project=copy.deepcopy(self.parent),
+            resources=subproject_resources,
+        )
+
+        # Record the subproject to create a cross-project dependency edge list
+        self.register_relationship(project_name, subproject_resources)
+
+        return subproject
+
+    def initialize(self, target_directory: os.PathLike):
+        """Initialize this subproject as a full dbt project at the provided `target_directory`."""
+
+        # TODO: Implement project initialization
+
+        raise NotImplementedError
+
+
+class DbtProjectHolder:
     def __init__(self) -> None:
-        self.relative_project_paths: List[str] = []
+        self.projects: Dict[str, BaseDbtProject] = {}
 
     def project_map(self) -> dict:
-        project_map = {}
-        for relative_project_path in self.relative_project_paths:
-            project = LocalDbtProject(relative_project_path)
-            project_map[project.project_id()] = project
-        return project_map 
+        return self.projects
 
-    def add_relative_project_path(self, relative_project_path) -> None:
-        self.relative_project_paths.append(relative_project_path)
-
-
+    def register_project(self, project: BaseDbtProject) -> None:
+        self.projects[project.project_id()] = project

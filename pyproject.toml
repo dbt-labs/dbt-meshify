@@ -27,6 +27,10 @@ dbt-postgres = { version = "^1.5.0rc1", optional = true }
 [tool.poetry.extras]
 postgres = ['dbt-postgres']
 
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+flake8 = "^6.0.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
