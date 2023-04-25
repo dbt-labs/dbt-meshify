@@ -1,0 +1,3 @@
+models:
+  - name: shared_model
+    description: business critical model used in downstream dbt projects. 
