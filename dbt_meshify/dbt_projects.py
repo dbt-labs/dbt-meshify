@@ -18,40 +18,6 @@ if dbtRunner is not None:
 else:
     dbt_runner = None
 
-class Dbt: 
-
-    def __init__(self):
-      self.dbt_runner = dbtRunner()
-   
-    def invoke(self, directory: Optional[os.PathLike] = None, runner_args: Optional[List[str]] = None) -> dbtRunnerResult:
-        starting_directory = os.getcwd()
-        if directory:
-            os.chdir(directory)
-        result = self.dbt_runner.invoke(runner_args if runner_args else [])
-        os.chdir(starting_directory)
-
-        if not result.success:
-            raise result.exception
-        return result.result
-
-    def parse(self, directory: os.PathLike):
-        return self.invoke(directory, ['--quiet', 'parse'])
-
-    def ls(self, directory: os.PathLike, arguments: List[str] = []) -> dbtRunnerResult:
-        """ 
-        Excute dbt ls with the given arguments and return the result as a list of strings. 
-        Log level is set to none to prevent dbt from printing to stdout.
-        """
-        args = ["--log-format", "json", "--log-level", "none", "ls"] + arguments
-        return self.invoke(directory, args)
-
-    def docs_generate(self, directory: os.PathLike) -> dbtRunnerResult:
-        """ 
-        Excute dbt docs generate with the given arguments
-        """
-        args = ["--quiet", "docs", "generate"]
-        return self.invoke(directory, args)
-
 class DbtProject:
 
     def __init__(self, relative_path: str) -> None:
