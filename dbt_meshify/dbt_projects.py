@@ -2,7 +2,7 @@ import copy
 import hashlib
 import logging
 import os
-from typing import Dict, Any, Optional, Self, MutableMapping, Set
+from typing import Dict, Any, Optional, MutableMapping, Set, Union
 
 import yaml
 from dbt_meshify.file_manager import DbtFileManager
@@ -18,7 +18,7 @@ logger = logging.getLogger()
 class BaseDbtProject:
     """A base-level representation of a dbt project."""
 
-    def __init__(self, manifest: Manifest, catalog: CatalogArtifact,  project: Project, name: Optional[str] = None) -> None:
+    def __init__(self, manifest: Manifest, project: Project, catalog: CatalogArtifact, name: Optional[str] = None) -> None:
         self.manifest = manifest
         self.project = project
         self.catalog = catalog
@@ -75,7 +75,7 @@ class BaseDbtProject:
         their_models = {k: v.relation_name for k, v in other.models().items()}
         return any(item in set(their_models.values()) for item in my_sources.values())
 
-    def overlapping_sources(self, other) -> dict[str, dict[str, SourceDefinition | Any]]:
+    def overlapping_sources(self, other) -> Dict[str, Dict[str, Union[SourceDefinition, Any]]]:
         """
         Returns any shared metadata between this sources in this project and the models in the other  project
         """
@@ -127,7 +127,7 @@ class DbtProject(BaseDbtProject):
         return Project.from_dict(project_dict)
 
     @classmethod
-    def from_directory(cls, directory: os.PathLike) -> Self:
+    def from_directory(cls, directory: os.PathLike) -> "DbtProject":
         """Create a new DbtProject using a dbt project directory"""
 
         dbt = Dbt()
@@ -144,15 +144,14 @@ class DbtProject(BaseDbtProject):
         self,
         manifest: Manifest,
         project: Project,
+        catalog: CatalogArtifact,
         dbt: Dbt,
         path: Optional[os.PathLike] = None,
         name: Optional[str] = None,
     ) -> None:
-        super().__init__(manifest, project, name)
+        super().__init__(manifest, project, catalog, name)
         self.path = path
         self.dbt = dbt
-        self.file_manager = DbtFileManager()
-        self.meshify = DbtMeshYmlEditor()
 
     def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
         """Select dbt resources using NodeSelection syntax"""
@@ -200,8 +199,9 @@ class DbtSubProject(BaseDbtProject):
 
         self.manifest = parent_project.manifest.deepcopy()
         self.project = copy.deepcopy(parent_project.project)
+        self.catalog = parent_project.catalog
 
-        super().__init__(self.manifest, self.project)
+        super().__init__(self.manifest, self.project, self.catalog)
 
     def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
         """
@@ -254,4 +254,4 @@ class DbtProjectHolder:
         return self.projects
 
     def register_project(self, project: BaseDbtProject) -> None:
-        self.projects[project.project_id()] = project
+        self.projects[project.project_id] = project

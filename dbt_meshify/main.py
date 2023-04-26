@@ -3,7 +3,6 @@ from typing import Dict
 import click
 from pathlib import Path
 
-from .dbt_meshify import Meshify
 from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
 
 

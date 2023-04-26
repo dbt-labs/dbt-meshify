@@ -63,7 +63,7 @@ class DbtFileManager():
         self.read_project_path = read_project_path
         self.write_project_path = write_project_path if write_project_path else read_project_path
         self.yml_file_manager = YmlFileManager(read_project_path, write_project_path)
-        self.base_file_manager = BaseFileManager(read_project_path, write_project_path)
+        self.base_file_manager = FileManager(read_project_path, write_project_path)
 
     def read_file(self, path: os.PathLike) -> Union[Dict[str, str], str]:
         """Returns the yaml for a model in the dbt project's manifest"""
