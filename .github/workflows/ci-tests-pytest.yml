@@ -22,4 +22,4 @@ jobs:
           pip install poetry
           poetry install
       - name: Run tests with pytest
-        run: python3 -m pytest
+        run: poetry run pytest
