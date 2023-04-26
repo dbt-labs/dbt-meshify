@@ -1,5 +1,5 @@
 from dbt.contracts.results import CatalogTable
-from dbt_meshify.dbt_meshify import DbtMeshConfigEditor
+from dbt_meshify.dbt_meshify import DbtMeshYmlEditor
 import yaml
 
 test_model_sql = """
@@ -143,7 +143,7 @@ models:
         data_type: boolean
 """
 
-meshify = DbtMeshConfigEditor()
+meshify = DbtMeshYmlEditor()
 catalog_entry = test_model_catalog_entry
 model_name = 'test_model'
 

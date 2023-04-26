@@ -1,7 +1,7 @@
 from typing import Dict
 from dbt.contracts.results import CatalogTable
 
-class DbtMeshConfigEditor:
+class DbtMeshYmlEditor:
     """
     Class to operate on the contents of a dbt project's dbt_project.yml file
     to add the dbt-core concepts specific to the dbt mesh

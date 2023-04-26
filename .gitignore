@@ -1,4 +1,7 @@
+# Environments
 env/
 venv/
 
 __pycache__/
+# IDEs
+.idea/

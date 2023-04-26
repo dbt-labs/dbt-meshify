@@ -27,7 +27,7 @@ class YmlFileManager(BaseFileManager):
         """Returns the yaml for a model in the dbt project's manifest"""
         return yaml.load(open(os.path.join(self.read_project_path, path)), Loader=yaml.FullLoader)
              
-    def write_file(self, path: os.PathLike, file_contents: Dict[str, str]) -> None:
+    def write_file(self, path: os.PathLike, file_contents: Optional[Dict[str, str]] = None) -> None:
         """Returns the yaml for a model in the dbt project's manifest"""
 
         with open(os.path.join(self.write_project_path, path), 'w+') as file:
@@ -47,7 +47,7 @@ class FileManager(BaseFileManager):
         with open(os.path.join(self.read_project_path, path), 'r') as file:
             return file.read()
              
-    def write_file(self, path: os.PathLike, file_contents: Dict[str, str]) -> None:
+    def write_file(self, path: os.PathLike, file_contents: Optional[Dict[str, str]] = None) -> None:
         """Returns the yaml for a model in the dbt project's manifest"""
 
         with open(os.path.join(self.write_project_path, path), 'w+') as file:
@@ -72,7 +72,7 @@ class DbtFileManager():
         else:
             return self.base_file_manager.read_file(path)
     
-    def write_file(self, path: os.PathLike, file_contents: Dict[str, str]) -> None:
+    def write_file(self, path: os.PathLike, file_contents: Optional[Dict[str, str]] = None) -> None:
         """Returns the yaml for a model in the dbt project's manifest"""
         if path.endswith('.yml'):
             return self.yml_file_manager.write_file(path, file_contents)
