@@ -4,6 +4,7 @@ from typing import Optional, List
 
 from dbt.cli.main import dbtRunner
 from dbt.contracts.graph.manifest import Manifest
+from dbt.contracts.results import CatalogArtifact
 
 
 class Dbt:
@@ -36,4 +37,11 @@ class Dbt:
         if arguments:
             args.extend(arguments)
 
+        return self.invoke(directory, args)
+    
+    def docs_generate(self, directory: os.PathLike) -> CatalogArtifact:
+        """ 
+        Excute dbt docs generate with the given arguments
+        """
+        args = ["--quiet", "docs", "generate"]
         return self.invoke(directory, args)
