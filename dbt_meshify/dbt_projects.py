@@ -24,7 +24,6 @@ class BaseDbtProject:
         self.catalog = catalog
         self.name = name if name else project.name
         self.relationships: Dict[str, Set[str]] = {}
-        self.file_manager = DbtFileManager()
         self.meshify = DbtMeshYmlEditor()
 
     def register_relationship(self, project: str, resources: Set[str]) -> None:
@@ -101,23 +100,6 @@ class BaseDbtProject:
         """Returns the catalog entry for a model in the dbt project's catalog"""
         return self.manifest.nodes.get(unique_id, {})
 
-    def add_model_contract(self, unique_id: str) -> None:
-        """Adds a model contract to the model's yaml"""
-        
-        # get the patch path for the model
-        node = self.get_manifest_node(unique_id)
-        yml_path = node.patch_path.split("://")[1] if node.patch_path else None
-        # if the model doesn't have a patch path, create a new yml file in the models directory
-        # TODO - should we check if there's a model yml file in the models directory and append to it?
-        if not yml_path:
-            yml_path = "/".join(node.original_file_path.split(".")[0].split("/")[:-1]) + "_models.yml"
-            self.write_file(yml_path)
-        model_catalog = self.get_catalog_entry(unique_id)
-        # read the yml file
-        full_yml_dict = self.file_manager.read_file(yml_path)
-        updated_yml = self.meshify.add_model_contract_to_yml(full_yml_dict, model_catalog, node.name)
-        # write the updated yml to the file
-        self.file_manager.write_file(yml_path, updated_yml)
 
 class DbtProject(BaseDbtProject):
     @staticmethod
@@ -152,15 +134,17 @@ class DbtProject(BaseDbtProject):
         super().__init__(manifest, project, catalog, name)
         self.path = path
         self.dbt = dbt
+        self.file_manager = DbtFileManager(read_project_path=path, write_project_path=path)
 
-    def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
+    def select_resources(self, select: str, exclude: Optional[str] = None, output_key: Optional[str] = None) -> Set[str]:
         """Select dbt resources using NodeSelection syntax"""
-
-        args = ["--select", select]
+        args = []
+        if select:
+            args = ["--select", select]
         if exclude:
             args.extend(["--exclude", exclude])
 
-        results = self.dbt.ls(self.path, args)
+        results = self.dbt.ls(self.path, args, output_key=output_key)
 
         return set(results)
 
@@ -183,6 +167,24 @@ class DbtProject(BaseDbtProject):
         self.register_relationship(project_name, subproject_resources)
 
         return subproject
+
+    def add_model_contract(self, unique_id: str) -> None:
+        """Adds a model contract to the model's yaml"""
+        
+        # get the patch path for the model
+        node = self.get_manifest_node(unique_id)
+        yml_path = node.patch_path.split("://")[1] if node.patch_path else None
+        # if the model doesn't have a patch path, create a new yml file in the models directory
+        # TODO - should we check if there's a model yml file in the models directory and append to it?
+        if not yml_path:
+            yml_path = "/".join(node.original_file_path.split(".")[0].split("/")[:-1]) + "_models.yml"
+            self.file_manager.write_file(yml_path)
+        model_catalog = self.get_catalog_entry(unique_id)
+        # read the yml file
+        full_yml_dict = self.file_manager.read_file(yml_path)
+        updated_yml = self.meshify.add_model_contract_to_yml(full_yml_dict, model_catalog, node.name)
+        # write the updated yml to the file
+        self.file_manager.write_file(yml_path, updated_yml)
 
 
 class DbtSubProject(BaseDbtProject):

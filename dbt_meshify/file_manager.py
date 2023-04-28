@@ -32,7 +32,7 @@ class YmlFileManager(BaseFileManager):
 
         with open(os.path.join(self.write_project_path, path), 'w+') as file:
             # Serialize the updated data back to YAML and write it to the file
-            yaml.safe_dump(file_contents, file)
+            yaml.safe_dump(file_contents, file, sort_keys=False)
 
 class FileManager(BaseFileManager):
 

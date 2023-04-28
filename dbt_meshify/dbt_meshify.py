@@ -1,4 +1,5 @@
 from typing import Dict
+from collections import OrderedDict
 from dbt.contracts.results import CatalogTable
 
 class DbtMeshYmlEditor:
@@ -10,6 +11,7 @@ class DbtMeshYmlEditor:
     def add_model_contract_to_yml(self, full_yml_dict: Dict[str, str], model_catalog: CatalogTable, model_name: str) -> None:
         """Adds a model contract to the model's yaml"""
         # import pdb; pdb.set_trace()
+        model_ordered_dict = OrderedDict.fromkeys(["name", "description", "access", "config", "meta","columns"])
         if full_yml_dict:
             model_yml = [entry for entry in full_yml_dict.get("models", {}) if entry["name"] == model_name].pop()
         else:
@@ -33,10 +35,13 @@ class DbtMeshYmlEditor:
         # update the model entry in the full yml file
         # if no entries exist, add the model entry
         # otherwise, update the existing model entry in place
+        import pdb; pdb.set_trace()
+        model_ordered_dict.update(model_yml)
+        model_ordered_dict = {k: v for k, v in model_ordered_dict.items() if v is not None}
         if not full_yml_dict.get("models"):
-            full_yml_dict.update({"models": [model_yml]})
+            full_yml_dict.update({"models": [model_ordered_dict]})
         else:
             for i, entry in enumerate(full_yml_dict.get("models", [])):
                 if entry["name"] == model_name:
-                    full_yml_dict["models"][i] = model_yml
+                    full_yml_dict["models"][i] = model_ordered_dict
         return full_yml_dict
