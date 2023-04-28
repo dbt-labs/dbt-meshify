@@ -35,7 +35,6 @@ class DbtMeshYmlEditor:
         # update the model entry in the full yml file
         # if no entries exist, add the model entry
         # otherwise, update the existing model entry in place
-        import pdb; pdb.set_trace()
         model_ordered_dict.update(model_yml)
         model_ordered_dict = {k: v for k, v in model_ordered_dict.items() if v is not None}
         if not full_yml_dict.get("models"):
