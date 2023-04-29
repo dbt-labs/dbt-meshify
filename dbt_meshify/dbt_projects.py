@@ -2,6 +2,7 @@ import copy
 import hashlib
 import logging
 import os
+import json
 from typing import Dict, Any, Optional, MutableMapping, Set, Union
 
 import yaml
@@ -145,6 +146,8 @@ class DbtProject(BaseDbtProject):
             args.extend(["--exclude", exclude])
 
         results = self.dbt.ls(self.path, args, output_key=output_key)
+        if output_key:
+            results = [json.loads(resource).get(output_key) for resource in results]
 
         return set(results)
 

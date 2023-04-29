@@ -70,7 +70,6 @@ def contract(select, exclude, project_path):
     path = Path(project_path).expanduser().resolve()
     project = DbtProject.from_directory(path)
     resources = list(project.select_resources(select=select, exclude=exclude, output_key="unique_id"))
-    models = [json.loads(resource)["unique_id"] for resource in resources if json.loads(resource)["unique_id"].startswith("model")]
-    print(models)
+    models = filter(lambda x: x.startswith('model'), resources)
     for model_unique_id in models:
         project.add_model_contract(model_unique_id)
