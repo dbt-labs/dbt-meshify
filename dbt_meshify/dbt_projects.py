@@ -20,8 +20,13 @@ logger = logging.getLogger()
 class BaseDbtProject:
     """A base-level representation of a dbt project."""
 
-    def __init__(self, manifest: Manifest, project: Project, catalog: CatalogArtifact,
-                 name: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        manifest: Manifest,
+        project: Project,
+        catalog: CatalogArtifact,
+        name: Optional[str] = None,
+    ) -> None:
         self.manifest = manifest
         self.project = project
         self.catalog = catalog
@@ -72,7 +77,6 @@ class BaseDbtProject:
         return self.project_id in other.installed_packages()
 
     def get_model_by_relation_name(self, relation_name: str) -> Optional[ModelNode]:
-
         model_id = self.model_relation_names.get(relation_name)
         if not model_id:
             return None
@@ -122,12 +126,16 @@ class BaseDbtProject:
         # if the model doesn't have a patch path, create a new yml file in the models directory
         # TODO - should we check if there's a model yml file in the models directory and append to it?
         if not yml_path:
-            yml_path = "/".join(node.original_file_path.split(".")[0].split("/")[:-1]) + "_models.yml"
+            yml_path = (
+                "/".join(node.original_file_path.split(".")[0].split("/")[:-1]) + "_models.yml"
+            )
             self.write_file(yml_path)
         model_catalog = self.get_catalog_entry(unique_id)
         # read the yml file
         full_yml_dict = self.file_manager.read_file(yml_path)
-        updated_yml = self.meshify.add_model_contract_to_yml(full_yml_dict, model_catalog, node.name)
+        updated_yml = self.meshify.add_model_contract_to_yml(
+            full_yml_dict, model_catalog, node.name
+        )
         # write the updated yml to the file
         self.file_manager.write_file(yml_path, updated_yml)
 
@@ -154,13 +162,13 @@ class DbtProject(BaseDbtProject):
         )
 
     def __init__(
-            self,
-            manifest: Manifest,
-            project: Project,
-            catalog: CatalogArtifact,
-            dbt: Dbt,
-            path: Optional[os.PathLike] = None,
-            name: Optional[str] = None,
+        self,
+        manifest: Manifest,
+        project: Project,
+        catalog: CatalogArtifact,
+        dbt: Dbt,
+        path: Optional[os.PathLike] = None,
+        name: Optional[str] = None,
     ) -> None:
         super().__init__(manifest, project, catalog, name)
         self.path = path
@@ -178,10 +186,10 @@ class DbtProject(BaseDbtProject):
         return set(results)
 
     def split(
-            self,
-            project_name: str,
-            select: str,
-            exclude: Optional[str] = None,
+        self,
+        project_name: str,
+        select: str,
+        exclude: Optional[str] = None,
     ) -> "DbtSubProject":
         """Create a new DbtSubProject using NodeSelection syntax."""
 
@@ -230,10 +238,10 @@ class DbtSubProject(BaseDbtProject):
         return set(results) - self.resources
 
     def split(
-            self,
-            project_name: str,
-            select: str,
-            exclude: Optional[str] = None,
+        self,
+        project_name: str,
+        select: str,
+        exclude: Optional[str] = None,
     ) -> "DbtSubProject":
         """Create a new DbtSubProject using NodeSelection syntax."""
 

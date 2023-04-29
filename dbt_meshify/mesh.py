@@ -7,13 +7,15 @@ from dbt_meshify.dbt_projects import BaseDbtProject
 
 class ProjectDependencyType(StrEnum):
     """ProjectDependencyTypes define how the dependency relationship was defined."""
-    Source = 'source'
-    Package = 'package'
+
+    Source = "source"
+    Package = "package"
 
 
 @dataclass
 class ProjectDependency:
     """ProjectDependencies define shared resources between two different projects"""
+
     upstream: str
     downstream: str
     type: ProjectDependencyType
@@ -29,8 +31,7 @@ class Mesh:
 
     @staticmethod
     def _find_relation_dependencies(
-            source_relations: Set[str],
-            target_relations: Set[str]
+        source_relations: Set[str], target_relations: Set[str]
     ) -> Set[str]:
         """
         Identify dependencies between projects using shared relations.
@@ -38,9 +39,7 @@ class Mesh:
         return source_relations.intersection(target_relations)
 
     def _source_dependencies(
-            self,
-            project: BaseDbtProject,
-            other_project: BaseDbtProject
+        self, project: BaseDbtProject, other_project: BaseDbtProject
     ) -> Set[ProjectDependency]:
         """
         Identify source-hack dependencies between projects.
@@ -51,22 +50,20 @@ class Mesh:
 
         relations = self._find_relation_dependencies(
             source_relations={source.relation_name for source in project.sources().values()},
-            target_relations={model.relation_name for model in other_project.models().values()}
+            target_relations={model.relation_name for model in other_project.models().values()},
         )
 
         return {
             ProjectDependency(
                 upstream=project.model_relation_names.get(relation),
                 downstream=other_project.model_relation_names.get(relation),
-                type=ProjectDependencyType.Source
+                type=ProjectDependencyType.Source,
             )
             for relation in relations
         }
 
     def _package_dependencies(
-            self,
-            project: BaseDbtProject,
-            other_project: BaseDbtProject
+        self, project: BaseDbtProject, other_project: BaseDbtProject
     ) -> Set[ProjectDependency]:
         """
         Identify package-imported dependencies between projects.
@@ -80,19 +77,21 @@ class Mesh:
 
         relations = self._find_relation_dependencies(
             source_relations={model.relation_name for model in project.models().values()},
-            target_relations={model.relation_name for model in other_project.models().values()}
+            target_relations={model.relation_name for model in other_project.models().values()},
         )
 
         return {
             ProjectDependency(
                 upstream=project.model_relation_names.get(relation),
                 downstream=other_project.model_relation_names.get(relation),
-                type=ProjectDependencyType.Package
+                type=ProjectDependencyType.Package,
             )
             for relation in relations
         }
 
-    def dependencies(self, project: BaseDbtProject, other_project: BaseDbtProject) -> Set[ProjectDependency]:
+    def dependencies(
+        self, project: BaseDbtProject, other_project: BaseDbtProject
+    ) -> Set[ProjectDependency]:
         """Detect dependencies between two projects and return a list of resources shared."""
 
         dependencies = set()
