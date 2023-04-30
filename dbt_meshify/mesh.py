@@ -20,6 +20,17 @@ class ProjectDependency:
     downstream: str
     type: ProjectDependencyType
 
+    def __key(self):
+        return self.upstream, self.downstream, self.type
+
+    def __hash__(self):
+        return hash(self.__key())
+
+    def __eq__(self, other):
+        if isinstance(other, ProjectDependency):
+            return self.__key() == other.__key()
+        return NotImplemented
+
 
 class Mesh:
     """
@@ -49,18 +60,34 @@ class Mesh:
         """
 
         relations = self._find_relation_dependencies(
-            source_relations={source.relation_name for source in project.sources().values()},
-            target_relations={model.relation_name for model in other_project.models().values()},
+            source_relations={model.relation_name for model in project.models().values()},
+            target_relations={source.relation_name for source in other_project.sources().values()},
         )
 
-        return {
+        forward_dependencies = {
             ProjectDependency(
                 upstream=project.model_relation_names.get(relation),
-                downstream=other_project.model_relation_names.get(relation),
+                downstream=other_project.source_relation_names.get(relation),
                 type=ProjectDependencyType.Source,
             )
             for relation in relations
         }
+
+        backwards_relations = self._find_relation_dependencies(
+            source_relations={model.relation_name for model in other_project.models().values()},
+            target_relations={source.relation_name for source in project.sources().values()},
+        )
+
+        backward_dependencies = {
+            ProjectDependency(
+                upstream=other_project.model_relation_names.get(relation),
+                downstream=project.source_relation_names.get(relation),
+                type=ProjectDependencyType.Source,
+            )
+            for relation in backwards_relations
+        }
+
+        return forward_dependencies | backward_dependencies
 
     def _package_dependencies(
         self, project: BaseDbtProject, other_project: BaseDbtProject

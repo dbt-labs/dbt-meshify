@@ -38,6 +38,9 @@ class BaseDbtProject:
         self.model_relation_names: Dict[str, str] = {
             model.relation_name: unique_id for unique_id, model in self.models().items()
         }
+        self.source_relation_names: Dict[str, str] = {
+            source.relation_name: unique_id for unique_id, source in self.sources().items()
+        }
 
     def register_relationship(self, project: str, resources: Set[str]) -> None:
         """Register the relationship between two projects"""
