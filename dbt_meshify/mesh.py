@@ -1,11 +1,11 @@
 from dataclasses import dataclass
-from enum import StrEnum
+from enum import Enum
 from typing import Set
 
 from dbt_meshify.dbt_projects import BaseDbtProject
 
 
-class ProjectDependencyType(StrEnum):
+class ProjectDependencyType(str, Enum):
     """ProjectDependencyTypes define how the dependency relationship was defined."""
 
     Source = "source"
