@@ -8,15 +8,14 @@ class DbtMeshYmlEditor:
     to add the dbt-core concepts specific to the dbt mesh
     """
 
-    def add_model_contract_to_yml(self, full_yml_dict: Dict[str, str], model_catalog: CatalogTable, model_name: str) -> None:
+    def add_model_contract_to_yml(self, model_name: str, model_catalog: CatalogTable, full_yml_dict: Dict[str, str]) -> None:
         """Adds a model contract to the model's yaml"""
-        # import pdb; pdb.set_trace()
+        # set up yml order
         model_ordered_dict = OrderedDict.fromkeys(["name", "description", "access", "config", "meta","columns"])
-        if full_yml_dict:
-            model_yml = [entry for entry in full_yml_dict.get("models", {}) if entry["name"] == model_name].pop()
-        else:
-            full_yml_dict = {"models": []}
-            model_yml = {"name": model_name, "columns": [], "config": {}}
+        # parse the yml file into a dictionary with model names as keys
+        models = { model['name']: model for model in full_yml_dict['models'] } if full_yml_dict else {}
+        model_yml = models.get(model_name) or {"name": model_name, "columns": [], "config": {}}
+
         # isolate the columns from the existing model entry
         yml_cols = model_yml.get("columns", [])
         catalog_cols = model_catalog.columns or {}
@@ -30,17 +29,15 @@ class DbtMeshYmlEditor:
         # update the columns in the model yml entry
         model_yml.update({"columns": yml_cols})
         # add contract to the model yml entry
-        if not model_yml.get("config"):
-            model_yml.update({"config": {"contract": {"enforced": True }}})
+        # this part should come from the same service as what we use for the standalone command when we get there
+        model_yml.update({"config": {"contract": {"enforced": True }}})
         # update the model entry in the full yml file
         # if no entries exist, add the model entry
         # otherwise, update the existing model entry in place
         model_ordered_dict.update(model_yml)
+        # remove any keys with None values
         model_ordered_dict = {k: v for k, v in model_ordered_dict.items() if v is not None}
-        if not full_yml_dict.get("models"):
-            full_yml_dict.update({"models": [model_ordered_dict]})
-        else:
-            for i, entry in enumerate(full_yml_dict.get("models", [])):
-                if entry["name"] == model_name:
-                    full_yml_dict["models"][i] = model_ordered_dict
+        models[model_name] = model_ordered_dict
+
+        full_yml_dict["models"] = list(models.values())
         return full_yml_dict
