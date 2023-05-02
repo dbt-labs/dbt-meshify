@@ -1,7 +1,5 @@
-from typing import Dict
-import json
-import click
 from pathlib import Path
+import click
 
 from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
 

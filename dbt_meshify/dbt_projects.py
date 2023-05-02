@@ -10,23 +10,38 @@ import yaml
 from dbt_meshify.file_manager import DbtFileManager
 from dbt_meshify.dbt_meshify import DbtMeshYmlEditor
 from dbt.contracts.graph.manifest import Manifest
-from dbt.contracts.graph.nodes import SourceDefinition
+from dbt.contracts.graph.nodes import SourceDefinition, ModelNode, ManifestNode
 from dbt.contracts.project import Project
 from dbt.contracts.results import CatalogArtifact
 
 from dbt_meshify.dbt import Dbt
 
 logger = logging.getLogger()
+
+
 class BaseDbtProject:
     """A base-level representation of a dbt project."""
 
-    def __init__(self, manifest: Manifest, project: Project, catalog: CatalogArtifact, name: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        manifest: Manifest,
+        project: Project,
+        catalog: CatalogArtifact,
+        name: Optional[str] = None,
+    ) -> None:
         self.manifest = manifest
         self.project = project
         self.catalog = catalog
         self.name = name if name else project.name
         self.relationships: Dict[str, Set[str]] = {}
         self.meshify = DbtMeshYmlEditor()
+
+        self.model_relation_names: Dict[str, str] = {
+            model.relation_name: unique_id for unique_id, model in self.models().items()
+        }
+        self.source_relation_names: Dict[str, str] = {
+            source.relation_name: unique_id for unique_id, source in self.sources().items()
+        }
 
     def register_relationship(self, project: str, resources: Set[str]) -> None:
         """Register the relationship between two projects"""
@@ -37,7 +52,7 @@ class BaseDbtProject:
     def sources(self) -> MutableMapping[str, SourceDefinition]:
         return self.manifest.sources
 
-    def models(self) -> Dict[str, Dict[Any, Any]]:
+    def models(self) -> Dict[str, ModelNode]:
         return {
             node_name: node
             for node_name, node in self.manifest.nodes.items()
@@ -65,8 +80,12 @@ class BaseDbtProject:
         """
         return self.project_id in other.installed_packages()
 
-    def get_model_by_relation_name(self, relation_name: str) -> Dict[str, Dict[Any, Any]]:
-        return {k: v for k, v in self.models().items() if v.relation_name == relation_name}
+    def get_model_by_relation_name(self, relation_name: str) -> Optional[ModelNode]:
+        model_id = self.model_relation_names.get(relation_name)
+        if not model_id:
+            return None
+
+        return self.manifest.nodes.get(model_id)
 
     def shares_source_metadata(self, other) -> bool:
         """
@@ -97,11 +116,10 @@ class BaseDbtProject:
     def get_catalog_entry(self, unique_id: str) -> Dict[str, Any]:
         """Returns the catalog entry for a model in the dbt project's catalog"""
         return self.catalog.nodes.get(unique_id, {})
-    
-    def get_manifest_node(self, unique_id: str) -> Dict[str, Any]:
+
+    def get_manifest_node(self, unique_id: str) -> ManifestNode:
         """Returns the catalog entry for a model in the dbt project's catalog"""
         return self.manifest.nodes.get(unique_id, {})
-
 
 class DbtProject(BaseDbtProject):
     @staticmethod
