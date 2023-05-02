@@ -1,7 +1,7 @@
 dest_proj_b:
   outputs:
     dev:
-      dbname: ../src_proj_a/database.db
+      path: ../src_proj_a/database.db
       threads: 2
       type: duckdb
   target: dev
