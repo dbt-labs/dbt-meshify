@@ -3,16 +3,16 @@ shared_model_catalog_entry = CatalogTable.from_dict(
     {
       "metadata": {
         "type": "BASE TABLE",
-        "schema": "dbt_dconnors",
+        "schema": "main",
         "name": "shared_model",
-        "database": "postgres",
+        "database": "database",
         "comment": None,
-        "owner": "daveconnors"
+        "owner": None
       },
       "columns": {
-        "id": { "type": "integer", "index": 1, "name": "id", "comment": None },
+        "id": { "type": "INTEGER", "index": 1, "name": "id", "comment": None },
         "colleague": {
-          "type": "text",
+          "type": "VARCHAR",
           "index": 2,
           "name": "colleague",
           "comment": None
@@ -74,7 +74,7 @@ models:
       - name: id
         data_type: integer
       - name: colleague
-        data_type: text
+        data_type: varchar
 """
 
 expected_yml_one_col = """
@@ -89,7 +89,7 @@ models:
         description: "this is the id column"
         data_type: integer
       - name: colleague
-        data_type: text
+        data_type: varchar
 """
 
 expected_yml_all_col = """
@@ -105,7 +105,7 @@ models:
         data_type: integer
       - name: colleague
         description: "this is the colleague column"
-        data_type: text
+        data_type: varchar
 """
 
 expected_yml_no_entry = """
@@ -118,7 +118,7 @@ models:
       - name: id
         data_type: integer
       - name: colleague
-        data_type: text
+        data_type: varchar
 """
 
 expected_yml_other_model = """
@@ -133,5 +133,5 @@ models:
       - name: id
         data_type: integer
       - name: colleague
-        data_type: text
+        data_type: varchar
 """
