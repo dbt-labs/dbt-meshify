@@ -31,7 +31,7 @@ proj_path = Path(proj_path_string)
 )
 
 def test_add_contract_to_yml(start_yml, end_yml):
-    yml_file = proj_path / 'models' / 'shared_model.yml'
+    yml_file = proj_path / 'models' / '_models.yml'
     yml_file.parent.mkdir(parents=True, exist_ok=True)
     runner = CliRunner()
     # only create file if start_yml is not None
@@ -44,8 +44,7 @@ def test_add_contract_to_yml(start_yml, end_yml):
     result = runner.invoke(contract, ["--select", "shared_model", "--project-path", proj_path_string])
     assert result.exit_code == 0
     # reset the read path to the default in the logic
-    read_file = yml_file if start_yml is not None else proj_path / 'models' / '_models.yml'
-    with open(read_file, 'r') as f:
+    with open(yml_file, 'r') as f:
         actual = yaml.safe_load(f)
-    read_file.unlink()
+    yml_file.unlink()
     assert actual == yaml.safe_load(end_yml)
