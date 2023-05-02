@@ -8,17 +8,25 @@ import yaml
 from dbt_meshify.file_manager import DbtFileManager
 from dbt_meshify.dbt_meshify import DbtMeshYmlEditor
 from dbt.contracts.graph.manifest import Manifest
-from dbt.contracts.graph.nodes import SourceDefinition
+from dbt.contracts.graph.nodes import SourceDefinition, ModelNode, ManifestNode
 from dbt.contracts.project import Project
 from dbt.contracts.results import CatalogArtifact
 
 from dbt_meshify.dbt import Dbt
 
 logger = logging.getLogger()
+
+
 class BaseDbtProject:
     """A base-level representation of a dbt project."""
 
-    def __init__(self, manifest: Manifest, project: Project, catalog: CatalogArtifact, name: Optional[str] = None) -> None:
+    def __init__(
+        self,
+        manifest: Manifest,
+        project: Project,
+        catalog: CatalogArtifact,
+        name: Optional[str] = None,
+    ) -> None:
         self.manifest = manifest
         self.project = project
         self.catalog = catalog
@@ -26,6 +34,13 @@ class BaseDbtProject:
         self.relationships: Dict[str, Set[str]] = {}
         self.file_manager = DbtFileManager()
         self.meshify = DbtMeshYmlEditor()
+
+        self.model_relation_names: Dict[str, str] = {
+            model.relation_name: unique_id for unique_id, model in self.models().items()
+        }
+        self.source_relation_names: Dict[str, str] = {
+            source.relation_name: unique_id for unique_id, source in self.sources().items()
+        }
 
     def register_relationship(self, project: str, resources: Set[str]) -> None:
         """Register the relationship between two projects"""
@@ -36,7 +51,7 @@ class BaseDbtProject:
     def sources(self) -> MutableMapping[str, SourceDefinition]:
         return self.manifest.sources
 
-    def models(self) -> Dict[str, Dict[Any, Any]]:
+    def models(self) -> Dict[str, ModelNode]:
         return {
             node_name: node
             for node_name, node in self.manifest.nodes.items()
@@ -64,8 +79,12 @@ class BaseDbtProject:
         """
         return self.project_id in other.installed_packages()
 
-    def get_model_by_relation_name(self, relation_name: str) -> Dict[str, Dict[Any, Any]]:
-        return {k: v for k, v in self.models().items() if v.relation_name == relation_name}
+    def get_model_by_relation_name(self, relation_name: str) -> Optional[ModelNode]:
+        model_id = self.model_relation_names.get(relation_name)
+        if not model_id:
+            return None
+
+        return self.manifest.nodes.get(model_id)
 
     def shares_source_metadata(self, other) -> bool:
         """
@@ -96,28 +115,33 @@ class BaseDbtProject:
     def get_catalog_entry(self, unique_id: str) -> Dict[str, Any]:
         """Returns the catalog entry for a model in the dbt project's catalog"""
         return self.catalog.nodes.get(unique_id, {})
-    
-    def get_manifest_node(self, unique_id: str) -> Dict[str, Any]:
+
+    def get_manifest_node(self, unique_id: str) -> ManifestNode:
         """Returns the catalog entry for a model in the dbt project's catalog"""
         return self.manifest.nodes.get(unique_id, {})
 
     def add_model_contract(self, unique_id: str) -> None:
         """Adds a model contract to the model's yaml"""
-        
+
         # get the patch path for the model
         node = self.get_manifest_node(unique_id)
         yml_path = node.patch_path.split("://")[1] if node.patch_path else None
         # if the model doesn't have a patch path, create a new yml file in the models directory
         # TODO - should we check if there's a model yml file in the models directory and append to it?
         if not yml_path:
-            yml_path = "/".join(node.original_file_path.split(".")[0].split("/")[:-1]) + "_models.yml"
+            yml_path = (
+                "/".join(node.original_file_path.split(".")[0].split("/")[:-1]) + "_models.yml"
+            )
             self.write_file(yml_path)
         model_catalog = self.get_catalog_entry(unique_id)
         # read the yml file
         full_yml_dict = self.file_manager.read_file(yml_path)
-        updated_yml = self.meshify.add_model_contract_to_yml(full_yml_dict, model_catalog, node.name)
+        updated_yml = self.meshify.add_model_contract_to_yml(
+            full_yml_dict, model_catalog, node.name
+        )
         # write the updated yml to the file
         self.file_manager.write_file(yml_path, updated_yml)
+
 
 class DbtProject(BaseDbtProject):
     @staticmethod

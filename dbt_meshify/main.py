@@ -1,7 +1,6 @@
-from typing import Dict
+from pathlib import Path
 
 import click
-from pathlib import Path
 
 from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
 
