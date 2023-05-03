@@ -60,8 +60,8 @@ class DbtMeshModelYmlEditor:
         models = { model['name']: model for model in full_yml_dict['models'] } if full_yml_dict else {}
         model_yml = models.get(model_name) or {"name": model_name, "latest_version": 0, "versions": []}
         # add the version to the model yml entry
-        versions_list = model_yml.get("versions")
-        latest_version = model_yml.get("latest_version")
+        versions_list = model_yml.get("versions") or []
+        latest_version = model_yml.get("latest_version") or 0
         version_dict = {}
         if not versions_list:
             version_dict["v"] = 1
@@ -77,8 +77,9 @@ class DbtMeshModelYmlEditor:
         if defined_in:
             version_dict["defined_in"] = defined_in
         # add the version to the model yml entry
-        model_yml["versions"].append(version_dict)
+        versions_list.append(version_dict)
         # update the latest version in the model yml entry
+        model_yml["versions"] = versions_list
         model_yml["latest_version"] = latest_version
 
         processed = self.process_model_yml(model_yml)
