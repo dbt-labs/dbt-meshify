@@ -1,6 +1,8 @@
 from pathlib import Path
 import click
 
+from dbt_meshify.dbt_meshify import DbtMeshModelConstructor
+
 from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
 
 
@@ -70,4 +72,11 @@ def contract(select, exclude, project_path):
     resources = list(project.select_resources(select=select, exclude=exclude, output_key="unique_id"))
     models = filter(lambda x: x.startswith('model'), resources)
     for model_unique_id in models:
-        project.add_model_contract(model_unique_id)
+        model_node = project.get_manifest_node(model_unique_id)
+        model_catalog = project.get_catalog_entry(model_unique_id)
+        meshify_constructor = DbtMeshModelConstructor(
+            model_node = model_node,
+            model_catalog = model_catalog,
+            project_path = project_path
+        )
+        meshify_constructor.add_model_contract()

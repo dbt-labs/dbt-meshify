@@ -1,5 +1,5 @@
 
-from dbt_meshify.dbt_meshify import DbtMeshYmlEditor
+from dbt_meshify.dbt_meshify import DbtMeshModelYmlEditor
 import yaml
 from ..fixtures import (
     shared_model_catalog_entry,
@@ -16,7 +16,7 @@ from ..fixtures import (
 
 
 
-meshify = DbtMeshYmlEditor()
+meshify = DbtMeshModelYmlEditor()
 catalog_entry = shared_model_catalog_entry
 model_name = 'shared_model'
 

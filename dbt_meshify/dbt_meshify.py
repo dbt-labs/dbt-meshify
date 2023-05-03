@@ -1,8 +1,11 @@
+from pathlib import Path
 from typing import Dict
 from collections import OrderedDict
 from dbt.contracts.results import CatalogTable
+from dbt.contracts.graph.nodes import ManifestNode
+from dbt_meshify.file_manager import DbtFileManager
 
-class DbtMeshYmlEditor:
+class DbtMeshModelYmlEditor:
     """
     Class to operate on the contents of a dbt project's dbt_project.yml file
     to add the dbt-core concepts specific to the dbt mesh
@@ -41,3 +44,43 @@ class DbtMeshYmlEditor:
 
         full_yml_dict["models"] = list(models.values())
         return full_yml_dict
+    
+
+class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
+
+    def __init__(self, 
+        project_path: str,
+        model_node: ManifestNode, 
+        model_catalog: CatalogTable
+    ):  
+        self.project_path = project_path
+        self.model_node = model_node
+        self.model_catalog = model_catalog
+        self.name = model_node.name
+        self.file_manager = DbtFileManager(read_project_path=project_path, write_project_path=project_path)
+    
+    def add_model_contract(self) -> None:
+        """Adds a model contract to the model's yaml"""
+        
+        # get the patch path for the model
+        node = self.model_node
+        yml_path = Path(node.patch_path.split("://")[1]) if node.patch_path else None
+        original_file_path = Path(node.original_file_path) if node.original_file_path else None
+        # if the model doesn't have a patch path, create a new yml file in the models directory
+        # TODO - should we check if there's a model yml file in the models directory and append to it?
+        if not yml_path:
+            yml_path = original_file_path.parent / "_models.yml"
+            self.file_manager.write_file(yml_path)
+        model_catalog = self.model_catalog
+        # read the yml file
+        # pass empty dict if no file contents returned
+        full_yml_dict = self.file_manager.read_file(yml_path) or {}
+        updated_yml = self.add_model_contract_to_yml(
+            model_name=node.name,
+            model_catalog=model_catalog,
+            full_yml_dict=full_yml_dict
+            )
+        # write the updated yml to the file
+        self.file_manager.write_file(yml_path, updated_yml) 
+
+
