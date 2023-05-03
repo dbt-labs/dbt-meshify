@@ -120,6 +120,7 @@ class BaseDbtProject:
         """Returns the catalog entry for a model in the dbt project's catalog"""
         return self.manifest.nodes.get(unique_id, {})
 
+
 class DbtProject(BaseDbtProject):
     @staticmethod
     def _load_project(path) -> Project:
@@ -153,9 +154,10 @@ class DbtProject(BaseDbtProject):
         super().__init__(manifest, project, catalog, name)
         self.path = path
         self.dbt = dbt
-        
 
-    def select_resources(self, select: str, exclude: Optional[str] = None, output_key: Optional[str] = None) -> Set[str]:
+    def select_resources(
+        self, select: str, exclude: Optional[str] = None, output_key: Optional[str] = None
+    ) -> Set[str]:
         """Select dbt resources using NodeSelection syntax"""
         args = []
         if select:

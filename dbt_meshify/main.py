@@ -54,29 +54,43 @@ def split():
 
 
 @cli.command(name="contract")
-@click.option(
-    "--select",
-    "-s"
-    )
-@click.option(
-    "--exclude",
-    "-e"
-    )
-@click.option(
-    "--project-path",
-    default="."
-)
+@click.option("--select", "-s")
+@click.option("--exclude", "-e")
+@click.option("--project-path", default=".")
 def contract(select, exclude, project_path):
     path = Path(project_path).expanduser().resolve()
     project = DbtProject.from_directory(path)
-    resources = list(project.select_resources(select=select, exclude=exclude, output_key="unique_id"))
-    models = filter(lambda x: x.startswith('model'), resources)
+    resources = list(
+        project.select_resources(select=select, exclude=exclude, output_key="unique_id")
+    )
+    models = filter(lambda x: x.startswith("model"), resources)
     for model_unique_id in models:
         model_node = project.get_manifest_node(model_unique_id)
         model_catalog = project.get_catalog_entry(model_unique_id)
         meshify_constructor = DbtMeshModelConstructor(
-            model_node = model_node,
-            model_catalog = model_catalog,
-            project_path = project_path
+            model_node=model_node, model_catalog=model_catalog, project_path=project_path
         )
         meshify_constructor.add_model_contract()
+
+@cli.command(name="version")
+@click.option("--select", "-s")
+@click.option("--exclude", "-e")
+@click.option("--project-path", default=".")
+@click.option("--prerelease", "--pre", default=False, is_flag=True)
+@click.option("--defined-in", default=None)
+def version(select, exclude, project_path, prerelease, defined_in):
+    path = Path(project_path).expanduser().resolve()
+    project = DbtProject.from_directory(path)
+    resources = list(
+        project.select_resources(select=select, exclude=exclude, output_key="unique_id")
+    )
+    models = filter(lambda x: x.startswith("model"), resources)
+    for model_unique_id in models:
+        model_node = project.get_manifest_node(model_unique_id)
+        if model_node.version == model_node.latest_version:
+            meshify_constructor = DbtMeshModelConstructor(
+                project_path=project_path, model_node=model_node
+            )
+            meshify_constructor.add_model_version(
+                prerelease=prerelease, defined_in=defined_in
+            )
