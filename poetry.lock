@@ -346,7 +346,7 @@ werkzeug = ">=1,<3"
 name = "dbt-duckdb"
 version = "1.5.0"
 description = "The duckdb adapter plugin for dbt (data build tool)"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -407,7 +407,7 @@ psycopg2-binary = ">=2.8,<3.0"
 name = "duckdb"
 version = "0.7.1"
 description = "DuckDB embedded database"
-category = "dev"
+category = "main"
 optional = false
 python-versions = "*"
 files = [
@@ -1346,4 +1346,4 @@ postgres = ["dbt-postgres"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.9"
-content-hash = "7b7eb24695f2432892f87591e3c862ad295e16d693fbb590d909a8c39da076c7"
+content-hash = "caa486359bcf83d56103945287127681866bd3965a1402b9a10720d4c63bae56"

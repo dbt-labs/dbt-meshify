@@ -1,5 +1,4 @@
 from pathlib import Path
-
 import click
 
 from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
@@ -50,3 +49,25 @@ def split():
         holder.register_project(subproject)
 
     print(holder.project_map())
+
+
+@cli.command(name="contract")
+@click.option(
+    "--select",
+    "-s"
+    )
+@click.option(
+    "--exclude",
+    "-e"
+    )
+@click.option(
+    "--project-path",
+    default="."
+)
+def contract(select, exclude, project_path):
+    path = Path(project_path).expanduser().resolve()
+    project = DbtProject.from_directory(path)
+    resources = list(project.select_resources(select=select, exclude=exclude, output_key="unique_id"))
+    models = filter(lambda x: x.startswith('model'), resources)
+    for model_unique_id in models:
+        project.add_model_contract(model_unique_id)

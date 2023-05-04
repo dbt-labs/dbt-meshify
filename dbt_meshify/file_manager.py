@@ -32,7 +32,7 @@ class YmlFileManager(BaseFileManager):
 
         with open(os.path.join(self.write_project_path, path), 'w+') as file:
             # Serialize the updated data back to YAML and write it to the file
-            yaml.safe_dump(file_contents, file)
+            yaml.safe_dump(file_contents, file, sort_keys=False)
 
 class FileManager(BaseFileManager):
 
@@ -67,14 +67,14 @@ class DbtFileManager():
 
     def read_file(self, path: os.PathLike) -> Union[Dict[str, str], str]:
         """Returns the yaml for a model in the dbt project's manifest"""
-        if path.endswith('.yml'):
+        if path.suffix == '.yml':
             return self.yml_file_manager.read_file(path)
         else:
             return self.base_file_manager.read_file(path)
     
     def write_file(self, path: os.PathLike, file_contents: Optional[Dict[str, str]] = None) -> None:
         """Returns the yaml for a model in the dbt project's manifest"""
-        if path.endswith('.yml'):
+        if path.suffix == '.yml':
             return self.yml_file_manager.write_file(path, file_contents)
         else:
             return self.base_file_manager.write_file(path, file_contents)
