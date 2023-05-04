@@ -152,10 +152,22 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
         
         # if we're incrementing the version, write the new version file with a copy of the code
         latest_version = node.latest_version if node.latest_version else 0
-        version_file_name = f"{defined_in}.{node.language}" if defined_in else f"{node.name}_v{latest_version + 1}.{node.language}"
-        version_path = original_file_path.parent / version_file_name
-        # if versions, create the new one 
-        self.file_manager.write_file(version_path, node.raw_code)
+        last_version_file_name = f"{node.name}_v{latest_version}.{node.language}"
+        next_version_file_name = f"{defined_in}.{node.language}" if defined_in else f"{node.name}_v{latest_version + 1}.{node.language}"
+        next_version_path = original_file_path.parent / next_version_file_name
+        last_version_path = original_file_path.parent / last_version_file_name
+        
+        # import pdb; pdb.set_trace()
+        
+        # if this is the first version, rename the original file to the next version
         if not node.latest_version:
-            Path(self.project_path).joinpath(original_file_path).rename(Path(self.project_path).joinpath(version_path))
+            Path(self.project_path).joinpath(original_file_path).rename(Path(self.project_path).joinpath(next_version_path))
+        else:
+            # if existing versions, create the new one 
+            self.file_manager.write_file(next_version_path, node.raw_code)
+            # if the existing version doesn't use the _v{version} naming convention, rename it to the previous version
+            if not original_file_path.root.endswith(f"_v{latest_version}.{node.language}"):
+                Path(self.project_path).joinpath(original_file_path).rename(Path(self.project_path).joinpath(last_version_path))
+
+        
 
