@@ -5,7 +5,7 @@ from dbt.contracts.results import CatalogTable
 class DbtMeshYmlEditor:
     """
     Class to operate on the contents of a dbt project's dbt_project.yml file
-    to add the dbt-core concepts specific to the dbt mesh
+    to add the dbt-core concepts specific to the dbt linker
     """
 
     def add_model_contract_to_yml(self, model_name: str, model_catalog: CatalogTable, full_yml_dict: Dict[str, str]) -> None:

@@ -4,11 +4,11 @@ import pytest as pytest
 
 from dbt_meshify.dbt import Dbt
 from dbt_meshify.dbt_projects import DbtProject
-from dbt_meshify.mesh import Mesh, ProjectDependency, ProjectDependencyType
+from dbt_meshify.linker import Linker, ProjectDependency, ProjectDependencyType
 
 
-class TestMeshSourceDependencies:
-    """Test how Mesh computes dependencies via the source hack."""
+class TestLinkerSourceDependencies:
+    """Test how Linker computes dependencies via the source hack."""
 
     @pytest.fixture
     def src_proj_a(self) -> DbtProject:
@@ -36,25 +36,11 @@ class TestMeshSourceDependencies:
         """Load the `dest_proj_b` project."""
         return DbtProject.from_directory(Path("test-projects/source-hack/dest_proj_b/").resolve())
 
-    def test_mesh_detects_source_dependencies(self, src_proj_a, src_proj_b):
-        """Verify that Mesh detects source-hacked projects."""
+    def test_linker_detects_source_dependencies(self, src_proj_a, src_proj_b):
+        """Verify that Linker detects source-hacked projects."""
 
-        mesh = Mesh()
-        dependencies = mesh.dependencies(src_proj_b, src_proj_a)
-
-        assert dependencies == {
-            ProjectDependency(
-                upstream="model.src_proj_a.shared_model",
-                downstream="source.src_proj_b.src_proj_a.shared_model",
-                type=ProjectDependencyType.Source,
-            )
-        }
-
-    def test_mesh_detects_source_dependencies_bidirectionally(self, src_proj_a, src_proj_b):
-        """Verify that Mesh detects source-hacked projects when provided out of order."""
-
-        mesh = Mesh()
-        dependencies = mesh.dependencies(src_proj_a, src_proj_b)
+        linker = Linker()
+        dependencies = linker.dependencies(src_proj_b, src_proj_a)
 
         assert dependencies == {
             ProjectDependency(
@@ -64,11 +50,25 @@ class TestMeshSourceDependencies:
             )
         }
 
-    def test_mesh_detects_package_import_dependencies(self, src_proj_a, dest_proj_a):
-        """Verify that Mesh detects package import dependencies."""
+    def test_linker_detects_source_dependencies_bidirectionally(self, src_proj_a, src_proj_b):
+        """Verify that Linker detects source-hacked projects when provided out of order."""
 
-        mesh = Mesh()
-        dependencies = mesh.dependencies(src_proj_a, dest_proj_a)
+        linker = Linker()
+        dependencies = linker.dependencies(src_proj_a, src_proj_b)
+
+        assert dependencies == {
+            ProjectDependency(
+                upstream="model.src_proj_a.shared_model",
+                downstream="source.src_proj_b.src_proj_a.shared_model",
+                type=ProjectDependencyType.Source,
+            )
+        }
+
+    def test_linker_detects_package_import_dependencies(self, src_proj_a, dest_proj_a):
+        """Verify that Linker detects package import dependencies."""
+
+        linker = Linker()
+        dependencies = linker.dependencies(src_proj_a, dest_proj_a)
 
         assert dependencies == {
             ProjectDependency(
@@ -79,11 +79,11 @@ class TestMeshSourceDependencies:
         }
 
     # This doesn't exist yet as of 1.5.0. We'll test it out once it's a thing.
-    # def test_mesh_detects_cross_project_reference_dependencies(self, src_proj_a, dest_proj_b):
-    #     """Verify that Mesh detects cross-project reference dependencies."""
+    # def test_linker_detects_cross_project_reference_dependencies(self, src_proj_a, dest_proj_b):
+    #     """Verify that Linker detects cross-project reference dependencies."""
     #
-    #     mesh = Mesh()
-    #     dependencies = mesh.dependencies(src_proj_a, dest_proj_b)
+    #     linker = Linker()
+    #     dependencies = linker.dependencies(src_proj_a, dest_proj_b)
     #
     #     assert dependencies == {
     #         ProjectDependency(

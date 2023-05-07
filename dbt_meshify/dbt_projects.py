@@ -7,14 +7,14 @@ from pathlib import Path
 from typing import Dict, Any, Optional, MutableMapping, Set, Union
 
 import yaml
-from dbt_meshify.file_manager import DbtFileManager
-from dbt_meshify.dbt_meshify import DbtMeshYmlEditor
 from dbt.contracts.graph.manifest import Manifest
 from dbt.contracts.graph.nodes import SourceDefinition, ModelNode, ManifestNode
 from dbt.contracts.project import Project
 from dbt.contracts.results import CatalogArtifact
 
 from dbt_meshify.dbt import Dbt
+from dbt_meshify.storage.file_manager import DbtFileManager
+from dbt_meshify.storage.yaml_editors import DbtMeshYmlEditor
 
 logger = logging.getLogger()
 
