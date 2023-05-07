@@ -1,5 +1,9 @@
+import os
 from pathlib import Path
+from typing import Optional, List, Tuple
+
 import click
+from dbt.contracts.graph.unparsed import Owner
 
 from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
 
@@ -7,6 +11,32 @@ from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
 @click.group()
 def cli():
     pass
+
+
+@cli.command()
+@click.argument('name')
+@click.option('--select', '-s', required=True)
+@click.option('--exclude', '-e')
+@click.option("--project-path", default=os.getcwd(), type=click.Path(exists=True))
+@click.option('--owner', nargs=2, multiple=True, type=click.Tuple([str, str]))
+def group(name, project_path: os.PathLike, owner: List[Tuple[str, str]], select: str, exclude: Optional[str] = None):
+    """Add a dbt group to your project, and assign models to the new group using Node Selection syntax."""
+
+    from dbt_meshify.utilities.grouper import ResourceGrouper
+
+    path = Path(project_path).expanduser().resolve()
+    project = DbtProject.from_directory(path)
+
+    owner: Owner = Owner(**{key: value for key, value in owner})
+
+    grouper = ResourceGrouper(project)
+    groups = grouper.create_group(
+        name=name,
+        owner=owner,
+        select=select,
+        exclude=exclude
+    )
+    print(groups)
 
 
 @cli.command(name="connect")
@@ -55,11 +85,11 @@ def split():
 @click.option(
     "--select",
     "-s"
-    )
+)
 @click.option(
     "--exclude",
     "-e"
-    )
+)
 @click.option(
     "--project-path",
     default="."
