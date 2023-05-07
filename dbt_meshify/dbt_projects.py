@@ -121,6 +121,13 @@ class BaseDbtProject:
         """Returns the catalog entry for a model in the dbt project's catalog"""
         return self.manifest.nodes.get(unique_id, {})
 
+    def select_resources(
+        self, select: str, exclude: Optional[str] = None, output_key: Optional[str] = None
+    ) -> Set[str]:
+        """Select dbt resources using NodeSelection syntax"""
+        raise NotImplementedError
+
+
 class DbtProject(BaseDbtProject):
     @staticmethod
     def _load_project(path) -> Project:
@@ -156,7 +163,9 @@ class DbtProject(BaseDbtProject):
         self.dbt = dbt
         self.file_manager = DbtFileManager(read_project_path=path, write_project_path=path)
 
-    def select_resources(self, select: str, exclude: Optional[str] = None, output_key: Optional[str] = None) -> Set[str]:
+    def select_resources(
+        self, select: str, exclude: Optional[str] = None, output_key: Optional[str] = None
+    ) -> Set[str]:
         """Select dbt resources using NodeSelection syntax"""
         args = []
         if select:
@@ -192,7 +201,7 @@ class DbtProject(BaseDbtProject):
 
     def add_model_contract(self, unique_id: str) -> None:
         """Adds a model contract to the model's yaml"""
-        
+
         # get the patch path for the model
         node = self.get_manifest_node(unique_id)
         yml_path = Path(node.patch_path.split("://")[1]) if node.patch_path else None
@@ -207,10 +216,8 @@ class DbtProject(BaseDbtProject):
         # pass empty dict if no file contents returned
         full_yml_dict = self.file_manager.read_file(yml_path) or {}
         updated_yml = self.meshify.add_model_contract_to_yml(
-            model_name=node.name,
-            model_catalog=model_catalog,
-            full_yml_dict=full_yml_dict
-            )
+            model_name=node.name, model_catalog=model_catalog, full_yml_dict=full_yml_dict
+        )
         # write the updated yml to the file
         self.file_manager.write_file(yml_path, updated_yml)
 
