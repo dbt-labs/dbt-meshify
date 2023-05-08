@@ -5,31 +5,29 @@ from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
 
 # define common parameters
 project_path = click.option(
-    "--select",
-    "-s",
-    default=None,
-    help="The dbt selection syntax specifying the resources to include in the operation"
-    )
+    "--project-path",
+    default="."
+)
 
 exclude = click.option(
     "--exclude",
     "-e",
     default=None,
     help="The dbt selection syntax specifying the resources to exclude in the operation"
-    )
+)
 
 select = click.option(
     "--select",
     "-s",
     default=None,
     help="The dbt selection syntax specifying the resources to include in the operation"
-    )
+)
 
 selector = click.option(
     "--selector",
     default=None,
     help="The name of the YML selector specifying the resources to include in the operation"
-    )
+)
 
 # define cli group 
 @click.group()
@@ -103,7 +101,7 @@ def split():
 @project_path
 @select
 @selector
-def add_contract(select, exclude, project_path):
+def add_contract(select, exclude, project_path, selector):
     """
     Adds a contract to all selected models.
     """
@@ -119,7 +117,7 @@ def add_contract(select, exclude, project_path):
 @project_path
 @select
 @selector
-def add_version(select, exclude, project_path):
+def add_version(select, exclude, project_path, selector):
     """
     Increments a model version on all selected models. Increments the version of the model if a version exists. 
     """
@@ -130,7 +128,7 @@ def add_version(select, exclude, project_path):
 @project_path
 @select
 @selector
-def create_group(select, exclude, project_path):
+def create_group(select, exclude, project_path, selector):
     """
     Add selected resources to a group
     """
