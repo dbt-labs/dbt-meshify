@@ -1,0 +1,48 @@
+
+# Name your project! Project names should contain only lowercase characters
+# and underscores. A good package name should reflect your organization's
+# name or the intended use of these models
+name: 'split_proj'
+version: '1.0.0'
+config-version: 2
+
+# This setting configures which "profile" dbt uses for this project.
+profile: 'split_proj'
+
+# These configurations specify where dbt should look for different types of files.
+# The `model-paths` config, for example, states that models in this project can be
+# found in the "models/" directory. You probably won't need to change these!
+model-paths: ["models"]
+analysis-paths: ["analyses"]
+test-paths: ["tests"]
+seed-paths: ["seeds"]
+# seed-paths: ["jaffle_data"]
+macro-paths: ["macros"]
+snapshot-paths: ["snapshots"]
+
+clean-targets:         # directories to be removed by `dbt clean`
+  - "target"
+  - "dbt_packages"
+
+
+vars:
+  truncate_timespan_to: "{{ current_timestamp() }}"
+
+# Configuring models
+# Full documentation: https://docs.getdbt.com/docs/configuring-models
+
+# In this example config, we tell dbt to build all models in the example/
+# directory as views. These settings can be overridden in the individual model
+# files using the `{{ config(...) }}` macro.
+models:
+  split_proj:
+    # Config indicated by + and applies to all files under models/example/
+    example:
+      +materialized: view
+
+# the below config for seeds is only relevant when seeding the project for the fist time with the raw jaffle data
+# pont the seed path to the jaffle data directory and make sure this is uncommented
+
+# seeds:
+#   split_proj:
+#     +schema: jaffle_raw
