@@ -6,6 +6,7 @@ from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
 # define common parameters
 project_path = click.option(
     "--project-path",
+    type=click.Path(exists=True),
     default="."
 )
 
