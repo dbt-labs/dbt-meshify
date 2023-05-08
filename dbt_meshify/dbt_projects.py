@@ -11,6 +11,7 @@ from dbt.contracts.graph.manifest import Manifest
 from dbt.contracts.graph.nodes import SourceDefinition, ModelNode, ManifestNode
 from dbt.contracts.project import Project
 from dbt.contracts.results import CatalogArtifact
+from dbt.graph import Graph
 
 from dbt_meshify.dbt import Dbt
 from dbt_meshify.storage.file_manager import DbtFileManager
@@ -42,6 +43,29 @@ class BaseDbtProject:
         self.source_relation_names: Dict[str, str] = {
             source.relation_name: unique_id for unique_id, source in self.sources().items()
         }
+
+        self._graph = None
+
+    @staticmethod
+    def _load_graph(manifest: Manifest) -> Graph:
+        """Generate a dbt Graph using a project manifest and the internal dbt Compiler and Linker."""
+
+        from dbt.compilation import Compiler
+        from dbt.compilation import Linker
+
+        compiler = Compiler(config={})
+        linker = Linker()
+        compiler.link_graph(linker=linker, manifest=manifest)
+        return Graph(linker.graph)
+
+    @property
+    def graph(self):
+        """Get the dbt-core Graph for a given project Manifest"""
+        if self._graph:
+            return self._graph
+
+        self._graph = self._load_graph(self.manifest)
+        return self._graph
 
     def register_relationship(self, project: str, resources: Set[str]) -> None:
         """Register the relationship between two projects"""

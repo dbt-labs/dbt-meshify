@@ -2,10 +2,8 @@ from dataclasses import dataclass
 from typing import Optional, Dict, Set
 
 import networkx
-from dbt.contracts.graph.manifest import Manifest
 from dbt.contracts.graph.nodes import Group
 from dbt.contracts.graph.unparsed import Owner
-from dbt.graph import Graph
 from dbt.node_types import AccessType, NodeType
 
 from dbt_meshify.dbt_projects import BaseDbtProject
@@ -35,20 +33,6 @@ class ResourceGrouper:
 
     def __init__(self, project: BaseDbtProject):
         self.project = project
-        self.graph = self._load_graph(self.project.manifest)
-
-    @staticmethod
-    def _load_graph(manifest: Manifest) -> Graph:
-        """Generate a dbt Graph using a project manifest and the internal dbt Compiler and Linker."""
-        # TODO: Consider using NetworkX directly to limit internal dbt dependencies.
-
-        from dbt.compilation import Compiler
-        from dbt.compilation import Linker
-
-        compiler = Compiler(config={})
-        linker = Linker()
-        compiler.link_graph(linker=linker, manifest=manifest)
-        return Graph(linker.graph)
 
     @staticmethod
     def identify_interface(graph: networkx.Graph, selected_bunch: Set[str]) -> Set[str]:
@@ -95,7 +79,7 @@ class ResourceGrouper:
         # For example, interfaces (nodes on the boundary of a subgraph or leaf nodes) should be public,
         # whereas nodes that are not a referenced are safe for a private access level.
 
-        boundary_nodes = self.identify_interface(self.graph.graph, nodes)
+        boundary_nodes = self.identify_interface(self.project.graph.graph, nodes)
         resources = {
             node: AccessType.Public if node in boundary_nodes else AccessType.Private
             for node in nodes
