@@ -1,7 +1,7 @@
 from click.testing import CliRunner
 import yaml
 from pathlib import Path
-from dbt_meshify.main import contract
+from dbt_meshify.main import add_contract
 import pytest
 from ..fixtures import (
     model_yml_no_col_no_version,
@@ -42,7 +42,7 @@ def test_add_contract_to_yml(start_yml, end_yml):
         with open(yml_file, "w+") as f:
             yaml.safe_dump(start_yml_content, f, sort_keys=False)
     result = runner.invoke(
-        contract, ["--select", "shared_model", "--project-path", proj_path_string]
+        add_contract, ["--select", "shared_model", "--project-path", proj_path_string]
     )
     assert result.exit_code == 0
     # reset the read path to the default in the logic

@@ -1,7 +1,7 @@
 from click.testing import CliRunner
 import yaml
 from pathlib import Path
-from dbt_meshify.main import version
+from dbt_meshify.main import add_version
 import pytest
 from ..fixtures import (
     shared_model_sql,
@@ -56,7 +56,7 @@ def test_add_version_to_yml(start_yml, end_yml, start_files, expected_files, com
     base_command.extend(command_options)
     # import pdb; pdb.set_trace()
     result = runner.invoke(
-        version, base_command
+        add_version, base_command
     )
     # import pdb; pdb.set_trace()
     assert result.exit_code == 0
