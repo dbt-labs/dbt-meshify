@@ -6,6 +6,7 @@ import click
 from dbt.contracts.graph.unparsed import Owner
 
 from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
+from .storage.yaml_generator import  ProjectYamlStorage
 
 
 @click.group()
@@ -37,7 +38,9 @@ def group(
 
     grouper = ResourceGrouper(project)
     output_project = grouper.add_group(name=name, owner=owner, select=select, exclude=exclude)
-    print(output_project.manifest.groups)
+
+    storage = ProjectYamlStorage(project_path=path)
+    storage.store(output_project)
 
 
 @cli.command(name="connect")

@@ -46,6 +46,9 @@ class BaseDbtProject:
 
         self._graph = None
 
+        self._changes: Dict[str, str] = {}
+
+
     @staticmethod
     def _load_graph(manifest: Manifest) -> Graph:
         """Generate a dbt Graph using a project manifest and the internal dbt Compiler and Linker."""
