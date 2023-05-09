@@ -1,27 +1,17 @@
+import copy
 from dataclasses import dataclass
-from typing import Optional, Dict, Set
+from typing import Optional, Dict, Set, Tuple
 
 import networkx
 from dbt.contracts.graph.nodes import Group
 from dbt.contracts.graph.unparsed import Owner
 from dbt.node_types import AccessType, NodeType
 
-from dbt_meshify.dbt_projects import BaseDbtProject
+from dbt_meshify.dbt_projects import BaseDbtProject, DbtProject
 
 
 class ResourceGroupingException(BaseException):
     """Exceptions relating to grouping of resources."""
-
-
-@dataclass
-class ResourceGroup:
-    """
-    A definition class for storing what Groups need to be created,
-    and the resources and access levels within that Group.
-    """
-
-    group: Group
-    resources: Dict[str, AccessType]
 
 
 class ResourceGrouper:
@@ -45,19 +35,19 @@ class ResourceGrouper:
         leaf_nodes = {node for node, out_degree in graph.out_degree() if out_degree == 0}
         return boundary_nodes | leaf_nodes
 
-    def create_group(
+    def _generate_resource_group(
         self, name: str, owner: Owner, select: str, exclude: Optional[str] = None
-    ) -> ResourceGroup:
-        """Create a ResourceGroup for a dbt project."""
+    ) -> Tuple[Group, Dict[str, AccessType]]:
+        """Generate the ResourceGroup that we want to apply to the project."""
 
         group = Group(
             name=name,
             owner=owner,
             package_name=self.project.name,
-            original_file_path="",
+            original_file_path="models/groups.yml",
             # TODO: This seems a bit yucky. How does dbt-core generate unique_ids?
             unique_id=f"group.{self.project.name}.{name}",
-            path="",
+            path="groups.yml",
             resource_type=NodeType.Group,
         )
 
@@ -85,4 +75,21 @@ class ResourceGrouper:
             for node in nodes
         }
 
-        return ResourceGroup(group=group, resources=resources)
+        return group, resources
+
+    def add_group(
+        self, name: str, owner: Owner, select: str, exclude: Optional[str] = None
+    ) -> BaseDbtProject | DbtProject:
+        """Create a ResourceGroup for a dbt project."""
+
+        group, resources = self._generate_resource_group(name, owner, select, exclude)
+        output_project = copy.deepcopy(self.project)
+
+        output_project.manifest.groups[group.unique_id] = group
+
+        for resource, access_type in resources.items():
+            output_project.manifest.nodes[resource].group = group.name
+            output_project.manifest.nodes[resource].config.group = group.name
+            output_project.manifest.nodes[resource].access = access_type
+
+        return output_project

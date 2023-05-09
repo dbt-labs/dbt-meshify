@@ -14,12 +14,18 @@ def cli():
 
 
 @cli.command()
-@click.argument('name')
-@click.option('--select', '-s', required=True)
-@click.option('--exclude', '-e')
+@click.argument("name")
+@click.option("--select", "-s", required=True)
+@click.option("--exclude", "-e")
 @click.option("--project-path", default=os.getcwd(), type=click.Path(exists=True))
-@click.option('--owner', nargs=2, multiple=True, type=click.Tuple([str, str]))
-def group(name, project_path: os.PathLike, owner: List[Tuple[str, str]], select: str, exclude: Optional[str] = None):
+@click.option("--owner", nargs=2, multiple=True, type=click.Tuple([str, str]))
+def group(
+    name,
+    project_path: os.PathLike,
+    owner: List[Tuple[str, str]],
+    select: str,
+    exclude: Optional[str] = None,
+):
     """Add a dbt group to your project, and assign models to the new group using Node Selection syntax."""
 
     from dbt_meshify.utilities.grouper import ResourceGrouper
@@ -30,13 +36,8 @@ def group(name, project_path: os.PathLike, owner: List[Tuple[str, str]], select:
     owner: Owner = Owner(**{key: value for key, value in owner})
 
     grouper = ResourceGrouper(project)
-    groups = grouper.create_group(
-        name=name,
-        owner=owner,
-        select=select,
-        exclude=exclude
-    )
-    print(groups)
+    output_project = grouper.add_group(name=name, owner=owner, select=select, exclude=exclude)
+    print(output_project.manifest.groups)
 
 
 @cli.command(name="connect")
@@ -82,22 +83,15 @@ def split():
 
 
 @cli.command(name="contract")
-@click.option(
-    "--select",
-    "-s"
-)
-@click.option(
-    "--exclude",
-    "-e"
-)
-@click.option(
-    "--project-path",
-    default="."
-)
+@click.option("--select", "-s")
+@click.option("--exclude", "-e")
+@click.option("--project-path", default=".")
 def contract(select, exclude, project_path):
     path = Path(project_path).expanduser().resolve()
     project = DbtProject.from_directory(path)
-    resources = list(project.select_resources(select=select, exclude=exclude, output_key="unique_id"))
-    models = filter(lambda x: x.startswith('model'), resources)
+    resources = list(
+        project.select_resources(select=select, exclude=exclude, output_key="unique_id")
+    )
+    models = filter(lambda x: x.startswith("model"), resources)
     for model_unique_id in models:
         project.add_model_contract(model_unique_id)
