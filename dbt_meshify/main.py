@@ -6,45 +6,50 @@ import click
 from dbt.contracts.graph.unparsed import Owner
 
 from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
-from .storage.yaml_generator import  ProjectYamlStorage
+from .storage.yaml_generator import ProjectYamlStorage
+
+# define common parameters
+project_path = click.option(
+    "--project-path",
+    type=click.Path(exists=True),
+    default="."
+)
+
+exclude = click.option(
+    "--exclude",
+    "-e",
+    default=None,
+    help="The dbt selection syntax specifying the resources to exclude in the operation"
+)
+
+select = click.option(
+    "--select",
+    "-s",
+    default=None,
+    help="The dbt selection syntax specifying the resources to include in the operation"
+)
+
+selector = click.option(
+    "--selector",
+    default=None,
+    help="The name of the YML selector specifying the resources to include in the operation"
+)
 
 
+# define cli group
 @click.group()
 def cli():
     pass
 
 
-@cli.command()
-@click.argument("name")
-@click.option("--select", "-s", required=True)
-@click.option("--exclude", "-e")
-@click.option("--project-path", default=os.getcwd(), type=click.Path(exists=True))
-@click.option("--owner", nargs=2, multiple=True, type=click.Tuple([str, str]))
-def group(
-    name,
-    project_path: os.PathLike,
-    owner: List[Tuple[str, str]],
-    select: str,
-    exclude: Optional[str] = None,
-):
-    """Add a dbt group to your project, and assign models to the new group using Node Selection syntax."""
-
-    from dbt_meshify.utilities.grouper import ResourceGrouper
-
-    path = Path(project_path).expanduser().resolve()
-    project = DbtProject.from_directory(path)
-
-    owner: Owner = Owner(**{key: value for key, value in owner})
-
-    grouper = ResourceGrouper(project)
-    output_project = grouper.add_group(name=name, owner=owner, select=select, exclude=exclude)
-
-    storage = ProjectYamlStorage(project_path=path)
-    storage.store(output_project)
-
-
 @cli.command(name="connect")
-def connect():
+@click.argument("projects-dir", type=click.Path(exists=True), default=".")
+def connect(projects_dir):
+    """
+    Connects multiple dbt projects together by adding all necessary dbt Mesh constructs
+
+    PROJECTS_DIR: The directory containing the dbt projects to connect. Defaults to the current directory.
+    """
     holder = DbtProjectHolder()
 
     while True:
@@ -60,7 +65,20 @@ def connect():
 
 
 @cli.command(name="split")
+@exclude
+@project_path
+@select
+@selector
 def split():
+    """
+    Splits dbt projects apart by adding all necessary dbt Mesh constructs based on the selection syntax. 
+
+    Order of operations:
+    1. Regsiter the selected resources as a subproject of the main project
+    2. Add the resources to a group
+    2. Identifies the edges of the subproject with the remainder of the project
+    3. Adds contracts to all edges
+    """
     path_string = input("Enter the relative path to a dbt project you'd like to split: ")
 
     holder = DbtProjectHolder()
@@ -85,11 +103,15 @@ def split():
     print(holder.project_map())
 
 
-@cli.command(name="contract")
-@click.option("--select", "-s")
-@click.option("--exclude", "-e")
-@click.option("--project-path", default=".")
-def contract(select, exclude, project_path):
+@cli.command(name="add-contract")
+@exclude
+@project_path
+@select
+@selector
+def add_contract(select, exclude, project_path, selector):
+    """
+    Adds a contract to all selected models.
+    """
     path = Path(project_path).expanduser().resolve()
     project = DbtProject.from_directory(path)
     resources = list(
@@ -98,3 +120,48 @@ def contract(select, exclude, project_path):
     models = filter(lambda x: x.startswith("model"), resources)
     for model_unique_id in models:
         project.add_model_contract(model_unique_id)
+
+
+@cli.command(name="add-version")
+@exclude
+@project_path
+@select
+@selector
+def add_version(select, exclude, project_path, selector):
+    """
+    Increments a model version on all selected models. Increments the version of the model if a version exists. 
+    """
+    pass
+
+
+@cli.command(name="create-group")
+@exclude
+@project_path
+@select
+@selector
+@click.argument("name")
+@click.option("--owner", nargs=2, multiple=True, type=click.Tuple([str, str]))
+def create_group(
+        name,
+        project_path: os.PathLike,
+        owner: List[Tuple[str, str]],
+        select: str,
+        exclude: Optional[str] = None,
+        selector: Optional[str] = None
+):
+    """
+    Create a group and add selected resources to the group.
+    """
+
+    from dbt_meshify.utilities.grouper import ResourceGrouper
+
+    path = Path(project_path).expanduser().resolve()
+    project = DbtProject.from_directory(path)
+
+    owner: Owner = Owner(**{key: value for key, value in owner})
+
+    grouper = ResourceGrouper(project)
+    output_project = grouper.add_group(name=name, owner=owner, select=select, exclude=exclude)
+
+    storage = ProjectYamlStorage(project_path=path)
+    storage.store(output_project)
