@@ -6,33 +6,30 @@ import click
 from dbt.contracts.graph.unparsed import Owner
 
 from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
+from .storage.yaml_editors import DbtMeshYmlEditor
 from .storage.yaml_generator import ProjectYamlStorage
 
 # define common parameters
-project_path = click.option(
-    "--project-path",
-    type=click.Path(exists=True),
-    default="."
-)
+project_path = click.option("--project-path", type=click.Path(exists=True), default=".")
 
 exclude = click.option(
     "--exclude",
     "-e",
     default=None,
-    help="The dbt selection syntax specifying the resources to exclude in the operation"
+    help="The dbt selection syntax specifying the resources to exclude in the operation",
 )
 
 select = click.option(
     "--select",
     "-s",
     default=None,
-    help="The dbt selection syntax specifying the resources to include in the operation"
+    help="The dbt selection syntax specifying the resources to include in the operation",
 )
 
 selector = click.option(
     "--selector",
     default=None,
-    help="The name of the YML selector specifying the resources to include in the operation"
+    help="The name of the YML selector specifying the resources to include in the operation",
 )
 
 
@@ -71,7 +68,7 @@ def connect(projects_dir):
 @selector
 def split():
     """
-    Splits dbt projects apart by adding all necessary dbt Mesh constructs based on the selection syntax. 
+    Splits dbt projects apart by adding all necessary dbt Mesh constructs based on the selection syntax.
 
     Order of operations:
     1. Regsiter the selected resources as a subproject of the main project
@@ -129,7 +126,7 @@ def add_contract(select, exclude, project_path, selector):
 @selector
 def add_version(select, exclude, project_path, selector):
     """
-    Increments a model version on all selected models. Increments the version of the model if a version exists. 
+    Increments a model version on all selected models. Increments the version of the model if a version exists.
     """
     pass
 
@@ -140,14 +137,26 @@ def add_version(select, exclude, project_path, selector):
 @select
 @selector
 @click.argument("name")
-@click.option("--owner", nargs=2, multiple=True, type=click.Tuple([str, str]))
+@click.option(
+    "--owner",
+    nargs=2,
+    multiple=True,
+    type=click.Tuple([str, str]),
+    help="A tuple of Owner information for the group. For example " "`--owner name example`",
+)
+@click.option(
+    "--group-yml-path",
+    type=click.Path(exists=False),
+    help="An optional path to store the new group YAML definition.",
+)
 def create_group(
-        name,
-        project_path: os.PathLike,
-        owner: List[Tuple[str, str]],
-        select: str,
-        exclude: Optional[str] = None,
-        selector: Optional[str] = None
+    name,
+    project_path: os.PathLike,
+    owner: List[Tuple[str, str]],
+    group_yml_path: os.PathLike,
+    select: str,
+    exclude: Optional[str] = None,
+    selector: Optional[str] = None,
 ):
     """
     Create a group and add selected resources to the group.
@@ -158,10 +167,17 @@ def create_group(
     path = Path(project_path).expanduser().resolve()
     project = DbtProject.from_directory(path)
 
+    if group_yml_path is None:
+        group_yml_path = (path / Path("models/__groups.yml")).resolve()
+    else:
+        group_yml_path = Path(group_yml_path).resolve()
+
+    if not str(os.path.commonpath([group_yml_path, path])) == str(path):
+        raise Exception(
+            "The provided group-yml-path is not contained within the provided dbt project."
+        )
+
     owner: Owner = Owner(**{key: value for key, value in owner})
 
     grouper = ResourceGrouper(project)
-    output_project = grouper.add_group(name=name, owner=owner, select=select, exclude=exclude)
-
-    storage = ProjectYamlStorage(project_path=path)
-    storage.store(output_project)
+    grouper.add_group(name=name, owner=owner, select=select, exclude=exclude, path=group_yml_path)

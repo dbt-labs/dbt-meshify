@@ -1,13 +1,17 @@
 import copy
+import os
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional, Dict, Set, Tuple
 
 import networkx
-from dbt.contracts.graph.nodes import Group
+from dbt.contracts.graph.nodes import Group, ModelNode
 from dbt.contracts.graph.unparsed import Owner
 from dbt.node_types import AccessType, NodeType
 
 from dbt_meshify.dbt_projects import BaseDbtProject, DbtProject
+from dbt_meshify.storage.file_manager import DbtFileManager
+from dbt_meshify.storage.yaml_editors import DbtMeshYmlEditor
 
 
 class ResourceGroupingException(BaseException):
@@ -21,8 +25,10 @@ class ResourceGrouper:
     recommendations based on the reference characteristics for each resource.
     """
 
-    def __init__(self, project: BaseDbtProject):
+    def __init__(self, project: DbtProject):
         self.project = project
+        self.meshify = DbtMeshYmlEditor()
+        self.file_manager = DbtFileManager(read_project_path=project.path)
 
     @staticmethod
     def identify_interface(graph: networkx.Graph, selected_bunch: Set[str]) -> Set[str]:
@@ -36,7 +42,12 @@ class ResourceGrouper:
         return boundary_nodes | leaf_nodes
 
     def _generate_resource_group(
-        self, name: str, owner: Owner, select: str, exclude: Optional[str] = None
+        self,
+        name: str,
+        owner: Owner,
+        path: os.PathLike,
+        select: str,
+        exclude: Optional[str] = None,
     ) -> Tuple[Group, Dict[str, AccessType]]:
         """Generate the ResourceGroup that we want to apply to the project."""
 
@@ -44,20 +55,20 @@ class ResourceGrouper:
             name=name,
             owner=owner,
             package_name=self.project.name,
-            original_file_path="models/groups.yml",
+            original_file_path=os.path.relpath(path, self.project.path),
             # TODO: This seems a bit yucky. How does dbt-core generate unique_ids?
             unique_id=f"group.{self.project.name}.{name}",
-            path="groups.yml",
+            path=os.path.relpath(path, self.project.path / Path("models")),
             resource_type=NodeType.Group,
         )
 
         nodes = self.project.select_resources(select, exclude, output_key="unique_id")
 
-        # Check if any of the selected nodes are already in a group. If so, raise an exception.
+        # Check if any of the selected nodes are already in a group of a different name. If so, raise an exception.
         for node in nodes:
             existing_group = self.project.manifest.nodes[node].config.group
 
-            if existing_group is None:
+            if existing_group is None or existing_group == group.name:
                 continue
 
             raise ResourceGroupingException(
@@ -78,18 +89,36 @@ class ResourceGrouper:
         return group, resources
 
     def add_group(
-        self, name: str, owner: Owner, select: str, exclude: Optional[str] = None
-    ) -> BaseDbtProject | DbtProject:
+        self,
+        name: str,
+        owner: Owner,
+        path: os.PathLike,
+        select: str,
+        exclude: Optional[str] = None,
+    ) -> None:
         """Create a ResourceGroup for a dbt project."""
 
-        group, resources = self._generate_resource_group(name, owner, select, exclude)
-        output_project = copy.deepcopy(self.project)
+        group, resources = self._generate_resource_group(name, owner, path, select, exclude)
 
-        output_project.manifest.groups[group.unique_id] = group
+        group_path = Path(group.original_file_path)
+        try:
+            group_yml = self.file_manager.read_file(group_path)
+        except FileNotFoundError:
+            group_yml = {}
+
+        output_yml = self.meshify.add_group_to_yml(group, group_yml)
+        self.file_manager.write_file(group_path, output_yml)
 
         for resource, access_type in resources.items():
-            output_project.manifest.nodes[resource].group = group.name
-            output_project.manifest.nodes[resource].config.group = group.name
-            output_project.manifest.nodes[resource].access = access_type
+            model: ModelNode = self.project.manifest.nodes[resource]
+            path = Path(model.patch_path.split("://")[1]) if model.patch_path else None
+            try:
+                file_yml = self.file_manager.read_file(path)
+            except FileNotFoundError:
+                file_yml = {}
 
-        return output_project
+            output_yml = self.meshify.add_group_and_access_to_model_yml(
+                model.name, group, access_type, file_yml
+            )
+
+            self.file_manager.write_file(path, output_yml)
