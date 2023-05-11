@@ -28,16 +28,33 @@ class ResourceGrouper:
         self.meshify = DbtMeshYmlEditor()
         self.file_manager = DbtFileManager(read_project_path=project.path)
 
-    @staticmethod
-    def identify_interface(graph: networkx.Graph, selected_bunch: Set[str]) -> Set[str]:
+    @classmethod
+    def identify_interface(cls, graph: networkx.Graph, selected_bunch: Set[str]) -> Set[str]:
         """
         Given a graph, find the interface nodes, where interface nodes are the nodes that
         either have downstream consumers outside the selected bunch OR are nodes
         with no downstream consumers.
         """
-        boundary_nodes = networkx.node_boundary(graph, selected_bunch)
+        boundary_nodes = {edge[0] for edge in networkx.edge_boundary(graph, selected_bunch)}
         leaf_nodes = {node for node, out_degree in graph.out_degree() if out_degree == 0}
         return boundary_nodes | leaf_nodes
+
+    @classmethod
+    def classify_resource_access(cls, graph, nodes):
+        """
+        Identify what access types each node should have. We can make some simplifying assumptions about
+        recommended access for a group.
+
+        For example, interfaces (nodes on the boundary of a subgraph or leaf nodes) should be public,
+        whereas nodes that are not a referenced are safe for a private access level.
+        """
+        boundary_nodes = cls.identify_interface(graph, nodes)
+        print(boundary_nodes)
+        resources = {
+            node: AccessType.Public if node in boundary_nodes else AccessType.Private
+            for node in nodes
+        }
+        return resources
 
     def _generate_resource_group(
         self,
@@ -74,15 +91,7 @@ class ResourceGrouper:
                 f"of the {existing_group} group. Please remove {node} from its group and try again."
             )
 
-        # We can make some simplifying assumptions about recommended access for a group.
-        # For example, interfaces (nodes on the boundary of a subgraph or leaf nodes) should be public,
-        # whereas nodes that are not a referenced are safe for a private access level.
-
-        boundary_nodes = self.identify_interface(self.project.graph.graph, nodes)
-        resources = {
-            node: AccessType.Public if node in boundary_nodes else AccessType.Private
-            for node in nodes
-        }
+        resources = self.classify_resource_access(self.project.graph.graph, nodes)
 
         return group, resources
 
