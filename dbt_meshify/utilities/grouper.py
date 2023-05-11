@@ -1,6 +1,4 @@
-import copy
 import os
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional, Dict, Set, Tuple
 
@@ -9,7 +7,7 @@ from dbt.contracts.graph.nodes import Group, ModelNode
 from dbt.contracts.graph.unparsed import Owner
 from dbt.node_types import AccessType, NodeType
 
-from dbt_meshify.dbt_projects import BaseDbtProject, DbtProject
+from dbt_meshify.dbt_projects import DbtProject
 from dbt_meshify.storage.file_manager import DbtFileManager
 from dbt_meshify.storage.yaml_editors import DbtMeshYmlEditor
 
