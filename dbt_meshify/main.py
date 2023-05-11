@@ -166,7 +166,7 @@ def create_group(
     project = DbtProject.from_directory(path)
 
     if group_yml_path is None:
-        group_yml_path = (path / Path("models/__groups.yml")).resolve()
+        group_yml_path = (path / Path("models/_groups.yml")).resolve()
     else:
         group_yml_path = Path(group_yml_path).resolve()
 

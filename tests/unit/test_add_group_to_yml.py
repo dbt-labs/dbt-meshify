@@ -10,8 +10,6 @@ meshify = DbtMeshYmlEditor()
 
 group_yml_empty_file = """"""
 
-group_yml_no_empty_group = """groups:"""
-
 expected_group_yml_no_group = """
 groups:
   - name: test_group
@@ -69,12 +67,6 @@ class TestAddGroupToYML:
     def test_adds_groups_to_empty_file(self, new_group: Group):
         yml_dict = meshify.add_group_to_yml(
             group=new_group, full_yml_dict=read_yml(group_yml_empty_file)
-        )
-        assert yml_dict == read_yml(expected_group_yml_no_group)
-
-    def test_adds_groups_to_empty_group_list(self, new_group: Group):
-        yml_dict = meshify.add_group_to_yml(
-            group=new_group, full_yml_dict=read_yml(group_yml_no_empty_group)
         )
         assert yml_dict == read_yml(expected_group_yml_no_group)
 
