@@ -4,18 +4,49 @@ from dbt.contracts.graph.unparsed import Owner
 from dbt.node_types import NodeType
 
 from dbt_meshify.storage.yaml_editors import DbtMeshYmlEditor
-from tests.fixtures import (
-    expected_group_yml_no_group,
-    group_yml_empty_file,
-    group_yml_no_empty_group,
-    expected_group_yml_existing_groups,
-    group_yml_existing_groups,
-    group_yml_group_predefined,
-)
 from tests.unit import read_yml
 
 meshify = DbtMeshYmlEditor()
-model_name = "shared_model"
+
+group_yml_empty_file = """"""
+
+group_yml_no_empty_group = """groups:"""
+
+expected_group_yml_no_group = """
+groups:
+  - name: test_group
+    owner:
+      name: Shaina Fake
+      email: fake@example.com
+"""
+
+group_yml_existing_groups = """
+groups:
+  - name: other_group
+    owner:
+      name: Ted Real
+      email: real@example.com
+"""
+
+expected_group_yml_existing_groups = """
+groups:
+  - name: other_group
+    owner:
+      name: Ted Real
+      email: real@example.com
+  - name: test_group
+    owner:
+      name: Shaina Fake
+      email: fake@example.com
+"""
+
+group_yml_group_predefined = """
+groups:
+  - name: test_group
+    owner:
+      name: Ted Real
+      email: real@example.com
+"""
 
 
 class TestAddGroupToYML:
