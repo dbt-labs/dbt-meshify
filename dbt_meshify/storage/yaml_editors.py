@@ -15,10 +15,11 @@ class DbtMeshYmlEditor:
     @staticmethod
     def add_group_to_yml(group: Group, full_yml_dict: Dict[str, Any]):
         """Add a group to a yml file"""
+        if full_yml_dict is None:
+            full_yml_dict = {}
 
-        groups = (
-            {group["name"]: group for group in full_yml_dict["groups"]} if full_yml_dict else {}
-        )
+        group_list = full_yml_dict.get("groups", []) or []
+        groups = {group["name"]: group for group in group_list}
         group_yml = groups.get(group.name) or {}
 
         group_yml.update({"name": group.name})

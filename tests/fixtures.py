@@ -1,33 +1,29 @@
 from dbt.contracts.results import CatalogTable
+
 shared_model_catalog_entry = CatalogTable.from_dict(
     {
-      "metadata": {
-        "type": "BASE TABLE",
-        "schema": "main",
-        "name": "shared_model",
-        "database": "database",
-        "comment": None,
-        "owner": None
-      },
-      "columns": {
-        "id": { "type": "INTEGER", "index": 1, "name": "id", "comment": None },
-        "colleague": {
-          "type": "VARCHAR",
-          "index": 2,
-          "name": "colleague",
-          "comment": None
-        }
-      },
-      "stats": {
-        "has_stats": {
-          "id": "has_stats",
-          "label": "Has Stats?",
-          "value": False,
-          "include": False,
-          "description": "Indicates whether there are statistics for this table"
-        }
-      },
-      "unique_id": "model.src_proj_a.shared_model"
+        "metadata": {
+            "type": "BASE TABLE",
+            "schema": "main",
+            "name": "shared_model",
+            "database": "database",
+            "comment": None,
+            "owner": None,
+        },
+        "columns": {
+            "id": {"type": "INTEGER", "index": 1, "name": "id", "comment": None},
+            "colleague": {"type": "VARCHAR", "index": 2, "name": "colleague", "comment": None},
+        },
+        "stats": {
+            "has_stats": {
+                "id": "has_stats",
+                "label": "Has Stats?",
+                "value": False,
+                "include": False,
+                "description": "Indicates whether there are statistics for this table",
+            }
+        },
+        "unique_id": "model.src_proj_a.shared_model",
     }
 )
 
@@ -134,4 +130,44 @@ models:
         data_type: integer
       - name: colleague
         data_type: varchar
+"""
+
+group_yml_empty_file = """"""
+
+group_yml_no_empty_group = """groups:"""
+
+expected_group_yml_no_group = """
+groups:
+  - name: test_group
+    owner:
+      name: Shaina Fake
+      email: fake@example.com
+"""
+
+group_yml_existing_groups = """
+groups:
+  - name: other_group
+    owner:
+      name: Ted Real
+      email: real@example.com
+"""
+
+expected_group_yml_existing_groups = """
+groups:
+  - name: other_group
+    owner:
+      name: Ted Real
+      email: real@example.com
+  - name: test_group
+    owner:
+      name: Shaina Fake
+      email: fake@example.com
+"""
+
+group_yml_group_predefined = """
+groups:
+  - name: test_group
+    owner:
+      name: Ted Real
+      email: real@example.com
 """

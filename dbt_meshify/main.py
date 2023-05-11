@@ -6,8 +6,6 @@ import click
 from dbt.contracts.graph.unparsed import Owner
 
 from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
-from .storage.yaml_editors import DbtMeshYmlEditor
-from .storage.yaml_generator import ProjectYamlStorage
 
 # define common parameters
 project_path = click.option("--project-path", type=click.Path(exists=True), default=".")
