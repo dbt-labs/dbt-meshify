@@ -148,12 +148,6 @@ class BaseDbtProject:
         """Returns the catalog entry for a model in the dbt project's catalog"""
         return self.manifest.nodes.get(unique_id, {})
 
-    def select_resources(
-        self, select: str, exclude: Optional[str] = None, output_key: Optional[str] = None
-    ) -> Set[str]:
-        """Select dbt resources using NodeSelection syntax"""
-        raise NotImplementedError
-
 
 class DbtProject(BaseDbtProject):
     @staticmethod
