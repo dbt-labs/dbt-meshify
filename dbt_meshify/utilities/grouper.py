@@ -71,7 +71,6 @@ class ResourceGrouper:
             owner=owner,
             package_name=self.project.name,
             original_file_path=os.path.relpath(path, self.project.path),
-            # TODO: This seems a bit yucky. How does dbt-core generate unique_ids?
             unique_id=f"group.{self.project.name}.{name}",
             path=os.path.relpath(path, self.project.path / Path("models")),
             resource_type=NodeType.Group,
