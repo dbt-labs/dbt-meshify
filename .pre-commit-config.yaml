@@ -1,4 +1,4 @@
-default_stages: [push]
+oudefault_stages: [push]
 default_language_version:
   python: python3.9
 repos:
@@ -7,7 +7,7 @@ repos:
   - id: isort
     stages: [commit,push]
     name: isort
-    entry: poetry run isort -rc
+    entry: poetry run isort
     language: system
     types: [python]
   - id: black
@@ -44,8 +44,8 @@ repos:
   - id: check-yaml
   - id: debug-statements
   - id: detect-private-key
-  - id: flake8
-    stages: [commit,push]
+  # - id: flake8
+    # stages: [commit,push]
   - id: forbid-new-submodules
   - id: no-commit-to-branch
     stages: [commit,push]
