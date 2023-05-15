@@ -4,7 +4,7 @@ import pytest
 import yaml
 from click.testing import CliRunner
 from dbt_meshify.main import create_group
-from tests.unit.test_add_group_and_access_to_model_ymll import model_yml_shared_model
+from tests.unit.test_add_group_and_access_to_model_yml import model_yml_shared_model
 from tests.unit.test_add_group_to_yml import (
     group_yml_empty_file,
     group_yml_existing_groups,
