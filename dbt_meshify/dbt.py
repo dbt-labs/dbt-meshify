@@ -1,6 +1,6 @@
 # third party
 import os
-from typing import Optional, List
+from typing import List, Optional
 
 from dbt.cli.main import dbtRunner
 from dbt.contracts.graph.manifest import Manifest

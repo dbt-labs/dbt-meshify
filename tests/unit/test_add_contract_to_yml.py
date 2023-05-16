@@ -1,18 +1,19 @@
-from dbt_meshify.dbt_meshify import DbtMeshModelYmlEditor
 import yaml
-from ..fixtures import (
-    shared_model_catalog_entry,
-    model_yml_no_col_no_version,
-    expected_contract_yml_no_col,
-    model_yml_one_col,
-    expected_contract_yml_one_col,
-    model_yml_all_col,
-    expected_contract_yml_all_col,
-    expected_contract_yml_no_entry,
-    model_yml_other_model,
-    expected_contract_yml_other_model,
-)
 
+from dbt_meshify.dbt_meshify import DbtMeshModelYmlEditor
+
+from ..fixtures import (
+    expected_contract_yml_all_col,
+    expected_contract_yml_no_col,
+    expected_contract_yml_no_entry,
+    expected_contract_yml_one_col,
+    expected_contract_yml_other_model,
+    model_yml_all_col,
+    model_yml_no_col_no_version,
+    model_yml_one_col,
+    model_yml_other_model,
+    shared_model_catalog_entry,
+)
 
 meshify = DbtMeshModelYmlEditor()
 catalog_entry = shared_model_catalog_entry

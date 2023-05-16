@@ -1,9 +1,10 @@
 from pathlib import Path
+
 import click
 
 from dbt_meshify.dbt_meshify import DbtMeshModelConstructor
 
-from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
+from .dbt_projects import DbtProject, DbtProjectHolder, DbtSubProject
 
 # define common parameters
 project_path = click.option("--project-path", type=click.Path(exists=True), default=".")

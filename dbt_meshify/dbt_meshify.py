@@ -1,9 +1,11 @@
 import os
+from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Dict, Optional
-from collections import OrderedDict
-from dbt.contracts.results import CatalogTable
+
 from dbt.contracts.graph.nodes import ManifestNode
+from dbt.contracts.results import CatalogTable
+
 from dbt_meshify.file_manager import DbtFileManager
 
 

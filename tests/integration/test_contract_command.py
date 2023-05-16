@@ -1,18 +1,21 @@
-from click.testing import CliRunner
-import yaml
 from pathlib import Path
-from dbt_meshify.main import add_contract
+
 import pytest
+import yaml
+from click.testing import CliRunner
+
+from dbt_meshify.main import add_contract
+
 from ..fixtures import (
-    model_yml_no_col_no_version,
-    expected_contract_yml_no_col,
-    model_yml_one_col,
-    expected_contract_yml_one_col,
-    model_yml_all_col,
     expected_contract_yml_all_col,
+    expected_contract_yml_no_col,
     expected_contract_yml_no_entry,
-    model_yml_other_model,
+    expected_contract_yml_one_col,
     expected_contract_yml_other_model,
+    model_yml_all_col,
+    model_yml_no_col_no_version,
+    model_yml_one_col,
+    model_yml_other_model,
 )
 
 proj_path_string = "test-projects/source-hack/src_proj_a"
