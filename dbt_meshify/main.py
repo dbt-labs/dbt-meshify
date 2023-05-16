@@ -1,36 +1,34 @@
 from pathlib import Path
+
 import click
 
-from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
+from .dbt_projects import DbtProject, DbtProjectHolder, DbtSubProject
 
 # define common parameters
-project_path = click.option(
-    "--project-path",
-    type=click.Path(exists=True),
-    default="."
-)
+project_path = click.option("--project-path", type=click.Path(exists=True), default=".")
 
 exclude = click.option(
     "--exclude",
     "-e",
     default=None,
-    help="The dbt selection syntax specifying the resources to exclude in the operation"
+    help="The dbt selection syntax specifying the resources to exclude in the operation",
 )
 
 select = click.option(
     "--select",
     "-s",
     default=None,
-    help="The dbt selection syntax specifying the resources to include in the operation"
+    help="The dbt selection syntax specifying the resources to include in the operation",
 )
 
 selector = click.option(
     "--selector",
     default=None,
-    help="The name of the YML selector specifying the resources to include in the operation"
+    help="The name of the YML selector specifying the resources to include in the operation",
 )
 
-# define cli group 
+
+# define cli group
 @click.group()
 def cli():
     pass
@@ -65,7 +63,7 @@ def connect(projects_dir):
 @selector
 def split():
     """
-    Splits dbt projects apart by adding all necessary dbt Mesh constructs based on the selection syntax. 
+    Splits dbt projects apart by adding all necessary dbt Mesh constructs based on the selection syntax.
 
     Order of operations:
     1. Regsiter the selected resources as a subproject of the main project
@@ -108,10 +106,13 @@ def add_contract(select, exclude, project_path, selector):
     """
     path = Path(project_path).expanduser().resolve()
     project = DbtProject.from_directory(path)
-    resources = list(project.select_resources(select=select, exclude=exclude, output_key="unique_id"))
-    models = filter(lambda x: x.startswith('model'), resources)
+    resources = list(
+        project.select_resources(select=select, exclude=exclude, output_key="unique_id")
+    )
+    models = filter(lambda x: x.startswith("model"), resources)
     for model_unique_id in models:
         project.add_model_contract(model_unique_id)
+
 
 @cli.command(name="add-version")
 @exclude
@@ -120,9 +121,10 @@ def add_contract(select, exclude, project_path, selector):
 @selector
 def add_version(select, exclude, project_path, selector):
     """
-    Increments a model version on all selected models. Increments the version of the model if a version exists. 
+    Increments a model version on all selected models. Increments the version of the model if a version exists.
     """
     pass
+
 
 @cli.command(name="create-group")
 @exclude
