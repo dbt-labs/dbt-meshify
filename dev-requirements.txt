@@ -1,2 +1,0 @@
-pytest
-git+https://github.com/dbt-labs/dbt-core.git@1.4.latest#egg=dbt-core&subdirectory=core

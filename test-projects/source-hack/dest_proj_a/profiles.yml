@@ -1,7 +1,0 @@
-dest_proj_a:
-  outputs:
-    dev:
-      path: ../src_proj_a/database.db
-      threads: 2
-      type: duckdb
-  target: dev

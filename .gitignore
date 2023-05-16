@@ -1,8 +1,0 @@
-# Environments
-env/
-venv/
-
-.pytest_cache/
-__pycache__/
-# IDEs
-.idea/

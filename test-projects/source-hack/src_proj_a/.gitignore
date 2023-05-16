@@ -1,6 +1,0 @@
-
-target/
-dbt_packages/
-logs/
-**/*.database.db
-**/*.duckdb.wal
