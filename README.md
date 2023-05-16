@@ -1,9 +1,7 @@
 # dbt-meshify
 
 
-The full documentation for this package is available here:
-
-__Documentation__ -- TODO add link to published docs
+[Click here for full package doucmentation](https://dbt-labs.github.io/dbt-meshify/)
 
 ## Overview
 
