@@ -157,7 +157,6 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
         next_version_path = original_file_path.parent / next_version_file_name
         last_version_path = original_file_path.parent / last_version_file_name
         
-        # import pdb; pdb.set_trace()
         
         # if this is the first version, rename the original file to the next version
         if not node.latest_version:
