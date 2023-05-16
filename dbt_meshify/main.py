@@ -109,7 +109,9 @@ def add_contract(select, exclude, project_path, selector):
     path = Path(project_path).expanduser().resolve()
     project = DbtProject.from_directory(path)
     resources = list(
-        project.select_resources(select=select, exclude=exclude, output_key="unique_id")
+        project.select_resources(
+            select=select, exclude=exclude, selector=selector, output_key="unique_id"
+        )
     )
     models = filter(lambda x: x.startswith("model"), resources)
     for model_unique_id in models:
@@ -132,7 +134,9 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in)
     path = Path(project_path).expanduser().resolve()
     project = DbtProject.from_directory(path)
     resources = list(
-        project.select_resources(select=select, exclude=exclude, output_key="unique_id")
+        project.select_resources(
+            select=select, exclude=exclude, selector=selector, output_key="unique_id"
+        )
     )
     models = filter(lambda x: x.startswith("model"), resources)
     for model_unique_id in models:
