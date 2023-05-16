@@ -1,16 +1,14 @@
 import copy
 import hashlib
+import json
 import logging
 import os
-import json
 from pathlib import Path
-from typing import Dict, Any, Optional, MutableMapping, Set, Union
+from typing import Any, Dict, MutableMapping, Optional, Set, Union
 
 import yaml
-from dbt_meshify.file_manager import DbtFileManager
-from dbt_meshify.dbt_meshify import DbtMeshYmlEditor
 from dbt.contracts.graph.manifest import Manifest
-from dbt.contracts.graph.nodes import SourceDefinition, ModelNode, ManifestNode
+from dbt.contracts.graph.nodes import ManifestNode, ModelNode, SourceDefinition
 from dbt.contracts.project import Project
 from dbt.contracts.results import CatalogArtifact
 
@@ -34,7 +32,6 @@ class BaseDbtProject:
         self.catalog = catalog
         self.name = name if name else project.name
         self.relationships: Dict[str, Set[str]] = {}
-        self.meshify = DbtMeshYmlEditor()
 
         self.model_relation_names: Dict[str, str] = {
             model.relation_name: unique_id for unique_id, model in self.models().items()
@@ -121,6 +118,7 @@ class BaseDbtProject:
         """Returns the catalog entry for a model in the dbt project's catalog"""
         return self.manifest.nodes.get(unique_id, {})
 
+
 class DbtProject(BaseDbtProject):
     @staticmethod
     def _load_project(path) -> Project:
@@ -154,9 +152,10 @@ class DbtProject(BaseDbtProject):
         super().__init__(manifest, project, catalog, name)
         self.path = path
         self.dbt = dbt
-        self.file_manager = DbtFileManager(read_project_path=path, write_project_path=path)
 
-    def select_resources(self, select: str, exclude: Optional[str] = None, output_key: Optional[str] = None) -> Set[str]:
+    def select_resources(
+        self, select: str, exclude: Optional[str] = None, output_key: Optional[str] = None
+    ) -> Set[str]:
         """Select dbt resources using NodeSelection syntax"""
         args = []
         if select:
@@ -189,30 +188,6 @@ class DbtProject(BaseDbtProject):
         self.register_relationship(project_name, subproject_resources)
 
         return subproject
-
-    def add_model_contract(self, unique_id: str) -> None:
-        """Adds a model contract to the model's yaml"""
-        
-        # get the patch path for the model
-        node = self.get_manifest_node(unique_id)
-        yml_path = Path(node.patch_path.split("://")[1]) if node.patch_path else None
-        original_file_path = Path(node.original_file_path) if node.original_file_path else None
-        # if the model doesn't have a patch path, create a new yml file in the models directory
-        # TODO - should we check if there's a model yml file in the models directory and append to it?
-        if not yml_path:
-            yml_path = original_file_path.parent / "_models.yml"
-            self.file_manager.write_file(yml_path)
-        model_catalog = self.get_catalog_entry(unique_id)
-        # read the yml file
-        # pass empty dict if no file contents returned
-        full_yml_dict = self.file_manager.read_file(yml_path) or {}
-        updated_yml = self.meshify.add_model_contract_to_yml(
-            model_name=node.name,
-            model_catalog=model_catalog,
-            full_yml_dict=full_yml_dict
-            )
-        # write the updated yml to the file
-        self.file_manager.write_file(yml_path, updated_yml)
 
 
 class DbtSubProject(BaseDbtProject):
