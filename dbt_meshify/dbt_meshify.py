@@ -43,7 +43,7 @@ class DbtMeshModelYmlEditor:
         # parse the yml file into a dictionary with model names as keys
 
         models = (
-            {model['name']: model for model in full_yml_dict['models']} if full_yml_dict else {}
+            {model["name"]: model for model in full_yml_dict["models"]} if full_yml_dict else {}
         )
         model_yml = models.get(model_name) or {"name": model_name, "columns": [], "config": {}}
 
@@ -52,7 +52,7 @@ class DbtMeshModelYmlEditor:
         catalog_cols = model_catalog.columns or {}
         # add the data type to the yml entry for columns that are in yml
         yml_cols = [
-            {**yml_col, 'data_type': catalog_cols.get(yml_col.get("name")).type.lower()}
+            {**yml_col, "data_type": catalog_cols.get(yml_col.get("name")).type.lower()}
             for yml_col in yml_cols
         ]
         # append missing columns in the table to the yml entry
@@ -85,7 +85,7 @@ class DbtMeshModelYmlEditor:
         # set up yml order
 
         models = (
-            {model['name']: model for model in full_yml_dict['models']} if full_yml_dict else {}
+            {model["name"]: model for model in full_yml_dict["models"]} if full_yml_dict else {}
         )
         model_yml = models.get(model_name) or {
             "name": model_name,
