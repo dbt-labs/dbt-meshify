@@ -7,7 +7,7 @@ from ..fixtures import (
     expected_versioned_model_yml_increment_version_no_prerelease,
     expected_versioned_model_yml_increment_version_with_prerelease,
     expected_versioned_model_yml_increment_version_defined_in,
-    expected_versioned_model_yml_no_yml
+    expected_versioned_model_yml_no_yml,
 )
 
 
@@ -21,11 +21,9 @@ def read_yml(yml_str):
 
 class TestAddContractToYML:
     def test_add_version_to_model_yml_no_yml(self):
-        yml_dict = meshify.add_model_version_to_yml(
-            full_yml_dict={}, 
-            model_name=model_name
-        )
+        yml_dict = meshify.add_model_version_to_yml(full_yml_dict={}, model_name=model_name)
         assert yml_dict == read_yml(expected_versioned_model_yml_no_yml)
+
     def test_add_version_to_model_yml_no_version(self):
         yml_dict = meshify.add_model_version_to_yml(
             full_yml_dict=read_yml(model_yml_no_col_no_version), model_name=model_name

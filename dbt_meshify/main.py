@@ -6,33 +6,30 @@ from dbt_meshify.dbt_meshify import DbtMeshModelConstructor
 from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
 
 # define common parameters
-project_path = click.option(
-    "--project-path",
-    type=click.Path(exists=True),
-    default="."
-)
+project_path = click.option("--project-path", type=click.Path(exists=True), default=".")
 
 exclude = click.option(
     "--exclude",
     "-e",
     default=None,
-    help="The dbt selection syntax specifying the resources to exclude in the operation"
+    help="The dbt selection syntax specifying the resources to exclude in the operation",
 )
 
 select = click.option(
     "--select",
     "-s",
     default=None,
-    help="The dbt selection syntax specifying the resources to include in the operation"
+    help="The dbt selection syntax specifying the resources to include in the operation",
 )
 
 selector = click.option(
     "--selector",
     default=None,
-    help="The name of the YML selector specifying the resources to include in the operation"
+    help="The name of the YML selector specifying the resources to include in the operation",
 )
 
-# define cli group 
+
+# define cli group
 @click.group()
 def cli():
     pass
@@ -67,7 +64,7 @@ def connect(projects_dir):
 @selector
 def split():
     """
-    Splits dbt projects apart by adding all necessary dbt Mesh constructs based on the selection syntax. 
+    Splits dbt projects apart by adding all necessary dbt Mesh constructs based on the selection syntax.
 
     Order of operations:
     1. Regsiter the selected resources as a subproject of the main project
@@ -122,6 +119,7 @@ def add_contract(select, exclude, project_path, selector):
         )
         meshify_constructor.add_model_contract()
 
+
 @cli.command(name="add-version")
 @exclude
 @project_path
@@ -142,9 +140,7 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in)
             meshify_constructor = DbtMeshModelConstructor(
                 project_path=project_path, model_node=model_node
             )
-            meshify_constructor.add_model_version(
-                prerelease=prerelease, defined_in=defined_in
-            )
+            meshify_constructor.add_model_version(prerelease=prerelease, defined_in=defined_in)
 
 
 @cli.command(name="create-group")
