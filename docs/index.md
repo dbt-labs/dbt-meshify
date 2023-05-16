@@ -13,11 +13,29 @@ This package leverages the dbt-core Python API to allow users to use standard db
 
 ## Basic Usage
 
+Each of the available [commands page](commands.md) allows you to add one (or many) of the above features to a set of models specified by the selection syntax in the command. 
+
+The goal of this package is to make it more straightforward to apply to your project so that splitting apart a monolithic project into component projects is a more automated, dbt-tonic experience. 
+
+The process of splitting a dbt monolith apart roughly requires you to:
+
+1. Determine what parts of your project should be grouped together into subprojects
+2. Determine the access-level for the members of that group
+3. Add model contracts to the elements that are public and accessed my members outside the group specified in (1)
+4. (Optional) Add model versions to the public models to allow for development without impacting downstream stakeholders. 
+
+Here's how that might look for the process of creating a separate `finance` subproject in your dbt monolith. 
+
 ```bash
 # create a group of all models tagged with "finance"
+# this command automatically detects models that should be public, and updates access levels
 dbt-meshify add-group finance --owner name Monopoly Man -s +tag:finance
 
-# create a contract to a model
-dbt-meshify add-contract --select my_public_model
+# create a contract to the publicly accessed nodes in that group
+dbt-meshify add-contract --select group:finance,access:public
+
+# optionally, add versions to your fct_payments model
+dbt-meshify add-version --select fct_payments
 
 ```
+Future releases of this package may also include features that allow users to fully split off groups of models into entirely new dbt projects. 
