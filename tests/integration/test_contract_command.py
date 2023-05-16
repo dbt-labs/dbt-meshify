@@ -7,13 +7,13 @@ from click.testing import CliRunner
 from dbt_meshify.main import add_contract
 
 from ..fixtures import (
-    expected_yml_all_col,
-    expected_yml_no_col,
-    expected_yml_no_entry,
-    expected_yml_one_col,
-    expected_yml_other_model,
+    expected_contract_yml_all_col,
+    expected_contract_yml_no_col,
+    expected_contract_yml_no_entry,
+    expected_contract_yml_one_col,
+    expected_contract_yml_other_model,
     model_yml_all_col,
-    model_yml_no_col,
+    model_yml_no_col_no_version,
     model_yml_one_col,
     model_yml_other_model,
 )
@@ -25,11 +25,11 @@ proj_path = Path(proj_path_string)
 @pytest.mark.parametrize(
     "start_yml,end_yml",
     [
-        (model_yml_no_col, expected_yml_no_col),
-        (model_yml_one_col, expected_yml_one_col),
-        (model_yml_all_col, expected_yml_all_col),
-        (None, expected_yml_no_entry),
-        (model_yml_other_model, expected_yml_other_model),
+        (model_yml_no_col_no_version, expected_contract_yml_no_col),
+        (model_yml_one_col, expected_contract_yml_one_col),
+        (model_yml_all_col, expected_contract_yml_all_col),
+        (None, expected_contract_yml_no_entry),
+        (model_yml_other_model, expected_contract_yml_other_model),
     ],
     ids=["1", "2", "3", "4", "5"],
 )
