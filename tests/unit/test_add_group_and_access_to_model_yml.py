@@ -1,12 +1,12 @@
 import pytest
 from dbt.contracts.graph.nodes import Group
 from dbt.contracts.graph.unparsed import Owner
-from dbt.node_types import NodeType, AccessType
+from dbt.node_types import AccessType, NodeType
 
-from dbt_meshify.storage.yaml_editors import DbtMeshYmlEditor
+from dbt_meshify.storage.yaml_editors import DbtMeshModelYmlEditor
 from tests.unit import read_yml
 
-meshify = DbtMeshYmlEditor()
+meshify = DbtMeshModelYmlEditor()
 model_name = "shared_model"
 
 model_yml_empty_file = """"""

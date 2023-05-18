@@ -1,5 +1,19 @@
 from dbt.contracts.results import CatalogTable
 
+shared_model_sql = """
+with source_data as (
+
+
+    select 1 as id, 'grace' as colleague
+    union all
+    select 2 as id, 'dave' as colleague
+
+)
+
+select *
+from source_data
+"""
+
 shared_model_catalog_entry = CatalogTable.from_dict(
     {
         "metadata": {
@@ -27,7 +41,7 @@ shared_model_catalog_entry = CatalogTable.from_dict(
     }
 )
 
-model_yml_no_col = """
+model_yml_no_col_no_version = """
 models:
   - name: shared_model
     description: "this is a test model"
@@ -59,7 +73,7 @@ models:
       - name: colleague
         description: "this is the colleague column"
 """
-expected_yml_no_col = """
+expected_contract_yml_no_col = """
 models:
   - name: shared_model
     config:
@@ -73,7 +87,7 @@ models:
         data_type: varchar
 """
 
-expected_yml_one_col = """
+expected_contract_yml_one_col = """
 models:
   - name: shared_model
     config:
@@ -88,7 +102,7 @@ models:
         data_type: varchar
 """
 
-expected_yml_all_col = """
+expected_contract_yml_all_col = """
 models:
   - name: shared_model
     config:
@@ -104,7 +118,7 @@ models:
         data_type: varchar
 """
 
-expected_yml_no_entry = """
+expected_contract_yml_no_entry = """
 models:
   - name: shared_model
     config:
@@ -117,7 +131,7 @@ models:
         data_type: varchar
 """
 
-expected_yml_other_model = """
+expected_contract_yml_other_model = """
 models:
   - name: other_shared_model
     description: "this is a different test model"
@@ -130,4 +144,61 @@ models:
         data_type: integer
       - name: colleague
         data_type: varchar
+"""
+
+expected_versioned_model_yml_no_yml = """
+models:
+  - name: shared_model
+    latest_version: 1
+    versions:
+      - v: 1
+"""
+
+expected_versioned_model_yml_no_version = """
+models:
+  - name: shared_model
+    latest_version: 1
+    description: "this is a test model"
+    versions:
+      - v: 1
+"""
+
+model_yml_increment_version = """
+models:
+  - name: shared_model
+    latest_version: 1
+    description: "this is a test model"
+    versions:
+      - v: 1
+"""
+
+expected_versioned_model_yml_increment_version_no_prerelease = """
+models:
+  - name: shared_model
+    latest_version: 2
+    description: "this is a test model"
+    versions:
+      - v: 1
+      - v: 2
+"""
+
+expected_versioned_model_yml_increment_version_with_prerelease = """
+models:
+  - name: shared_model
+    latest_version: 1
+    description: "this is a test model"
+    versions:
+      - v: 1
+      - v: 2
+"""
+
+expected_versioned_model_yml_increment_version_defined_in = """
+models:
+  - name: shared_model
+    latest_version: 2
+    description: "this is a test model"
+    versions:
+      - v: 1
+      - v: 2
+        defined_in: daves_model
 """

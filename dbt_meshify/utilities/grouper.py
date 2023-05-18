@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Optional, Dict, Set, Tuple
+from typing import Dict, Optional, Set, Tuple
 
 import networkx
 from dbt.contracts.graph.nodes import Group, ModelNode
@@ -9,7 +9,7 @@ from dbt.node_types import AccessType, NodeType
 
 from dbt_meshify.dbt_projects import DbtProject
 from dbt_meshify.storage.file_manager import DbtFileManager
-from dbt_meshify.storage.yaml_editors import DbtMeshYmlEditor
+from dbt_meshify.storage.yaml_editors import DbtMeshModelYmlEditor
 
 
 class ResourceGroupingException(BaseException):
@@ -25,7 +25,7 @@ class ResourceGrouper:
 
     def __init__(self, project: DbtProject):
         self.project = project
-        self.meshify = DbtMeshYmlEditor()
+        self.meshify = DbtMeshModelYmlEditor()
         self.file_manager = DbtFileManager(read_project_path=project.path)
 
     @classmethod

@@ -1,11 +1,12 @@
 import os
 from pathlib import Path
-from typing import Optional, List, Tuple
+from typing import List, Optional, Tuple
 
 import click
 from dbt.contracts.graph.unparsed import Owner
 
-from .dbt_projects import DbtProject, DbtSubProject, DbtProjectHolder
+from .dbt_projects import DbtProject, DbtProjectHolder, DbtSubProject
+from .storage.yaml_editors import DbtMeshModelConstructor
 
 # define common parameters
 project_path = click.option("--project-path", type=click.Path(exists=True), default=".")
@@ -114,7 +115,12 @@ def add_contract(select, exclude, project_path, selector):
     )
     models = filter(lambda x: x.startswith("model"), resources)
     for model_unique_id in models:
-        project.add_model_contract(model_unique_id)
+        model_node = project.get_manifest_node(model_unique_id)
+        model_catalog = project.get_catalog_entry(model_unique_id)
+        meshify_constructor = DbtMeshModelConstructor(
+            project_path=project_path, model_node=model_node, model_catalog=model_catalog
+        )
+        meshify_constructor.add_model_contract()
 
 
 @cli.command(name="add-version")
@@ -122,11 +128,22 @@ def add_contract(select, exclude, project_path, selector):
 @project_path
 @select
 @selector
-def add_version(select, exclude, project_path, selector):
-    """
-    Increments a model version on all selected models. Increments the version of the model if a version exists.
-    """
-    pass
+@click.option("--prerelease", "--pre", default=False, is_flag=True)
+@click.option("--defined-in", default=None)
+def add_version(select, exclude, project_path, selector, prerelease, defined_in):
+    path = Path(project_path).expanduser().resolve()
+    project = DbtProject.from_directory(path)
+    resources = list(
+        project.select_resources(select=select, exclude=exclude, output_key="unique_id")
+    )
+    models = filter(lambda x: x.startswith("model"), resources)
+    for model_unique_id in models:
+        model_node = project.get_manifest_node(model_unique_id)
+        if model_node.version == model_node.latest_version:
+            meshify_constructor = DbtMeshModelConstructor(
+                project_path=project_path, model_node=model_node
+            )
+            meshify_constructor.add_model_version(prerelease=prerelease, defined_in=defined_in)
 
 
 @cli.command(name="create-group")
