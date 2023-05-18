@@ -49,7 +49,6 @@ class ResourceGrouper:
         whereas nodes that are not a referenced are safe for a private access level.
         """
         boundary_nodes = cls.identify_interface(graph, nodes)
-        print(boundary_nodes)
         resources = {
             node: AccessType.Public if node in boundary_nodes else AccessType.Private
             for node in nodes
