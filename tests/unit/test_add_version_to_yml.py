@@ -1,15 +1,16 @@
-from dbt_meshify.dbt_meshify import DbtMeshModelYmlEditor
 import yaml
+
+from dbt_meshify.storage.yaml_editors import DbtMeshModelYmlEditor
+
 from ..fixtures import (
-    model_yml_no_col_no_version,
-    expected_versioned_model_yml_no_version,
-    model_yml_increment_version,
+    expected_versioned_model_yml_increment_version_defined_in,
     expected_versioned_model_yml_increment_version_no_prerelease,
     expected_versioned_model_yml_increment_version_with_prerelease,
-    expected_versioned_model_yml_increment_version_defined_in,
+    expected_versioned_model_yml_no_version,
     expected_versioned_model_yml_no_yml,
+    model_yml_increment_version,
+    model_yml_no_col_no_version,
 )
-
 
 meshify = DbtMeshModelYmlEditor()
 model_name = "shared_model"

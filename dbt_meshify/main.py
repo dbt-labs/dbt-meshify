@@ -1,10 +1,12 @@
+import os
 from pathlib import Path
+from typing import List, Optional, Tuple
 
 import click
-
-from dbt_meshify.dbt_meshify import DbtMeshModelConstructor
+from dbt.contracts.graph.unparsed import Owner
 
 from .dbt_projects import DbtProject, DbtProjectHolder, DbtSubProject
+from .storage.yaml_editors import DbtMeshModelConstructor
 
 # define common parameters
 project_path = click.option("--project-path", type=click.Path(exists=True), default=".")
@@ -116,7 +118,7 @@ def add_contract(select, exclude, project_path, selector):
         model_node = project.get_manifest_node(model_unique_id)
         model_catalog = project.get_catalog_entry(model_unique_id)
         meshify_constructor = DbtMeshModelConstructor(
-            model_node=model_node, model_catalog=model_catalog, project_path=project_path
+            project_path=project_path, model_node=model_node, model_catalog=model_catalog
         )
         meshify_constructor.add_model_contract()
 
@@ -149,8 +151,48 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in)
 @project_path
 @select
 @selector
-def create_group(select, exclude, project_path, selector):
+@click.argument("name")
+@click.option(
+    "--owner",
+    nargs=2,
+    multiple=True,
+    type=click.Tuple([str, str]),
+    help="A tuple of Owner information for the group. For example " "`--owner name example`",
+)
+@click.option(
+    "--group-yml-path",
+    type=click.Path(exists=False),
+    help="An optional path to store the new group YAML definition.",
+)
+def create_group(
+    name,
+    project_path: os.PathLike,
+    owner: List[Tuple[str, str]],
+    group_yml_path: os.PathLike,
+    select: str,
+    exclude: Optional[str] = None,
+    selector: Optional[str] = None,
+):
     """
-    Add selected resources to a group
+    Create a group and add selected resources to the group.
     """
-    pass
+
+    from dbt_meshify.utilities.grouper import ResourceGrouper
+
+    path = Path(project_path).expanduser().resolve()
+    project = DbtProject.from_directory(path)
+
+    if group_yml_path is None:
+        group_yml_path = (path / Path("models/_groups.yml")).resolve()
+    else:
+        group_yml_path = Path(group_yml_path).resolve()
+
+    if not str(os.path.commonpath([group_yml_path, path])) == str(path):
+        raise Exception(
+            "The provided group-yml-path is not contained within the provided dbt project."
+        )
+
+    owner: Owner = Owner(**{key: value for key, value in owner})
+
+    grouper = ResourceGrouper(project)
+    grouper.add_group(name=name, owner=owner, select=select, exclude=exclude, path=group_yml_path)

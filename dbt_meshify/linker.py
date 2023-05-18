@@ -32,9 +32,9 @@ class ProjectDependency:
         return NotImplemented
 
 
-class Mesh:
+class Linker:
     """
-    Mesh computes the metagraph between separate DbtProjects. This includes
+    Linker computes the metagraph between separate DbtProjects. This includes
     providing an interface for mapping the dependencies between projects be
     it source-hacked models, imported packages, or explicit cross-project
     references.

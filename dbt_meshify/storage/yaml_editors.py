@@ -3,17 +3,64 @@ from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Dict, Optional
 
-from dbt.contracts.graph.nodes import ManifestNode
+from dbt.contracts.graph.nodes import Group, ManifestNode
 from dbt.contracts.results import CatalogTable
+from dbt.node_types import AccessType
 
-from dbt_meshify.file_manager import DbtFileManager
+from dbt_meshify.storage.file_manager import DbtFileManager
 
 
 class DbtMeshModelYmlEditor:
     """
     Class to operate on the contents of a dbt project's dbt_project.yml file
-    to add the dbt-core concepts specific to the dbt mesh
+    to add the dbt-core concepts specific to the dbt linker
     """
+
+    @staticmethod
+    def add_group_to_yml(group: Group, full_yml_dict: Dict[str, Any]):
+        """Add a group to a yml file"""
+        if full_yml_dict is None:
+            full_yml_dict = {}
+
+        group_list = full_yml_dict.get("groups", []) or []
+        groups = {group["name"]: group for group in group_list}
+        group_yml = groups.get(group.name) or {}
+
+        group_yml.update({"name": group.name})
+        owner = group_yml.get("owner", {})
+        owner.update({k: v for k, v in group.owner.to_dict().items() if v is not None})
+        group_yml["owner"] = owner
+
+        groups[group.name] = {k: v for k, v in group_yml.items() if v is not None}
+
+        full_yml_dict["groups"] = list(groups.values())
+        return full_yml_dict
+
+    @staticmethod
+    def add_group_and_access_to_model_yml(
+        model_name: str, group: Group, access_type: AccessType, full_yml_dict: Dict[str, Any]
+    ):
+        """Add group and access configuration to a model's YAMl properties."""
+
+        model_ordered_dict = OrderedDict.fromkeys(
+            ["name", "description", "access", "config", "meta", "columns"]
+        )
+        # parse the yml file into a dictionary with model names as keys
+        models = (
+            {model["name"]: model for model in full_yml_dict["models"]} if full_yml_dict else {}
+        )
+        model_yml = models.get(model_name) or {"name": model_name, "columns": [], "config": {}}
+
+        model_yml.update({"access": access_type.value})
+        config = model_yml.get("config", {})
+        config.update({"group": group.name})
+        model_yml["config"] = config
+
+        model_ordered_dict.update(model_yml)
+        models[model_name] = {k: v for k, v in model_ordered_dict.items() if v is not None}
+
+        full_yml_dict["models"] = list(models.values())
+        return full_yml_dict
 
     def process_model_yml(self, model_yml: str):
         """Processes the yml contents to be written back to a file"""
@@ -125,7 +172,7 @@ class DbtMeshModelYmlEditor:
 class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
     def __init__(
         self,
-        project_path: str,
+        project_path: os.PathLike,
         model_node: ManifestNode,
         model_catalog: Optional[CatalogTable] = None,
     ):
