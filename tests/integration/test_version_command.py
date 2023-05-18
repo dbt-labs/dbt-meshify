@@ -1,17 +1,20 @@
-from click.testing import CliRunner
-import yaml
 from pathlib import Path
-from dbt_meshify.main import add_version
+
 import pytest
+import yaml
+from click.testing import CliRunner
+
+from dbt_meshify.main import add_version
+
 from ..fixtures import (
-    shared_model_sql,
-    model_yml_no_col_no_version,
-    expected_versioned_model_yml_no_version,
-    model_yml_increment_version,
+    expected_versioned_model_yml_increment_version_defined_in,
     expected_versioned_model_yml_increment_version_no_prerelease,
     expected_versioned_model_yml_increment_version_with_prerelease,
-    expected_versioned_model_yml_increment_version_defined_in,
+    expected_versioned_model_yml_no_version,
     expected_versioned_model_yml_no_yml,
+    model_yml_increment_version,
+    model_yml_no_col_no_version,
+    shared_model_sql,
 )
 
 proj_path_string = "test-projects/source-hack/src_proj_a"

@@ -3,14 +3,15 @@ from pathlib import Path
 import pytest
 import yaml
 from click.testing import CliRunner
+
 from dbt_meshify.main import create_group
 from tests.unit.test_add_group_and_access_to_model_yml import model_yml_shared_model
 from tests.unit.test_add_group_to_yml import (
+    expected_group_yml_existing_groups,
+    expected_group_yml_no_group,
     group_yml_empty_file,
     group_yml_existing_groups,
     group_yml_group_predefined,
-    expected_group_yml_no_group,
-    expected_group_yml_existing_groups,
 )
 
 proj_path_string = "test-projects/source-hack/src_proj_a"
