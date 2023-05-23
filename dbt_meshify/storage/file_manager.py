@@ -7,14 +7,13 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 import yaml
-from dbt.contracts.results import CatalogTable
 
 
 class BaseFileManager(ABC):
-    def read_file(path: os.PathLike) -> None:
+    def read_file(path: Path) -> None:
         pass
 
-    def write_file(path: os.PathLike, file_contents: Any) -> None:
+    def write_file(path: Path, file_contents: Any) -> None:
         pass
 
 
