@@ -4,6 +4,7 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
+from dbt_meshify.dbt import Dbt
 from dbt_meshify.main import add_contract
 
 from ..fixtures import (
@@ -20,6 +21,7 @@ from ..fixtures import (
 
 proj_path_string = "test-projects/source-hack/src_proj_a"
 proj_path = Path(proj_path_string)
+dbt = Dbt()
 
 
 @pytest.mark.parametrize(
@@ -37,6 +39,9 @@ def test_add_contract_to_yml(start_yml, end_yml):
     yml_file = proj_path / "models" / "_models.yml"
     yml_file.parent.mkdir(parents=True, exist_ok=True)
     runner = CliRunner()
+    # do a dbt run to create the duckdb
+    # and enable the docs generate command to work
+    dbt.run(proj_path)
     # only create file if start_yml is not None
     # in situations where models don't have a patch path, there isn't a yml file to read from
     if start_yml:
