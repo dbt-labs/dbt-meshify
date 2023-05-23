@@ -205,7 +205,7 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
         return yml_path
 
     def get_model_path(self) -> Path:
-        """Returns the path to the model yml file"""
+        """Returns the path to the model file"""
         return (
             Path(self.model_node.original_file_path)
             if self.model_node.original_file_path
