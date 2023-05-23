@@ -9,6 +9,7 @@ from dbt.node_types import AccessType
 
 from dbt_meshify.storage.file_manager import DbtFileManager
 
+
 def process_model_yml(model_yml: str):
     """Processes the yml contents to be written back to a file"""
     model_ordered_dict = OrderedDict.fromkeys(
@@ -27,6 +28,7 @@ def process_model_yml(model_yml: str):
     # remove any keys with None values
     model_ordered_dict = {k: v for k, v in model_ordered_dict.items() if v is not None}
     return model_ordered_dict
+
 
 class DbtMeshModelYmlEditor:
     """
@@ -74,7 +76,6 @@ class DbtMeshModelYmlEditor:
 
         full_yml_dict["models"] = list(models.values())
         return full_yml_dict
-
 
     def add_model_contract_to_yml(
         self, model_name: str, model_catalog: CatalogTable, full_yml_dict: Dict[str, str]
@@ -181,8 +182,16 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
 
     def get_model_yml_path(self) -> Path:
         """Returns the path to the model yml file"""
-        yml_path = Path(self.model_node.patch_path.split("://")[1]) if self.model_node.patch_path else None
-        original_file_path = Path(self.model_node.original_file_path) if self.model_node.original_file_path else None
+        yml_path = (
+            Path(self.model_node.patch_path.split("://")[1])
+            if self.model_node.patch_path
+            else None
+        )
+        original_file_path = (
+            Path(self.model_node.original_file_path)
+            if self.model_node.original_file_path
+            else None
+        )
         # if the model doesn't have a patch path, create a new yml file in the models directory
         if not yml_path:
             yml_path = original_file_path.parent / "_models.yml"
@@ -191,7 +200,11 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
 
     def get_model_path(self) -> Path:
         """Returns the path to the model yml file"""
-        return Path(self.model_node.original_file_path) if self.model_node.original_file_path else None
+        return (
+            Path(self.model_node.original_file_path)
+            if self.model_node.original_file_path
+            else None
+        )
 
     def add_model_contract(self) -> None:
         """Adds a model contract to the model's yaml"""
@@ -201,7 +214,9 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
         # pass empty dict if no file contents returned
         full_yml_dict = self.file_manager.read_file(yml_path) or {}
         updated_yml = self.add_model_contract_to_yml(
-            model_name=self.model_node.name, model_catalog=self.model_catalog, full_yml_dict=full_yml_dict
+            model_name=self.model_node.name,
+            model_catalog=self.model_catalog,
+            full_yml_dict=full_yml_dict,
         )
         # write the updated yml to the file
         self.file_manager.write_file(yml_path, updated_yml)
@@ -227,7 +242,9 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
 
         # if we're incrementing the version, write the new version file with a copy of the code
         latest_version = self.model_node.latest_version if self.model_node.latest_version else 0
-        last_version_file_name = f"{self.model_node.name}_v{latest_version}.{self.model_node.language}"
+        last_version_file_name = (
+            f"{self.model_node.name}_v{latest_version}.{self.model_node.language}"
+        )
         next_version_file_name = (
             f"{defined_in}.{self.model_node.language}"
             if defined_in
