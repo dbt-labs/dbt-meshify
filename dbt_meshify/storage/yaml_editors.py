@@ -10,6 +10,11 @@ from dbt.node_types import AccessType
 from dbt_meshify.storage.file_manager import DbtFileManager
 
 
+def filter_empty_dict_items(dict_to_filter: Dict[str, Any]):
+    """Filters out empty dictionary items"""
+    return {k: v for k, v in dict_to_filter.items() if v is not None}
+
+
 def process_model_yml(model_yml: str):
     """Processes the yml contents to be written back to a file"""
     model_ordered_dict = OrderedDict.fromkeys(
@@ -26,8 +31,16 @@ def process_model_yml(model_yml: str):
     )
     model_ordered_dict.update(model_yml)
     # remove any keys with None values
-    model_ordered_dict = {k: v for k, v in model_ordered_dict.items() if v is not None}
-    return model_ordered_dict
+    return filter_empty_dict_items(model_ordered_dict)
+
+
+def resources_yml_to_dict(resources_yml: str, resource_type: str = "models"):
+    """Converts a yml dict to a named dictionary for easier operation"""
+    return (
+        {resource["name"]: resource for resource in resources_yml[resource_type]}
+        if resources_yml
+        else {}
+    )
 
 
 class DbtMeshModelYmlEditor:
@@ -37,34 +50,31 @@ class DbtMeshModelYmlEditor:
     """
 
     @staticmethod
-    def add_group_to_yml(group: Group, full_yml_dict: Dict[str, Any]):
+    def add_group_to_yml(group: Group, groups_yml: Dict[str, Any]):
         """Add a group to a yml file"""
-        if full_yml_dict is None:
-            full_yml_dict = {}
+        if groups_yml is None:
+            groups_yml = {}
 
-        group_list = full_yml_dict.get("groups", []) or []
-        groups = {group["name"]: group for group in group_list}
+        groups = resources_yml_to_dict(groups_yml, "groups")
         group_yml = groups.get(group.name) or {}
 
         group_yml.update({"name": group.name})
         owner = group_yml.get("owner", {})
-        owner.update({k: v for k, v in group.owner.to_dict().items() if v is not None})
+        owner.update(filter_empty_dict_items(group.owner.to_dict()))
         group_yml["owner"] = owner
 
-        groups[group.name] = {k: v for k, v in group_yml.items() if v is not None}
+        groups[group.name] = filter_empty_dict_items(group_yml)
 
-        full_yml_dict["groups"] = list(groups.values())
-        return full_yml_dict
+        groups_yml["groups"] = list(groups.values())
+        return groups_yml
 
     @staticmethod
     def add_group_and_access_to_model_yml(
-        model_name: str, group: Group, access_type: AccessType, full_yml_dict: Dict[str, Any]
+        model_name: str, group: Group, access_type: AccessType, models_yml: Dict[str, Any]
     ):
         """Add group and access configuration to a model's YAMl properties."""
         # parse the yml file into a dictionary with model names as keys
-        models = (
-            {model["name"]: model for model in full_yml_dict["models"]} if full_yml_dict else {}
-        )
+        models = resources_yml_to_dict(models_yml)
         model_yml = models.get(model_name) or {"name": model_name, "columns": [], "config": {}}
 
         model_yml.update({"access": access_type.value})
@@ -74,20 +84,18 @@ class DbtMeshModelYmlEditor:
 
         models[model_name] = process_model_yml(model_yml)
 
-        full_yml_dict["models"] = list(models.values())
-        return full_yml_dict
+        models_yml["models"] = list(models.values())
+        return models_yml
 
     def add_model_contract_to_yml(
-        self, model_name: str, model_catalog: CatalogTable, full_yml_dict: Dict[str, str]
+        self, model_name: str, model_catalog: CatalogTable, models_yml: Dict[str, str]
     ) -> None:
         """Adds a model contract to the model's yaml"""
         # set up yml order
 
         # parse the yml file into a dictionary with model names as keys
 
-        models = (
-            {model["name"]: model for model in full_yml_dict["models"]} if full_yml_dict else {}
-        )
+        models = resources_yml_to_dict(models_yml)
         model_yml = models.get(model_name) or {"name": model_name, "columns": [], "config": {}}
 
         # isolate the columns from the existing model entry
@@ -114,22 +122,20 @@ class DbtMeshModelYmlEditor:
         processed = process_model_yml(model_yml)
         models[model_name] = processed
 
-        full_yml_dict["models"] = list(models.values())
-        return full_yml_dict
+        models_yml["models"] = list(models.values())
+        return models_yml
 
     def add_model_version_to_yml(
         self,
         model_name,
-        full_yml_dict,
+        models_yml,
         prerelease: Optional[bool] = False,
         defined_in: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Adds a model version to the model's yaml"""
         # set up yml order
 
-        models = (
-            {model["name"]: model for model in full_yml_dict["models"]} if full_yml_dict else {}
-        )
+        models = resources_yml_to_dict(models_yml)
         model_yml = models.get(model_name) or {
             "name": model_name,
             "latest_version": 0,
@@ -161,8 +167,8 @@ class DbtMeshModelYmlEditor:
         processed = process_model_yml(model_yml)
         models[model_name] = processed
 
-        full_yml_dict["models"] = list(models.values())
-        return full_yml_dict
+        models_yml["models"] = list(models.values())
+        return models_yml
 
 
 class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
@@ -212,11 +218,11 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
         yml_path = self.get_model_yml_path()
         # read the yml file
         # pass empty dict if no file contents returned
-        full_yml_dict = self.file_manager.read_file(yml_path) or {}
+        models_yml = self.file_manager.read_file(yml_path) or {}
         updated_yml = self.add_model_contract_to_yml(
             model_name=self.model_node.name,
             model_catalog=self.model_catalog,
-            full_yml_dict=full_yml_dict,
+            models_yml=models_yml,
         )
         # write the updated yml to the file
         self.file_manager.write_file(yml_path, updated_yml)
@@ -229,10 +235,10 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
         yml_path = self.get_model_yml_path()
         # read the yml file
         # pass empty dict if no file contents returned
-        full_yml_dict = self.file_manager.read_file(yml_path) or {}
+        models_yml = self.file_manager.read_file(yml_path) or {}
         updated_yml = self.add_model_version_to_yml(
             model_name=self.model_node.name,
-            full_yml_dict=full_yml_dict,
+            models_yml=models_yml,
             prerelease=prerelease,
             defined_in=defined_in,
         )

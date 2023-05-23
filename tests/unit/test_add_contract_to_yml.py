@@ -22,7 +22,7 @@ model_name = "shared_model"
 class TestAddContractToYML:
     def test_add_contract_to_yml_no_col(self):
         yml_dict = meshify.add_model_contract_to_yml(
-            full_yml_dict=read_yml(model_yml_no_col_no_version),
+            models_yml=read_yml(model_yml_no_col_no_version),
             model_catalog=catalog_entry,
             model_name=model_name,
         )
@@ -30,7 +30,7 @@ class TestAddContractToYML:
 
     def test_add_contract_to_yml_one_col(self):
         yml_dict = meshify.add_model_contract_to_yml(
-            full_yml_dict=read_yml(model_yml_one_col),
+            models_yml=read_yml(model_yml_one_col),
             model_catalog=catalog_entry,
             model_name=model_name,
         )
@@ -38,7 +38,7 @@ class TestAddContractToYML:
 
     def test_add_contract_to_yml_all_col(self):
         yml_dict = meshify.add_model_contract_to_yml(
-            full_yml_dict=read_yml(model_yml_all_col),
+            models_yml=read_yml(model_yml_all_col),
             model_catalog=catalog_entry,
             model_name=model_name,
         )
@@ -46,13 +46,13 @@ class TestAddContractToYML:
 
     def test_add_contract_to_yml_no_entry(self):
         yml_dict = meshify.add_model_contract_to_yml(
-            full_yml_dict={}, model_catalog=catalog_entry, model_name=model_name
+            models_yml={}, model_catalog=catalog_entry, model_name=model_name
         )
         assert yml_dict == read_yml(expected_contract_yml_no_entry)
 
     def test_add_contract_to_yml_other_model(self):
         yml_dict = meshify.add_model_contract_to_yml(
-            full_yml_dict=read_yml(model_yml_other_model),
+            models_yml=read_yml(model_yml_other_model),
             model_catalog=catalog_entry,
             model_name=model_name,
         )
