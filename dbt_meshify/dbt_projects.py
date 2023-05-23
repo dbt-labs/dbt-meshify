@@ -178,7 +178,11 @@ class DbtProject(BaseDbtProject):
         self.dbt = dbt
 
     def select_resources(
-        self, select: str, exclude: Optional[str] = None, output_key: Optional[str] = None
+        self,
+        select: str,
+        exclude: Optional[str] = None,
+        selector: Optional[str] = None,
+        output_key: Optional[str] = None,
     ) -> Set[str]:
         """Select dbt resources using NodeSelection syntax"""
         args = []
@@ -186,6 +190,8 @@ class DbtProject(BaseDbtProject):
             args = ["--select", select]
         if exclude:
             args.extend(["--exclude", exclude])
+        if selector:
+            args.extend(["--selector", selector])
 
         results = self.dbt.ls(self.path, args, output_key=output_key)
         if output_key:
