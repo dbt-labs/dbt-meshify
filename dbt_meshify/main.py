@@ -18,11 +18,25 @@ exclude = click.option(
     help="The dbt selection syntax specifying the resources to exclude in the operation",
 )
 
+group_yml_path = click.option(
+    "--group-yml-path",
+    type=click.Path(exists=False),
+    help="An optional path to store the new group YAML definition.",
+)
+
 select = click.option(
     "--select",
     "-s",
     default=None,
     help="The dbt selection syntax specifying the resources to include in the operation",
+)
+
+owner = click.option(
+    "--owner",
+    nargs=2,
+    multiple=True,
+    type=click.Tuple([str, str]),
+    help="A tuple of Owner information for the group. For example " "`--owner name example`",
 )
 
 selector = click.option(
@@ -59,6 +73,21 @@ def connect(projects_dir):
 
     print(holder.project_map())
 
+@cli.command(name="group")
+@click.argument("name")
+@exclude
+@group_yml_path
+@owner
+@project_path
+@select
+@selector
+def group(name, project_path, owner, group_yml_path, select, exclude, selector):
+    """
+    Creates a new dbt group based on the selection syntax
+    Detects the edges of the group, makes their access public,  and adds contracts to them
+    """
+    create_group(name, project_path, owner, group_yml_path, select, exclude, selector)
+    add_contract(select=f'group:{name},config.access:public', project_path=project_path)
 
 @cli.command(name="split")
 @exclude
@@ -98,8 +127,12 @@ def split():
 
     print(holder.project_map())
 
+@cli.group()
+def component():
+    pass
 
-@cli.command(name="add-contract")
+
+@component.command(name="add-contract")
 @exclude
 @project_path
 @select
@@ -125,7 +158,7 @@ def add_contract(select, exclude, project_path, selector):
         meshify_constructor.add_model_contract()
 
 
-@cli.command(name="add-version")
+@component.command(name="add-version")
 @exclude
 @project_path
 @select
@@ -150,24 +183,14 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in)
             meshify_constructor.add_model_version(prerelease=prerelease, defined_in=defined_in)
 
 
-@cli.command(name="create-group")
+@component.command(name="create-group")
 @exclude
 @project_path
 @select
 @selector
 @click.argument("name")
-@click.option(
-    "--owner",
-    nargs=2,
-    multiple=True,
-    type=click.Tuple([str, str]),
-    help="A tuple of Owner information for the group. For example " "`--owner name example`",
-)
-@click.option(
-    "--group-yml-path",
-    type=click.Path(exists=False),
-    help="An optional path to store the new group YAML definition.",
-)
+@owner
+@group_yml_path
 def create_group(
     name,
     project_path: os.PathLike,
@@ -199,4 +222,4 @@ def create_group(
     owner: Owner = Owner(**{key: value for key, value in owner})
 
     grouper = ResourceGrouper(project)
-    grouper.add_group(name=name, owner=owner, select=select, exclude=exclude, path=group_yml_path)
+    grouper.add_group(name=name, owner=owner, select=select, exclude=exclude, selector=selector, path=group_yml_path)

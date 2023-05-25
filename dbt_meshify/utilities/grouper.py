@@ -62,6 +62,7 @@ class ResourceGrouper:
         path: os.PathLike,
         select: str,
         exclude: Optional[str] = None,
+        selector: Optional[str] = None,
     ) -> Tuple[Group, Dict[str, AccessType]]:
         """Generate the ResourceGroup that we want to apply to the project."""
 
@@ -75,7 +76,7 @@ class ResourceGrouper:
             resource_type=NodeType.Group,
         )
 
-        nodes = self.project.select_resources(select, exclude, output_key="unique_id")
+        nodes = self.project.select_resources(select=select, select=exclude, selector=selector, output_key="unique_id")
 
         # Check if any of the selected nodes are already in a group of a different name. If so, raise an exception.
         for node in nodes:
@@ -100,10 +101,11 @@ class ResourceGrouper:
         path: os.PathLike,
         select: str,
         exclude: Optional[str] = None,
+        selector: Optional[str] = None,
     ) -> None:
         """Create a ResourceGroup for a dbt project."""
 
-        group, resources = self._generate_resource_group(name, owner, path, select, exclude)
+        group, resources = self._generate_resource_group(name, owner, path, select, exclude, selector)
 
         group_path = Path(group.original_file_path)
         try:
