@@ -1,0 +1,5 @@
+packages:
+  - package: dbt-labs/metrics
+    version: 1.5.0
+  - package: dbt-labs/dbt_utils
+    version: 1.0.0

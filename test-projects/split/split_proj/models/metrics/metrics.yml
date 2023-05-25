@@ -1,0 +1,60 @@
+version: 2
+
+metrics:
+  - name: revenue
+    label: Revenue
+    model: ref('orders')
+    description: "Income from all orders less tax"
+
+    calculation_method: sum
+    expression: order_total - tax_paid
+
+    timestamp: ordered_at
+    time_grains: [day, week, month, quarter, year]
+
+    dimensions:
+      - location_name
+      - is_first_order
+
+  - name: customers
+    label: Customers
+    model: ref('orders')
+    description: "Number of customers with a sale"
+
+    calculation_method: count_distinct
+    expression: customer_id
+
+    timestamp: ordered_at
+    time_grains: [day, week, month, quarter, year]
+
+    dimensions:
+      - location_name
+
+  - name: expenses
+    label: Expenses
+    model: ref('orders')
+    description: "Total expenses per order"
+
+    calculation_method: sum
+    expression: order_cost
+
+    timestamp: ordered_at
+    time_grains: [day, week, month, quarter, year]
+
+    dimensions:
+      - location_name
+      - is_first_order
+
+  - name: gross_profit
+    label: Gross Profit
+    description: "Revenue minus expenses"
+
+    calculation_method: derived
+    expression: "{{ metric('revenue') }} - {{ metric('expenses') }}"
+
+    timestamp: ordered_at
+    time_grains: [day, week, month, quarter, year]
+
+    dimensions:
+      - location_name
+      - is_first_order
