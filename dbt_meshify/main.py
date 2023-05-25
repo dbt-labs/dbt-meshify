@@ -52,6 +52,14 @@ def cli():
     pass
 
 
+@cli.group()
+def operation():
+    """
+    Set of subcommands for performing mesh operations on dbt projects
+    """
+    pass
+
+
 @cli.command(name="connect")
 @click.argument("projects-dir", type=click.Path(exists=True), default=".")
 def connect(projects_dir):
@@ -73,21 +81,6 @@ def connect(projects_dir):
 
     print(holder.project_map())
 
-@cli.command(name="group")
-@click.argument("name")
-@exclude
-@group_yml_path
-@owner
-@project_path
-@select
-@selector
-def group(name, project_path, owner, group_yml_path, select, exclude, selector):
-    """
-    Creates a new dbt group based on the selection syntax
-    Detects the edges of the group, makes their access public,  and adds contracts to them
-    """
-    create_group(name, project_path, owner, group_yml_path, select, exclude, selector)
-    add_contract(select=f'group:{name},config.access:public', project_path=project_path)
 
 @cli.command(name="split")
 @exclude
@@ -127,12 +120,8 @@ def split():
 
     print(holder.project_map())
 
-@cli.group()
-def component():
-    pass
 
-
-@component.command(name="add-contract")
+@operation.command(name="add-contract")
 @exclude
 @project_path
 @select
@@ -158,7 +147,7 @@ def add_contract(select, exclude, project_path, selector):
         meshify_constructor.add_model_contract()
 
 
-@component.command(name="add-version")
+@operation.command(name="add-version")
 @exclude
 @project_path
 @select
@@ -183,7 +172,7 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in)
             meshify_constructor.add_model_version(prerelease=prerelease, defined_in=defined_in)
 
 
-@component.command(name="create-group")
+@operation.command(name="create-group")
 @exclude
 @project_path
 @select
@@ -222,4 +211,40 @@ def create_group(
     owner: Owner = Owner(**{key: value for key, value in owner})
 
     grouper = ResourceGrouper(project)
-    grouper.add_group(name=name, owner=owner, select=select, exclude=exclude, selector=selector, path=group_yml_path)
+    grouper.add_group(
+        name=name,
+        owner=owner,
+        select=select,
+        exclude=exclude,
+        selector=selector,
+        path=group_yml_path,
+    )
+
+
+@cli.command(name="group")
+@exclude
+@project_path
+@select
+@selector
+@click.argument("name")
+@owner
+@group_yml_path
+@click.pass_context
+def group(
+    ctx,
+    name,
+    project_path: os.PathLike,
+    owner: List[Tuple[str, str]],
+    group_yml_path: os.PathLike,
+    select: str,
+    exclude: Optional[str] = None,
+    selector: Optional[str] = None,
+):
+    """
+    Creates a new dbt group based on the selection syntax
+    Detects the edges of the group, makes their access public,  and adds contracts to them
+    """
+    ctx.forward(create_group)
+    ctx.invoke(
+        add_contract, select=f'group:{name},config.access:public', project_path=project_path
+    )
