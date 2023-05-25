@@ -7,3 +7,4 @@ __pycache__/
 # IDEs
 .idea/
 test-projects/**/*.db
+test-projects/split/split_proj/database.db
