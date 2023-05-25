@@ -2,6 +2,9 @@
 # TODO: widen range of files as we fix issues
 namespace_packages = true
 
+[tool.isort]
+profile = "black"
+
 [tool.black]
 line-length = 99
 target-version = ['py38']
@@ -24,6 +27,10 @@ dbt-core = "^1.5.0rc1"
 click = "^8.1.3"
 dbt-postgres = { version = "^1.5.0rc1", optional = true }
 dbt-duckdb = "^1.5.0"
+black = "^23.3.0"
+mypy = "^1.3.0"
+isort = "^5.12.0"
+pre-commit = "^3.3.1"
 
 [tool.poetry.extras]
 postgres = ['dbt-postgres']

@@ -6,4 +6,7 @@ venv/
 __pycache__/
 # IDEs
 .idea/
+
 **/database.db
+logs/
+
