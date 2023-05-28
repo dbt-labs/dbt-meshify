@@ -3,6 +3,7 @@ import hashlib
 import json
 import logging
 import os
+from pathlib import Path
 from typing import Any, Dict, MutableMapping, Optional, Set, Union
 
 import yaml
@@ -32,12 +33,17 @@ class BaseDbtProject:
         self.catalog = catalog
         self.name = name if name else project.name
         self.relationships: Dict[str, Set[str]] = {}
+        self._models: Optional[Dict[str, ModelNode]] = None
 
         self.model_relation_names: Dict[str, str] = {
-            model.relation_name: unique_id for unique_id, model in self.models().items()
+            model.relation_name: unique_id
+            for unique_id, model in self.models.items()
+            if model.relation_name is not None
         }
         self.source_relation_names: Dict[str, str] = {
-            source.relation_name: unique_id for unique_id, source in self.sources().items()
+            source.relation_name: unique_id
+            for unique_id, source in self.sources().items()
+            if source.relation_name is not None
         }
 
         self._graph = None
@@ -73,12 +79,18 @@ class BaseDbtProject:
     def sources(self) -> MutableMapping[str, SourceDefinition]:
         return self.manifest.sources
 
+    @property
     def models(self) -> Dict[str, ModelNode]:
-        return {
+        if self._models:
+            return self._models
+
+        self._models = {
             node_name: node
             for node_name, node in self.manifest.nodes.items()
-            if node.resource_type == "model"
+            if node.resource_type == "model" and isinstance(node, ModelNode)
         }
+
+        return self._models
 
     def installed_packages(self) -> Set[str]:
         project_packages = []
@@ -92,7 +104,7 @@ class BaseDbtProject:
         return set(project_packages)
 
     @property
-    def project_id(self) -> str:
+    def project_id(self) -> Optional[str]:
         return self.manifest.metadata.project_id
 
     def installs(self, other) -> bool:
@@ -106,7 +118,7 @@ class BaseDbtProject:
         if not model_id:
             return None
 
-        return self.manifest.nodes.get(model_id)
+        return self.manifest.nodes.get(model_id)  # type: ignore
 
     def shares_source_metadata(self, other) -> bool:
         """
@@ -134,13 +146,13 @@ class BaseDbtProject:
         """
         return self.installs(other) or self.shares_source_metadata(other)
 
-    def get_catalog_entry(self, unique_id: str) -> CatalogTable:
+    def get_catalog_entry(self, unique_id: str) -> Optional[CatalogTable]:
         """Returns the catalog entry for a model in the dbt project's catalog"""
-        return self.catalog.nodes.get(unique_id, {})
+        return self.catalog.nodes.get(unique_id)
 
-    def get_manifest_node(self, unique_id: str) -> ManifestNode:
+    def get_manifest_node(self, unique_id: str) -> Optional[ManifestNode]:
         """Returns the catalog entry for a model in the dbt project's catalog"""
-        return self.manifest.nodes.get(unique_id, {})
+        return self.manifest.nodes.get(unique_id)
 
 
 class DbtProject(BaseDbtProject):
@@ -170,7 +182,7 @@ class DbtProject(BaseDbtProject):
         project: Project,
         catalog: CatalogArtifact,
         dbt: Dbt,
-        path: Optional[os.PathLike] = None,
+        path: os.PathLike = Path(os.getcwd()),
         name: Optional[str] = None,
     ) -> None:
         super().__init__(manifest, project, catalog, name)
@@ -289,4 +301,5 @@ class DbtProjectHolder:
         return self.projects
 
     def register_project(self, project: BaseDbtProject) -> None:
-        self.projects[project.project_id] = project
+        if project.project_id:
+            self.projects[project.project_id] = project

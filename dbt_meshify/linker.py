@@ -60,28 +60,44 @@ class Linker:
         """
 
         relations = self._find_relation_dependencies(
-            source_relations={model.relation_name for model in project.models().values()},
-            target_relations={source.relation_name for source in other_project.sources().values()},
+            source_relations={
+                model.relation_name
+                for model in project.models.values()
+                if model.relation_name is not None
+            },
+            target_relations={
+                source.relation_name
+                for source in other_project.sources().values()
+                if source.relation_name is not None
+            },
         )
 
         forward_dependencies = {
             ProjectDependency(
-                upstream=project.model_relation_names.get(relation),
-                downstream=other_project.source_relation_names.get(relation),
+                upstream=project.model_relation_names[relation],
+                downstream=other_project.source_relation_names[relation],
                 type=ProjectDependencyType.Source,
             )
             for relation in relations
         }
 
         backwards_relations = self._find_relation_dependencies(
-            source_relations={model.relation_name for model in other_project.models().values()},
-            target_relations={source.relation_name for source in project.sources().values()},
+            source_relations={
+                model.relation_name
+                for model in other_project.models.values()
+                if model.relation_name is not None
+            },
+            target_relations={
+                source.relation_name
+                for source in project.sources().values()
+                if source.relation_name is not None
+            },
         )
 
         backward_dependencies = {
             ProjectDependency(
-                upstream=other_project.model_relation_names.get(relation),
-                downstream=project.source_relation_names.get(relation),
+                upstream=other_project.model_relation_names[relation],
+                downstream=project.source_relation_names[relation],
                 type=ProjectDependencyType.Source,
             )
             for relation in backwards_relations
@@ -103,14 +119,22 @@ class Linker:
             return set()
 
         relations = self._find_relation_dependencies(
-            source_relations={model.relation_name for model in project.models().values()},
-            target_relations={model.relation_name for model in other_project.models().values()},
+            source_relations={
+                model.relation_name
+                for model in project.models.values()
+                if model.relation_name is not None
+            },
+            target_relations={
+                model.relation_name
+                for model in other_project.models.values()
+                if model.relation_name is not None
+            },
         )
 
         return {
             ProjectDependency(
-                upstream=project.model_relation_names.get(relation),
-                downstream=other_project.model_relation_names.get(relation),
+                upstream=project.model_relation_names[relation],
+                downstream=other_project.model_relation_names[relation],
                 type=ProjectDependencyType.Package,
             )
             for relation in relations
