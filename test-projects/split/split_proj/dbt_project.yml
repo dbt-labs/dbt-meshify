@@ -37,6 +37,7 @@ vars:
 models:
   split_proj:
     # Config indicated by + and applies to all files under models/example/
+    +on_schema_change: append_new_columns
     example:
       +materialized: view
 

@@ -50,7 +50,7 @@ class ResourceGrouper:
         """
         boundary_nodes = cls.identify_interface(graph, nodes)
         resources = {
-            node: AccessType.Public if node in boundary_nodes else AccessType.Private
+            node: AccessType.Public if node in boundary_nodes else AccessType.Protected
             for node in nodes
         }
         return resources

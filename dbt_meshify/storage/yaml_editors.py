@@ -72,6 +72,7 @@ class DbtMeshModelYmlEditor:
                 "access",
                 "config",
                 "meta",
+                "tests",
                 "columns",
                 "versions",
             ]
@@ -98,9 +99,11 @@ class DbtMeshModelYmlEditor:
         yml_cols = model_yml.get("columns", [])
         catalog_cols = model_catalog.columns or {}
         # add the data type to the yml entry for columns that are in yml
+        # import pdb; pdb.set_trace()
         yml_cols = [
             {**yml_col, "data_type": catalog_cols.get(yml_col.get("name")).type.lower()}
             for yml_col in yml_cols
+            if yml_col.get("name") in catalog_cols.keys()
         ]
         # append missing columns in the table to the yml entry
         yml_col_names = [col.get("name").lower() for col in yml_cols]

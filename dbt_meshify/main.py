@@ -126,7 +126,7 @@ def split():
 @project_path
 @select
 @selector
-def add_contract(select, exclude, project_path, selector):
+def add_contract(select, exclude, project_path, selector, public_only=False):
     """
     Adds a contract to all selected models.
     """
@@ -138,6 +138,8 @@ def add_contract(select, exclude, project_path, selector):
         )
     )
     models = filter(lambda x: x.startswith("model"), resources)
+    if public_only:
+        models = filter(lambda x: project.get_manifest_node(x).access == "public", models)
     for model_unique_id in models:
         model_node = project.get_manifest_node(model_unique_id)
         model_catalog = project.get_catalog_entry(model_unique_id)
@@ -245,6 +247,4 @@ def group(
     Detects the edges of the group, makes their access public,  and adds contracts to them
     """
     ctx.forward(create_group)
-    ctx.invoke(
-        add_contract, select=f'group:{name},config.access:public', project_path=project_path
-    )
+    ctx.invoke(add_contract, select=f'group:{name}', project_path=project_path, public_only=True)

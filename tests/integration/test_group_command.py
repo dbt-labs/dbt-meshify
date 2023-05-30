@@ -18,7 +18,7 @@ dbt = Dbt()
 
 
 @pytest.mark.parametrize(
-    "select,expected_public_contract_models",
+    "select,expected_public_contracted_models",
     [
         (
             "+orders",
@@ -27,7 +27,7 @@ dbt = Dbt()
     ],
     ids=["1"],
 )
-def test_group_command(select, expected_public_contract_models):
+def test_group_command(select, expected_public_contracted_models):
     dbt.seed(proj_path)
     dbt.run(proj_path)
     runner = CliRunner()
@@ -35,6 +35,9 @@ def test_group_command(select, expected_public_contract_models):
         group,
         [
             "test_group",
+            "--owner",
+            "name",
+            "Teenage Mutant Jinja Turtles",
             "--select",
             select,
             "--project-path",
@@ -42,13 +45,11 @@ def test_group_command(select, expected_public_contract_models):
         ],
     )
     assert result.exit_code == 0
-    project = DbtProject(proj_path)
+    project = DbtProject.from_directory(proj_path)
     # ensure that the correct set of punblic models is created
-    public_models = project.select_resources(
-        select="group:test_group,config.access:public", output_key="name"
-    )
-    assert public_models == expected_public_contract_models
-    contracted_models = project.select_resources(
-        select="group:test_group,config.access:public", output_key="contract"
-    )
-    assert max([contract["enforced"] for contract in contracted_models]) == True
+    public_contracted_models = [
+        model.name
+        for model_key, model in project.models().items()
+        if model.access == "public" and model.config.contract.enforced
+    ]
+    assert public_contracted_models == expected_public_contracted_models
