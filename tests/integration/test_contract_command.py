@@ -41,7 +41,7 @@ def test_add_contract_to_yml(start_yml, end_yml):
     runner = CliRunner()
     # do a dbt run to create the duckdb
     # and enable the docs generate command to work
-    dbt.run(proj_path)
+    dbt.invoke(directory=proj_path, runner_args=["run"])
     # only create file if start_yml is not None
     # in situations where models don't have a patch path, there isn't a yml file to read from
     if start_yml:
