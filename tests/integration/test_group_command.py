@@ -28,6 +28,7 @@ dbt = Dbt()
     ids=["1"],
 )
 def test_group_command(select, expected_public_contracted_models):
+    dbt.invoke(directory=proj_path, runner_args=["deps"])
     dbt.seed(proj_path)
     dbt.run(proj_path)
     runner = CliRunner()
