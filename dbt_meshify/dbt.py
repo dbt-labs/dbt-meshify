@@ -52,15 +52,3 @@ class Dbt:
         """
         args = ["--quiet", "docs", "generate"]
         return self.invoke(directory, args)
-
-    def run(self, directory: os.PathLike) -> CatalogArtifact:
-        """
-        Excute dbt run. No args permitted -- this should only be used for integration tests to seed the duckdb instance with the necessary models so we can execute a docs generate
-        """
-        return self.invoke(directory, ["run"])
-
-    def seed(self, directory: os.PathLike) -> CatalogArtifact:
-        """
-        Excute dbt run. No args permitted -- this should only be used for integration tests to seed the duckdb instance with the necessary models so we can execute a docs generate
-        """
-        return self.invoke(directory, ["seed"])
