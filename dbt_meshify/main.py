@@ -9,7 +9,12 @@ from .dbt_projects import DbtProject, DbtProjectHolder, DbtSubProject
 from .storage.yaml_editors import DbtMeshModelConstructor
 
 # define common parameters
-project_path = click.option("--project-path", type=click.Path(exists=True), default=".")
+project_path = click.option(
+    "--project-path",
+    type=click.Path(exists=True),
+    default=".",
+    help="The path to the dbt project to operate on. Defaults to the current directory.",
+)
 
 exclude = click.option(
     "--exclude",
@@ -64,9 +69,10 @@ def operation():
 @click.argument("projects-dir", type=click.Path(exists=True), default=".")
 def connect(projects_dir):
     """
-    Connects multiple dbt projects together by adding all necessary dbt Mesh constructs
+    !!! info
+        This command is not yet implemented
 
-    PROJECTS_DIR: The directory containing the dbt projects to connect. Defaults to the current directory.
+    Connects multiple dbt projects together by adding all necessary dbt Mesh constructs
     """
     holder = DbtProjectHolder()
 
@@ -89,13 +95,11 @@ def connect(projects_dir):
 @selector
 def split():
     """
+    !!! info
+        This command is not yet implemented
+
     Splits dbt projects apart by adding all necessary dbt Mesh constructs based on the selection syntax.
 
-    Order of operations:
-    1. Regsiter the selected resources as a subproject of the main project
-    2. Add the resources to a group
-    2. Identifies the edges of the subproject with the remainder of the project
-    3. Adds contracts to all edges
     """
     path_string = input("Enter the relative path to a dbt project you'd like to split: ")
 
@@ -157,6 +161,9 @@ def add_contract(select, exclude, project_path, selector, public_only=False):
 @click.option("--prerelease", "--pre", default=False, is_flag=True)
 @click.option("--defined-in", default=None)
 def add_version(select, exclude, project_path, selector, prerelease, defined_in):
+    """
+    Adds/increments model versions for all selected models.
+    """
     path = Path(project_path).expanduser().resolve()
     project = DbtProject.from_directory(path)
     resources = list(
@@ -194,7 +201,6 @@ def create_group(
     """
     Create a group and add selected resources to the group.
     """
-
     from dbt_meshify.utilities.grouper import ResourceGrouper
 
     path = Path(project_path).expanduser().resolve()
@@ -244,7 +250,7 @@ def group(
 ):
     """
     Creates a new dbt group based on the selection syntax
-    Detects the edges of the group, makes their access public,  and adds contracts to them
+    Detects the edges of the group, makes their access public, and adds contracts to them
     """
     ctx.forward(create_group)
     ctx.invoke(add_contract, select=f'group:{name}', project_path=project_path, public_only=True)

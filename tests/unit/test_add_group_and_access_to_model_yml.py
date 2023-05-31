@@ -79,7 +79,7 @@ class TestAddGroupToModelYML:
             model_name=model_name,
             group=new_group,
             access_type=AccessType.Public,
-            full_yml_dict=read_yml(model_yml_shared_model),
+            models_yml=read_yml(model_yml_shared_model),
         )
         assert yml_dict == read_yml(expected_model_yml_shared_model)
 
@@ -88,7 +88,7 @@ class TestAddGroupToModelYML:
             model_name=model_name,
             group=new_group,
             access_type=AccessType.Public,
-            full_yml_dict=read_yml(model_yml_shared_model_with_group),
+            models_yml=read_yml(model_yml_shared_model_with_group),
         )
         assert yml_dict == read_yml(expected_model_yml_shared_model)
 
@@ -97,6 +97,6 @@ class TestAddGroupToModelYML:
             model_name=model_name,
             group=new_group,
             access_type=AccessType.Public,
-            full_yml_dict=read_yml(model_yml_multiple_models),
+            models_yml=read_yml(model_yml_multiple_models),
         )
         assert yml_dict == read_yml(expected_model_yml_multiple_models)
