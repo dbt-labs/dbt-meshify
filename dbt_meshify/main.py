@@ -9,7 +9,12 @@ from .dbt_projects import DbtProject, DbtProjectHolder, DbtSubProject
 from .storage.yaml_editors import DbtMeshModelConstructor
 
 # define common parameters
-project_path = click.option("--project-path", type=click.Path(exists=True), default=".")
+project_path = click.option(
+    "--project-path",
+    type=click.Path(exists=True),
+    default=".",
+    help="The path to the dbt project to operate on. Defaults to the current directory.",
+)
 
 exclude = click.option(
     "--exclude",
@@ -36,67 +41,6 @@ selector = click.option(
 @click.group()
 def cli():
     pass
-
-
-@cli.command(name="connect")
-@click.argument("projects-dir", type=click.Path(exists=True), default=".")
-def connect(projects_dir):
-    """
-    Connects multiple dbt projects together by adding all necessary dbt Mesh constructs
-
-    PROJECTS_DIR: The directory containing the dbt projects to connect. Defaults to the current directory.
-    """
-    holder = DbtProjectHolder()
-
-    while True:
-        path_string = input("Enter the relative path to a dbt project (enter 'done' to finish): ")
-        if path_string == "done":
-            break
-
-        path = Path(path_string).expanduser().resolve()
-        project = DbtProject.from_directory(path)
-        holder.register_project(project)
-
-    print(holder.project_map())
-
-
-@cli.command(name="split")
-@exclude
-@project_path
-@select
-@selector
-def split():
-    """
-    Splits dbt projects apart by adding all necessary dbt Mesh constructs based on the selection syntax.
-
-    Order of operations:
-    1. Regsiter the selected resources as a subproject of the main project
-    2. Add the resources to a group
-    2. Identifies the edges of the subproject with the remainder of the project
-    3. Adds contracts to all edges
-    """
-    path_string = input("Enter the relative path to a dbt project you'd like to split: ")
-
-    holder = DbtProjectHolder()
-
-    path = Path(path_string).expanduser().resolve()
-    project = DbtProject.from_directory(path)
-    holder.register_project(project)
-
-    while True:
-        subproject_name = input("Enter the name for your subproject ('done' to finish): ")
-        if subproject_name == "done":
-            break
-        subproject_selector = input(
-            f"Enter the selector that represents the subproject {subproject_name}: "
-        )
-
-        subproject: DbtSubProject = project.split(
-            project_name=subproject_name, select=subproject_selector
-        )
-        holder.register_project(subproject)
-
-    print(holder.project_map())
 
 
 @cli.command(name="add-contract")
@@ -180,7 +124,6 @@ def create_group(
     """
     Create a group and add selected resources to the group.
     """
-
     from dbt_meshify.utilities.grouper import ResourceGrouper
 
     path = Path(project_path).expanduser().resolve()
@@ -200,3 +143,63 @@ def create_group(
 
     grouper = ResourceGrouper(project)
     grouper.add_group(name=name, owner=owner, select=select, exclude=exclude, path=group_yml_path)
+
+
+@cli.command(name="connect")
+@click.argument("projects-dir", type=click.Path(exists=True), default=".")
+def connect(projects_dir):
+    """
+    !!! info
+        This command is not yet implemented
+
+    Connects multiple dbt projects together by adding all necessary dbt Mesh constructs
+    """
+    holder = DbtProjectHolder()
+
+    while True:
+        path_string = input("Enter the relative path to a dbt project (enter 'done' to finish): ")
+        if path_string == "done":
+            break
+
+        path = Path(path_string).expanduser().resolve()
+        project = DbtProject.from_directory(path)
+        holder.register_project(project)
+
+    print(holder.project_map())
+
+
+@cli.command(name="split")
+@exclude
+@project_path
+@select
+@selector
+def split():
+    """
+    !!! info
+        This command is not yet implemented
+
+    Splits dbt projects apart by adding all necessary dbt Mesh constructs based on the selection syntax.
+
+    """
+    path_string = input("Enter the relative path to a dbt project you'd like to split: ")
+
+    holder = DbtProjectHolder()
+
+    path = Path(path_string).expanduser().resolve()
+    project = DbtProject.from_directory(path)
+    holder.register_project(project)
+
+    while True:
+        subproject_name = input("Enter the name for your subproject ('done' to finish): ")
+        if subproject_name == "done":
+            break
+        subproject_selector = input(
+            f"Enter the selector that represents the subproject {subproject_name}: "
+        )
+
+        subproject: DbtSubProject = project.split(
+            project_name=subproject_name, select=subproject_selector
+        )
+        holder.register_project(subproject)
+
+    print(holder.project_map())
