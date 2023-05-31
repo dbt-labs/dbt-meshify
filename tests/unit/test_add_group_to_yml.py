@@ -66,18 +66,18 @@ class TestAddGroupToYML:
 
     def test_adds_groups_to_empty_file(self, new_group: Group):
         yml_dict = meshify.add_group_to_yml(
-            group=new_group, full_yml_dict=read_yml(group_yml_empty_file)
+            group=new_group, groups_yml=read_yml(group_yml_empty_file)
         )
         assert yml_dict == read_yml(expected_group_yml_no_group)
 
     def test_adds_groups_to_existing_list_of_groups(self, new_group: Group):
         yml_dict = meshify.add_group_to_yml(
-            group=new_group, full_yml_dict=read_yml(group_yml_existing_groups)
+            group=new_group, groups_yml=read_yml(group_yml_existing_groups)
         )
         assert yml_dict == read_yml(expected_group_yml_existing_groups)
 
     def test_adds_groups_updates_predefined_group(self, new_group: Group):
         yml_dict = meshify.add_group_to_yml(
-            group=new_group, full_yml_dict=read_yml(group_yml_group_predefined)
+            group=new_group, groups_yml=read_yml(group_yml_group_predefined)
         )
         assert yml_dict == read_yml(expected_group_yml_no_group)
