@@ -3,14 +3,14 @@ import hashlib
 import json
 import logging
 import os
-from pathlib import Path
 from typing import Any, Dict, MutableMapping, Optional, Set, Union
 
 import yaml
 from dbt.contracts.graph.manifest import Manifest
 from dbt.contracts.graph.nodes import ManifestNode, ModelNode, SourceDefinition
 from dbt.contracts.project import Project
-from dbt.contracts.results import CatalogArtifact
+from dbt.contracts.results import CatalogArtifact, CatalogTable
+from dbt.graph import Graph
 
 from dbt_meshify.dbt import Dbt
 
@@ -39,6 +39,30 @@ class BaseDbtProject:
         self.source_relation_names: Dict[str, str] = {
             source.relation_name: unique_id for unique_id, source in self.sources().items()
         }
+
+        self._graph = None
+
+        self._changes: Dict[str, str] = {}
+
+    @staticmethod
+    def _load_graph(manifest: Manifest) -> Graph:
+        """Generate a dbt Graph using a project manifest and the internal dbt Compiler and Linker."""
+
+        from dbt.compilation import Compiler, Linker
+
+        compiler = Compiler(config={})
+        linker = Linker()
+        compiler.link_graph(linker=linker, manifest=manifest)
+        return Graph(linker.graph)
+
+    @property
+    def graph(self):
+        """Get the dbt-core Graph for a given project Manifest"""
+        if self._graph:
+            return self._graph
+
+        self._graph = self._load_graph(self.manifest)
+        return self._graph
 
     def register_relationship(self, project: str, resources: Set[str]) -> None:
         """Register the relationship between two projects"""
@@ -110,7 +134,7 @@ class BaseDbtProject:
         """
         return self.installs(other) or self.shares_source_metadata(other)
 
-    def get_catalog_entry(self, unique_id: str) -> Dict[str, Any]:
+    def get_catalog_entry(self, unique_id: str) -> CatalogTable:
         """Returns the catalog entry for a model in the dbt project's catalog"""
         return self.catalog.nodes.get(unique_id, {})
 
@@ -154,7 +178,11 @@ class DbtProject(BaseDbtProject):
         self.dbt = dbt
 
     def select_resources(
-        self, select: str, exclude: Optional[str] = None, output_key: Optional[str] = None
+        self,
+        select: str,
+        exclude: Optional[str] = None,
+        selector: Optional[str] = None,
+        output_key: Optional[str] = None,
     ) -> Set[str]:
         """Select dbt resources using NodeSelection syntax"""
         args = []
@@ -162,6 +190,8 @@ class DbtProject(BaseDbtProject):
             args = ["--select", select]
         if exclude:
             args.extend(["--exclude", exclude])
+        if selector:
+            args.extend(["--selector", selector])
 
         results = self.dbt.ls(self.path, args, output_key=output_key)
         if output_key:

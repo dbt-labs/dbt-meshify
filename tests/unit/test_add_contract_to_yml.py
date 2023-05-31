@@ -1,6 +1,4 @@
-import yaml
-
-from dbt_meshify.dbt_meshify import DbtMeshModelYmlEditor
+from dbt_meshify.storage.yaml_editors import DbtMeshModelYmlEditor
 
 from ..fixtures import (
     expected_contract_yml_all_col,
@@ -14,14 +12,11 @@ from ..fixtures import (
     model_yml_other_model,
     shared_model_catalog_entry,
 )
+from . import read_yml
 
 meshify = DbtMeshModelYmlEditor()
 catalog_entry = shared_model_catalog_entry
 model_name = "shared_model"
-
-
-def read_yml(yml_str):
-    return yaml.safe_load(yml_str)
 
 
 class TestAddContractToYML:
