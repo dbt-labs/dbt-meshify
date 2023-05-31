@@ -1,5 +1,8 @@
 # dbt-meshify
 
+EXPERIMENTAL
+
+maintained with :heart: by dbt practitioners for dbt practitioners
 
 [Click here for full package doucmentation](https://dbt-labs.github.io/dbt-meshify/)
 
@@ -24,9 +27,10 @@ pip install dbt-meshify
 
 ```bash
 # create a group of all models tagged with "finance"
-dbt-meshify add-group finance --owner name Monopoly Man -s +tag:finance
+# leaf nodes and nodes with cross-group dependencies will be `public`
+# public nodes will also have contracts added to them
+dbt-meshify group finance --owner name Monopoly Man -s +tag:finance
 
-# create a contract to a model
-dbt-meshify add-contract --select my_public_model
-
+# optionally use the add-version operation to add a new version to a model
+dbt-meshify operation add-version -s fct_orders
 ```
