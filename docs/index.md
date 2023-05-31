@@ -26,16 +26,16 @@ The process of splitting a dbt monolith apart roughly requires you to:
 
 Here's how that might look for the process of creating a separate `finance` subproject in your dbt monolith.
 
+## Basic Usage
+
 ```bash
 # create a group of all models tagged with "finance"
-# this command automatically detects models that should be public, and updates access levels
-dbt-meshify add-group finance --owner name Monopoly Man -s +tag:finance
+# leaf nodes and nodes with cross-group dependencies will be `public`
+# public nodes will also have contracts added to them
+dbt-meshify group finance --owner name Monopoly Man -s +tag:finance
 
-# create a contract to the publicly accessed nodes in that group
-dbt-meshify add-contract --select group:finance,access:public
-
-# optionally, add versions to your fct_payments model
-dbt-meshify add-version --select fct_payments
-
+# optionally use the add-version operation to add a new version to a model
+dbt-meshify operation add-version -s fct_orders
 ```
+
 Future releases of this package may also include features that allow users to fully split off groups of models into entirely new dbt projects.
