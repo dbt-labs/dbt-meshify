@@ -1,89 +1,51 @@
 # classes that deal specifcally with mile manipulation
 # of dbt files to be used in the meshify dbt project
-
-import os
+import abc
 from abc import ABC
 from pathlib import Path
-from typing import Any, Dict, NewType, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import yaml
-from dbt.contracts.results import CatalogTable
 
 FileContent = Union[Dict[str, str], str]
 
 
 class BaseFileManager(ABC):
-    def read_file(self, path: os.PathLike) -> Any:
+    @abc.abstractmethod
+    def read_file(self, path: Path) -> Union[Dict[str, Any], str]:
+        """Returns the content from a file."""
         pass
 
-    def write_file(self, path: os.PathLike, file_contents: Optional[Any] = None) -> None:
+    @abc.abstractmethod
+    def write_file(self, path: Path, file_contents: Any) -> None:
+        """Write content to a file."""
         pass
 
 
-class YmlFileManager(BaseFileManager):
-    def __init__(
-        self, read_project_path: os.PathLike, write_project_path: Optional[os.PathLike] = None
-    ):
-        self.read_project_path = read_project_path
-        self.write_project_path = write_project_path if write_project_path else read_project_path
-
-    def read_file(self, path: os.PathLike) -> Dict[str, str]:
-        """Returns the yaml for a model in the dbt project's manifest"""
-        return yaml.load(open(os.path.join(self.read_project_path, path)), Loader=yaml.FullLoader)
-
-    def write_file(
-        self, path: os.PathLike, file_contents: Optional[Dict[str, str]] = None
-    ) -> None:
-        """Returns the yaml for a model in the dbt project's manifest"""
-
-        with open(os.path.join(self.write_project_path, path), "w+") as file:
-            # Serialize the updated data back to YAML and write it to the file
-            yaml.safe_dump(file_contents, file, sort_keys=False)
-
-
-class FileManager(BaseFileManager):
-    def __init__(
-        self, read_project_path: os.PathLike, write_project_path: Optional[os.PathLike] = None
-    ) -> None:
-        self.read_project_path = read_project_path
-        self.write_project_path = write_project_path if write_project_path else read_project_path
-
-    def read_file(self, path: os.PathLike) -> str:
-        """Returns the yaml for a model in the dbt project's manifest"""
-        with open(os.path.join(self.read_project_path, path), "r") as file:
-            return file.read()
-
-    def write_file(self, path: os.PathLike, file_contents: Optional[str] = None) -> None:
-        """Returns the yaml for a model in the dbt project's manifest"""
-
-        with open(os.path.join(self.write_project_path, path), "w+") as file:
-            file.write(file_contents or '')
-
-
-class DbtFileManager:
+class DbtFileManager(BaseFileManager):
     def __init__(
         self,
-        read_project_path: Optional[os.PathLike] = None,
-        write_project_path: Optional[os.PathLike] = None,
+        read_project_path: Path,
+        write_project_path: Optional[Path] = None,
     ) -> None:
-        self.read_project_path: os.PathLike = read_project_path or Path(os.getcwd())
-        self.write_project_path: os.PathLike = (
-            write_project_path if write_project_path else self.read_project_path
-        )
+        self.read_project_path = read_project_path
+        self.write_project_path = write_project_path if write_project_path else read_project_path
 
-        self.yml_file_manager = YmlFileManager(self.read_project_path, self.write_project_path)
-        self.base_file_manager = FileManager(self.read_project_path, self.write_project_path)
-
-    def read_file(self, path: os.PathLike) -> Union[Dict[str, str], str]:
+    def read_file(self, path: Path) -> Union[Dict[str, Any], str]:
         """Returns the yaml for a model in the dbt project's manifest"""
-        if Path(path).suffix == ".yml":
-            return self.yml_file_manager.read_file(path)
+        full_path = self.read_project_path / path
+        if full_path.suffix == ".yml":
+            return yaml.safe_load(full_path.read_text())
         else:
-            return self.base_file_manager.read_file(path)
+            return full_path.read_text()
 
-    def write_file(self, path: os.PathLike, file_contents: Optional[FileContent] = None) -> None:
+    def write_file(
+        self, path: Path, file_contents: Optional[Union[Dict[str, Any], str]] = None
+    ) -> None:
         """Returns the yaml for a model in the dbt project's manifest"""
-        if Path(path).suffix == ".yml":
-            return self.yml_file_manager.write_file(path, file_contents)  # type: ignore
+        full_path = self.write_project_path / path
+        if full_path.suffix == ".yml":
+            string_yml = yaml.safe_dump(file_contents)
+            full_path.write_text(string_yml)
         else:
-            return self.base_file_manager.write_file(path, file_contents)  # type: ignore
+            full_path.write_text(file_contents)  # type: ignore

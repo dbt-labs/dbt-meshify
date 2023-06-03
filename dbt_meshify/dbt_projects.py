@@ -173,7 +173,7 @@ class DbtProject(BaseDbtProject):
             project=cls._load_project(directory),
             catalog=dbt.docs_generate(directory),
             dbt=dbt,
-            path=directory,
+            path=Path(directory),
         )
 
     def __init__(
@@ -182,7 +182,7 @@ class DbtProject(BaseDbtProject):
         project: Project,
         catalog: CatalogArtifact,
         dbt: Dbt,
-        path: os.PathLike = Path(os.getcwd()),
+        path: Path = Path(os.getcwd()),
         name: Optional[str] = None,
     ) -> None:
         super().__init__(manifest, project, catalog, name)
