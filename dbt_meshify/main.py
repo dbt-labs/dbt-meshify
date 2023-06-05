@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import click
 from dbt.contracts.graph.unparsed import Owner
@@ -139,10 +139,13 @@ def create_group(
             "The provided group-yml-path is not contained within the provided dbt project."
         )
 
-    owner: Owner = Owner(**{key: value for key, value in owner})
+    owner_dict: Dict[str, Any] = {key: value for key, value in owner}
+    owner_object: Owner = Owner(**owner_dict)
 
     grouper = ResourceGrouper(project)
-    grouper.add_group(name=name, owner=owner, select=select, exclude=exclude, path=group_yml_path)
+    grouper.add_group(
+        name=name, owner=owner_object, select=select, exclude=exclude, path=group_yml_path
+    )
 
 
 @cli.command(name="connect")

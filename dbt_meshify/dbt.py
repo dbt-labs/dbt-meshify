@@ -9,7 +9,7 @@ from dbt.contracts.results import CatalogArtifact
 
 class Dbt:
     def __init__(self, manifest: Optional[Manifest] = None):
-        self.dbt_runner = dbtRunner(manifest=manifest)
+        self.dbt_runner = dbtRunner(manifest=manifest)  # type: ignore
 
     def invoke(
         self, directory: Optional[os.PathLike] = None, runner_args: Optional[List[str]] = None
@@ -20,7 +20,7 @@ class Dbt:
         result = self.dbt_runner.invoke(runner_args if runner_args else [])
         os.chdir(starting_directory)
 
-        if not result.success:
+        if not result.success and result.exception:
             raise result.exception
         return result.result
 
