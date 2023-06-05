@@ -1,7 +1,6 @@
 # classes that deal specifcally with mile manipulation
 # of dbt files to be used in the meshify dbt project
 
-import sys
 from abc import ABC
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
