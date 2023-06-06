@@ -15,7 +15,7 @@ def filter_empty_dict_items(dict_to_filter: Dict[str, Any]):
     return {k: v for k, v in dict_to_filter.items() if v is not None}
 
 
-def process_model_yml(model_yml: str):
+def process_model_yml(model_yml: Dict[str, Any]):
     """Processes the yml contents to be written back to a file"""
     model_ordered_dict = OrderedDict.fromkeys(
         [
