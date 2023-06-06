@@ -21,8 +21,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install mkdocs-material mike mkdocs-click
+        poetry install
 
     - name: Deploy to GitHub Pages
       env:
@@ -30,4 +29,4 @@ jobs:
       run: |
         git config --global user.name "GitHub Actions Bot"
         git config --global user.email "github-actions[bot]@users.noreply.github.com"
-        mike deploy --push --message "Deployed by GitHub Actions" main
+        poetry run mike deploy --push --message "Deployed by GitHub Actions" main
