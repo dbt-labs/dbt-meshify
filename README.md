@@ -4,7 +4,7 @@ EXPERIMENTAL
 
 maintained with :heart: by dbt practitioners for dbt practitioners
 
-[Click here for full package doucmentation](https://dbt-labs.github.io/dbt-meshify/)
+[Click here for full package documentation](https://dbt-labs.github.io/dbt-meshify/)
 
 ## Overview
 
