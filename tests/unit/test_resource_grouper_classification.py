@@ -17,8 +17,8 @@ class TestResourceGrouper:
         resources = ResourceGrouper.classify_resource_access(example_graph, nodes)
 
         assert resources == {
-            "a": AccessType.Protected,
-            "b": AccessType.Protected,
+            "a": AccessType.Private,
+            "b": AccessType.Private,
             "c": AccessType.Public,
             "d": AccessType.Public,
         }
