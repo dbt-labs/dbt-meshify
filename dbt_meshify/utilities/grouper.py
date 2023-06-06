@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple
+from typing import Any, Dict, Optional, Set, Tuple
 
 import networkx
 from dbt.contracts.graph.nodes import Group, ModelNode
@@ -114,7 +114,7 @@ class ResourceGrouper:
 
         group_path = Path(group.original_file_path)
         try:
-            group_yml = self.file_manager.read_file(group_path)
+            group_yml: Dict[str, str] = self.file_manager.read_file(group_path)  # type: ignore
         except FileNotFoundError:
             group_yml = {}
 
@@ -125,10 +125,17 @@ class ResourceGrouper:
             # TODO: revisit this logic other resource types
             if not resource.startswith("model"):
                 continue
-            model: ModelNode = self.project.manifest.nodes[resource]
-            path = Path(model.patch_path.split("://")[1]) if model.patch_path else None
+            model: ModelNode = self.project.models[resource]
+            if model.patch_path:
+                path = Path(model.patch_path.split("://")[1])
+            else:
+                if not model.original_file_path:
+                    raise Exception("Unable to locate model file. Failing.")
+
+                path = Path(model.original_file_path).parent / '_models.yml'
+
             try:
-                file_yml = self.file_manager.read_file(path)
+                file_yml: Dict[str, Any] = self.file_manager.read_file(path)  # type: ignore
             except FileNotFoundError:
                 file_yml = {}
 
