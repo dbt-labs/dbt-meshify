@@ -15,7 +15,7 @@ def filter_empty_dict_items(dict_to_filter: Dict[str, Any]):
     return {k: v for k, v in dict_to_filter.items() if v is not None}
 
 
-def process_model_yml(model_yml: Dict):
+def process_model_yml(model_yml: str):
     """Processes the yml contents to be written back to a file"""
     model_ordered_dict = OrderedDict.fromkeys(
         [
@@ -23,8 +23,10 @@ def process_model_yml(model_yml: Dict):
             "description",
             "latest_version",
             "access",
+            "group",
             "config",
             "meta",
+            "tests",
             "columns",
             "versions",
         ]
@@ -77,35 +79,11 @@ class DbtMeshModelYmlEditor:
         models = resources_yml_to_dict(models_yml)
         model_yml = models.get(model_name) or {"name": model_name, "columns": [], "config": {}}
 
-        model_yml.update({"access": access_type.value})
-        config = model_yml.get("config", {})
-        config.update({"group": group.name})
-        model_yml["config"] = config
-
+        model_yml.update({"access": access_type.value, "group": group.name})
         models[model_name] = process_model_yml(model_yml)
 
         models_yml["models"] = list(models.values())
         return models_yml
-
-    def process_model_yml(self, model_yml: str):
-        """Processes the yml contents to be written back to a file"""
-        model_ordered_dict = OrderedDict.fromkeys(
-            [
-                "name",
-                "description",
-                "latest_version",
-                "access",
-                "config",
-                "meta",
-                "tests",
-                "columns",
-                "versions",
-            ]
-        )
-        model_ordered_dict.update(model_yml)
-        # remove any keys with None values
-        model_ordered_dict = {k: v for k, v in model_ordered_dict.items() if v is not None}
-        return model_ordered_dict
 
     def add_model_contract_to_yml(
         self, model_name: str, model_catalog: Optional[CatalogTable], models_yml: Dict[str, Any]
@@ -139,7 +117,9 @@ class DbtMeshModelYmlEditor:
         model_yml.update({"columns": yml_cols})
         # add contract to the model yml entry
         # this part should come from the same service as what we use for the standalone command when we get there
-        model_yml.update({"config": {"contract": {"enforced": True}}})
+        model_config = model_yml.get("config", {})
+        model_config.update({"contract": {"enforced": True}})
+        model_yml["config"] = model_config
         # update the model entry in the full yml file
         # if no entries exist, add the model entry
         # otherwise, update the existing model entry in place
