@@ -47,10 +47,10 @@ def test_group_command(select, expected_public_contracted_models):
     )
     assert result.exit_code == 0
     project = DbtProject.from_directory(proj_path)
-    # ensure that the correct set of punblic models is created
+    # ensure that the correct set of public models is created
     public_contracted_models = [
         model.name
-        for model_key, model in project.models().items()
+        for model_key, model in project.models.items()
         if model.access == "public" and model.config.contract.enforced
     ]
     assert public_contracted_models == expected_public_contracted_models
