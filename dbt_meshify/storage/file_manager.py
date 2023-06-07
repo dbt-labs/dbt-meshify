@@ -21,6 +21,7 @@ class DbtYAML(YAML):
 
 
 yaml = DbtYAML()
+yaml.width = 4096
 yaml.indent(mapping=2, sequence=4, offset=2)
 
 FileContent = Union[Dict[str, str], str]
