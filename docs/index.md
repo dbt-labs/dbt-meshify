@@ -26,8 +26,6 @@ The process of splitting a dbt monolith apart roughly requires you to:
 
 Here's how that might look for the process of creating a separate `finance` subproject in your dbt monolith.
 
-## Basic Usage
-
 ```bash
 # create a group of all models tagged with "finance"
 # leaf nodes and nodes with cross-group dependencies will be `public`
