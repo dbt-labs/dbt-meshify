@@ -15,7 +15,7 @@ profile: 'split_proj'
 model-paths: ["models"]
 analysis-paths: ["analyses"]
 test-paths: ["tests"]
-seed-paths: ["seeds"]
+seed-paths: ["seeds", "jaffle_data"]
 # seed-paths: ["jaffle_data"]
 macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
@@ -37,8 +37,12 @@ vars:
 models:
   split_proj:
     # Config indicated by + and applies to all files under models/example/
+    +on_schema_change: append_new_columns
     example:
       +materialized: view
+
+seeds:
+  +schema: jaffle_raw
 
 # the below config for seeds is only relevant when seeding the project for the fist time with the raw jaffle data
 # pont the seed path to the jaffle data directory and make sure this is uncommented

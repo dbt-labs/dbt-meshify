@@ -26,16 +26,14 @@ expected_model_yml_shared_model = """
 models:
   - name: shared_model
     access: public
-    config:
-      group: test_group
+    group: test_group
 """
 
 model_yml_shared_model_with_group = """
 models:
   - name: shared_model
     access: private
-    config:
-      group: old_group
+    group: old_group
 """
 
 
@@ -50,8 +48,7 @@ expected_model_yml_multiple_models = """
 models:
   - name: shared_model
     access: public
-    config:
-      group: test_group
+    group: test_group
   - name: other_model
   - name: other_other_model
 """

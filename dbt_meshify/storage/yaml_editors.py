@@ -15,7 +15,7 @@ def filter_empty_dict_items(dict_to_filter: Dict[str, Any]):
     return {k: v for k, v in dict_to_filter.items() if v is not None}
 
 
-def process_model_yml(model_yml: Dict):
+def process_model_yml(model_yml: Dict[str, Any]):
     """Processes the yml contents to be written back to a file"""
     model_ordered_dict = OrderedDict.fromkeys(
         [
@@ -23,8 +23,10 @@ def process_model_yml(model_yml: Dict):
             "description",
             "latest_version",
             "access",
+            "group",
             "config",
             "meta",
+            "tests",
             "columns",
             "versions",
         ]
@@ -77,11 +79,7 @@ class DbtMeshModelYmlEditor:
         models = resources_yml_to_dict(models_yml)
         model_yml = models.get(model_name) or {"name": model_name, "columns": [], "config": {}}
 
-        model_yml.update({"access": access_type.value})
-        config = model_yml.get("config", {})
-        config.update({"group": group.name})
-        model_yml["config"] = config
-
+        model_yml.update({"access": access_type.value, "group": group.name})
         models[model_name] = process_model_yml(model_yml)
 
         models_yml["models"] = list(models.values())
@@ -102,10 +100,11 @@ class DbtMeshModelYmlEditor:
         catalog_cols = model_catalog.columns or {} if model_catalog else {}
 
         # add the data type to the yml entry for columns that are in yml
+        # import pdb; pdb.set_trace()
         yml_cols = [
             {**yml_col, "data_type": catalog_cols[yml_col["name"]].type.lower()}
             for yml_col in yml_cols
-            if yml_col["name"] in catalog_cols
+            if yml_col.get("name") in catalog_cols.keys()
         ]
 
         # append missing columns in the table to the yml entry
@@ -118,7 +117,9 @@ class DbtMeshModelYmlEditor:
         model_yml.update({"columns": yml_cols})
         # add contract to the model yml entry
         # this part should come from the same service as what we use for the standalone command when we get there
-        model_yml.update({"config": {"contract": {"enforced": True}}})
+        model_config = model_yml.get("config", {})
+        model_config.update({"contract": {"enforced": True}})
+        model_yml["config"] = model_config
         # update the model entry in the full yml file
         # if no entries exist, add the model entry
         # otherwise, update the existing model entry in place

@@ -62,6 +62,7 @@ class ResourceGrouper:
         path: os.PathLike,
         select: str,
         exclude: Optional[str] = None,
+        selector: Optional[str] = None,
     ) -> Tuple[Group, Dict[str, AccessType]]:
         """Generate the ResourceGroup that we want to apply to the project."""
 
@@ -75,9 +76,12 @@ class ResourceGrouper:
             resource_type=NodeType.Group,
         )
 
-        nodes = self.project.select_resources(select, exclude, output_key="unique_id")
+        nodes = self.project.select_resources(
+            select=select, exclude=exclude, selector=selector, output_key="unique_id"
+        )
 
         # Check if any of the selected nodes are already in a group of a different name. If so, raise an exception.
+        nodes = set(filter(lambda x: not x.startswith("source"), nodes))
         for node in nodes:
             existing_group = self.project.manifest.nodes[node].config.group
 
@@ -100,10 +104,13 @@ class ResourceGrouper:
         path: os.PathLike,
         select: str,
         exclude: Optional[str] = None,
+        selector: Optional[str] = None,
     ) -> None:
         """Create a ResourceGroup for a dbt project."""
 
-        group, resources = self._generate_resource_group(name, owner, path, select, exclude)
+        group, resources = self._generate_resource_group(
+            name, owner, path, select, exclude, selector
+        )
 
         group_path = Path(group.original_file_path)
         try:
@@ -115,6 +122,9 @@ class ResourceGrouper:
         self.file_manager.write_file(group_path, output_yml)
 
         for resource, access_type in resources.items():
+            # TODO: revisit this logic other resource types
+            if not resource.startswith("model"):
+                continue
             model: ModelNode = self.project.models[resource]
             if model.patch_path:
                 path = Path(model.patch_path.split("://")[1])
