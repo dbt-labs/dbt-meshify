@@ -347,45 +347,11 @@
 </span></code></pre></div>
 <p><strong>Subcommands</strong></p>
 <ul>
-<li><em><a href="#dbt-meshify-add-contract">add-contract</a></em>: </li>
-<li><em><a href="#dbt-meshify-add-version">add-version</a></em>: <em>No description was provided with this command.</em></li>
 <li><em><a href="#dbt-meshify-connect">connect</a></em>: </li>
-<li><em><a href="#dbt-meshify-create-group">create-group</a></em>: </li>
+<li><em><a href="#dbt-meshify-group">group</a></em>: </li>
+<li><em><a href="#dbt-meshify-operation">operation</a></em>: </li>
 <li><em><a href="#dbt-meshify-split">split</a></em>: </li>
 </ul>
-<h2 id="dbt-meshify-add-contract">dbt-meshify add-contract<a class="headerlink" href="#dbt-meshify-add-contract" title="Permanent link">#</a></h2>
-<p>Adds a contract to all selected models.</p>
-<p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dbt-meshify add-contract [OPTIONS]
-</span></code></pre></div>
-<p><strong>Options:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>  -e, --exclude TEXT   The dbt selection syntax specifying the resources to
-</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>                       exclude in the operation
-</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  --project-path PATH  The path to the dbt project to operate on. Defaults to
-</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>                       the current directory.
-</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>  -s, --select TEXT    The dbt selection syntax specifying the resources to
-</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>                       include in the operation
-</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>  --selector TEXT      The name of the YML selector specifying the resources
-</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>                       to include in the operation
-</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>  --help               Show this message and exit.
-</span></code></pre></div>
-<h2 id="dbt-meshify-add-version">dbt-meshify add-version<a class="headerlink" href="#dbt-meshify-add-version" title="Permanent link">#</a></h2>
-<p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dbt-meshify add-version [OPTIONS]
-</span></code></pre></div>
-<p><strong>Options:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>  -e, --exclude TEXT   The dbt selection syntax specifying the resources to
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>                       exclude in the operation
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  --project-path PATH  The path to the dbt project to operate on. Defaults to
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>                       the current directory.
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>  -s, --select TEXT    The dbt selection syntax specifying the resources to
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>                       include in the operation
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>  --selector TEXT      The name of the YML selector specifying the resources
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>                       to include in the operation
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>  --prerelease, --pre
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>  --defined-in TEXT
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>  --help               Show this message and exit.
-</span></code></pre></div>
 <h2 id="dbt-meshify-connect">dbt-meshify connect<a class="headerlink" href="#dbt-meshify-connect" title="Permanent link">#</a></h2>
 <div class="admonition info">
 <p class="admonition-title">Info</p>
@@ -393,39 +359,66 @@
 </div>
 <p>Connects multiple dbt projects together by adding all necessary dbt Mesh constructs</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>dbt-meshify connect [OPTIONS] [PROJECTS_DIR]
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dbt-meshify connect [OPTIONS] [PROJECTS_DIR]
+</span></code></pre></div>
+<p><strong>Options:</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>  --help  Show this message and exit.
+</span></code></pre></div>
+<h2 id="dbt-meshify-group">dbt-meshify group<a class="headerlink" href="#dbt-meshify-group" title="Permanent link">#</a></h2>
+<p>Creates a new dbt group based on the selection syntax
+Detects the edges of the group, makes their access public, and adds contracts to them</p>
+<p><strong>Usage:</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>dbt-meshify group [OPTIONS] NAME
+</span></code></pre></div>
+<p><strong>Options:</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>  -e, --exclude TEXT      The dbt selection syntax specifying the resources to
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>                          exclude in the operation
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>  --project-path PATH     The path to the dbt project to operate on. Defaults
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>                          to the current directory.
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>  -s, --select TEXT       The dbt selection syntax specifying the resources to
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>                          include in the operation
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>  --selector TEXT         The name of the YML selector specifying the
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>                          resources to include in the operation
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>  --owner &lt;TEXT TEXT&gt;...  A tuple of Owner information for the group. For
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>                          example `--owner name example`
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>  --group-yml-path PATH   An optional path to store the new group YAML
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>                          definition.
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>  --help                  Show this message and exit.
+</span></code></pre></div>
+<h2 id="dbt-meshify-operation">dbt-meshify operation<a class="headerlink" href="#dbt-meshify-operation" title="Permanent link">#</a></h2>
+<p>Set of subcommands for performing mesh operations on dbt projects</p>
+<p><strong>Usage:</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>dbt-meshify operation [OPTIONS] COMMAND [ARGS]...
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>  --help  Show this message and exit.
 </span></code></pre></div>
-<h2 id="dbt-meshify-create-group">dbt-meshify create-group<a class="headerlink" href="#dbt-meshify-create-group" title="Permanent link">#</a></h2>
-<p>Create a group and add selected resources to the group.</p>
+<p><strong>Subcommands</strong></p>
+<ul>
+<li><em><a href="#dbt-meshify-operation-add-contract">add-contract</a></em>: </li>
+<li><em><a href="#dbt-meshify-operation-add-version">add-version</a></em>: </li>
+<li><em><a href="#dbt-meshify-operation-create-group">create-group</a></em>: </li>
+</ul>
+<h3 id="dbt-meshify-operation-add-contract">dbt-meshify operation add-contract<a class="headerlink" href="#dbt-meshify-operation-add-contract" title="Permanent link">#</a></h3>
+<p>Adds a contract to all selected models.</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>dbt-meshify create-group [OPTIONS] NAME
+<div class="language-text highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>dbt-meshify operation add-contract [OPTIONS]
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>  -e, --exclude TEXT      The dbt selection syntax specifying the resources to
-</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>                          exclude in the operation
-</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  --project-path PATH     The path to the dbt project to operate on. Defaults
-</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>                          to the current directory.
-</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>  -s, --select TEXT       The dbt selection syntax specifying the resources to
-</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>                          include in the operation
-</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>  --selector TEXT         The name of the YML selector specifying the
-</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>                          resources to include in the operation
-</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>  --owner &lt;TEXT TEXT&gt;...  A tuple of Owner information for the group. For
-</span><span id="__span-9-10"><a id="__codelineno-9-10" name="__codelineno-9-10" href="#__codelineno-9-10"></a>                          example `--owner name example`
-</span><span id="__span-9-11"><a id="__codelineno-9-11" name="__codelineno-9-11" href="#__codelineno-9-11"></a>  --group-yml-path PATH   An optional path to store the new group YAML
-</span><span id="__span-9-12"><a id="__codelineno-9-12" name="__codelineno-9-12" href="#__codelineno-9-12"></a>                          definition.
-</span><span id="__span-9-13"><a id="__codelineno-9-13" name="__codelineno-9-13" href="#__codelineno-9-13"></a>  --help                  Show this message and exit.
+<div class="language-text highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>  -e, --exclude TEXT   The dbt selection syntax specifying the resources to
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>                       exclude in the operation
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>  --project-path PATH  The path to the dbt project to operate on. Defaults to
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>                       the current directory.
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>  -s, --select TEXT    The dbt selection syntax specifying the resources to
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>                       include in the operation
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>  --selector TEXT      The name of the YML selector specifying the resources
+</span><span id="__span-9-8"><a id="__codelineno-9-8" name="__codelineno-9-8" href="#__codelineno-9-8"></a>                       to include in the operation
+</span><span id="__span-9-9"><a id="__codelineno-9-9" name="__codelineno-9-9" href="#__codelineno-9-9"></a>  --help               Show this message and exit.
 </span></code></pre></div>
-<h2 id="dbt-meshify-split">dbt-meshify split<a class="headerlink" href="#dbt-meshify-split" title="Permanent link">#</a></h2>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>This command is not yet implemented</p>
-</div>
-<p>Splits dbt projects apart by adding all necessary dbt Mesh constructs based on the selection syntax.</p>
+<h3 id="dbt-meshify-operation-add-version">dbt-meshify operation add-version<a class="headerlink" href="#dbt-meshify-operation-add-version" title="Permanent link">#</a></h3>
+<p>Adds/increments model versions for all selected models.</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>dbt-meshify split [OPTIONS]
+<div class="language-text highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a>dbt-meshify operation add-version [OPTIONS]
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
 <div class="language-text highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>  -e, --exclude TEXT   The dbt selection syntax specifying the resources to
@@ -436,7 +429,49 @@
 </span><span id="__span-11-6"><a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>                       include in the operation
 </span><span id="__span-11-7"><a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>  --selector TEXT      The name of the YML selector specifying the resources
 </span><span id="__span-11-8"><a id="__codelineno-11-8" name="__codelineno-11-8" href="#__codelineno-11-8"></a>                       to include in the operation
-</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>  --help               Show this message and exit.
+</span><span id="__span-11-9"><a id="__codelineno-11-9" name="__codelineno-11-9" href="#__codelineno-11-9"></a>  --prerelease, --pre
+</span><span id="__span-11-10"><a id="__codelineno-11-10" name="__codelineno-11-10" href="#__codelineno-11-10"></a>  --defined-in TEXT
+</span><span id="__span-11-11"><a id="__codelineno-11-11" name="__codelineno-11-11" href="#__codelineno-11-11"></a>  --help               Show this message and exit.
+</span></code></pre></div>
+<h3 id="dbt-meshify-operation-create-group">dbt-meshify operation create-group<a class="headerlink" href="#dbt-meshify-operation-create-group" title="Permanent link">#</a></h3>
+<p>Create a group and add selected resources to the group.</p>
+<p><strong>Usage:</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>dbt-meshify operation create-group [OPTIONS] NAME
+</span></code></pre></div>
+<p><strong>Options:</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>  -e, --exclude TEXT      The dbt selection syntax specifying the resources to
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a>                          exclude in the operation
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a>  --project-path PATH     The path to the dbt project to operate on. Defaults
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a>                          to the current directory.
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a>  -s, --select TEXT       The dbt selection syntax specifying the resources to
+</span><span id="__span-13-6"><a id="__codelineno-13-6" name="__codelineno-13-6" href="#__codelineno-13-6"></a>                          include in the operation
+</span><span id="__span-13-7"><a id="__codelineno-13-7" name="__codelineno-13-7" href="#__codelineno-13-7"></a>  --selector TEXT         The name of the YML selector specifying the
+</span><span id="__span-13-8"><a id="__codelineno-13-8" name="__codelineno-13-8" href="#__codelineno-13-8"></a>                          resources to include in the operation
+</span><span id="__span-13-9"><a id="__codelineno-13-9" name="__codelineno-13-9" href="#__codelineno-13-9"></a>  --owner &lt;TEXT TEXT&gt;...  A tuple of Owner information for the group. For
+</span><span id="__span-13-10"><a id="__codelineno-13-10" name="__codelineno-13-10" href="#__codelineno-13-10"></a>                          example `--owner name example`
+</span><span id="__span-13-11"><a id="__codelineno-13-11" name="__codelineno-13-11" href="#__codelineno-13-11"></a>  --group-yml-path PATH   An optional path to store the new group YAML
+</span><span id="__span-13-12"><a id="__codelineno-13-12" name="__codelineno-13-12" href="#__codelineno-13-12"></a>                          definition.
+</span><span id="__span-13-13"><a id="__codelineno-13-13" name="__codelineno-13-13" href="#__codelineno-13-13"></a>  --help                  Show this message and exit.
+</span></code></pre></div>
+<h2 id="dbt-meshify-split">dbt-meshify split<a class="headerlink" href="#dbt-meshify-split" title="Permanent link">#</a></h2>
+<div class="admonition info">
+<p class="admonition-title">Info</p>
+<p>This command is not yet implemented</p>
+</div>
+<p>Splits dbt projects apart by adding all necessary dbt Mesh constructs based on the selection syntax.</p>
+<p><strong>Usage:</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>dbt-meshify split [OPTIONS]
+</span></code></pre></div>
+<p><strong>Options:</strong></p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a>  -e, --exclude TEXT   The dbt selection syntax specifying the resources to
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a>                       exclude in the operation
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>  --project-path PATH  The path to the dbt project to operate on. Defaults to
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a>                       the current directory.
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a>  -s, --select TEXT    The dbt selection syntax specifying the resources to
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a>                       include in the operation
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a>  --selector TEXT      The name of the YML selector specifying the resources
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a>                       to include in the operation
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a>  --help               Show this message and exit.
 </span></code></pre></div>
 
 
