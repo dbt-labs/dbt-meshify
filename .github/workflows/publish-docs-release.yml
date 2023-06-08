@@ -23,7 +23,7 @@ jobs:
       run: |
         python3 -m pip install --upgrade pip
         pip install poetry
-        poetry install
+        poetry install --with=dev
 
     - name: Extract Major and Minor Version
       run: |

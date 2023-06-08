@@ -20,6 +20,6 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           pip install poetry
-          poetry install
+          poetry install --with=dev
       - name: Run tests with pytest
         run: poetry run pytest
