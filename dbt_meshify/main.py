@@ -89,11 +89,12 @@ def connect(projects_dir):
 
 
 @cli.command(name="split")
+@click.argument("project_name")
 @exclude
 @project_path
 @select
 @selector
-def split():
+def split(project_name, select, exclude, project_path, selector):
     """
     !!! info
         This command is not yet implemented
@@ -101,28 +102,13 @@ def split():
     Splits dbt projects apart by adding all necessary dbt Mesh constructs based on the selection syntax.
 
     """
-    path_string = input("Enter the relative path to a dbt project you'd like to split: ")
 
-    holder = DbtProjectHolder()
-
-    path = Path(path_string).expanduser().resolve()
+    path = Path(project_path).expanduser().resolve()
     project = DbtProject.from_directory(path)
-    holder.register_project(project)
-
-    while True:
-        subproject_name = input("Enter the name for your subproject ('done' to finish): ")
-        if subproject_name == "done":
-            break
-        subproject_selector = input(
-            f"Enter the selector that represents the subproject {subproject_name}: "
-        )
-
-        subproject: DbtSubProject = project.split(
-            project_name=subproject_name, select=subproject_selector
-        )
-        holder.register_project(subproject)
-
-    print(holder.project_map())
+    subproject = project.split(
+        project_name=project_name, select=select, exclude=exclude, selector=selector
+    )
+    subproject.initialize(project_name)
 
 
 @operation.command(name="add-contract")
@@ -143,9 +129,9 @@ def add_contract(select, exclude, project_path, selector, public_only=False):
     )
     models = filter(lambda x: x.startswith("model"), resources)
     if public_only:
-        models = filter(lambda x: project.get_manifest_node(x).access == "public", models)
+        models = filter(lambda x: project.get_manifest_entry(x).access == "public", models)
     for model_unique_id in models:
-        model_node = project.get_manifest_node(model_unique_id)
+        model_node = project.get_manifest_entry(model_unique_id)
         model_catalog = project.get_catalog_entry(model_unique_id)
         meshify_constructor = DbtMeshModelConstructor(
             project_path=project_path, model_node=model_node, model_catalog=model_catalog
@@ -173,7 +159,7 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in)
     )
     models = filter(lambda x: x.startswith("model"), resources)
     for model_unique_id in models:
-        model_node = project.get_manifest_node(model_unique_id)
+        model_node = project.get_manifest_entry(model_unique_id)
         if model_node.version == model_node.latest_version:
             meshify_constructor = DbtMeshModelConstructor(
                 project_path=project_path, model_node=model_node

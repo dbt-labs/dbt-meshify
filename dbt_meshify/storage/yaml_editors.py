@@ -85,6 +85,15 @@ class DbtMeshModelYmlEditor:
         models_yml["models"] = list(models.values())
         return models_yml
 
+    @staticmethod
+    def remove_model_yml_entry(model_name: str, models_yml: Dict[str, Any]):
+        """Add group and access configuration to a model's YAMl properties."""
+        # parse the yml file into a dictionary with model names as keys
+        models = resources_yml_to_dict(models_yml)
+        models.pop(model_name, None)
+        models_yml["models"] = list(models.values())
+        return models_yml
+
     def add_model_contract_to_yml(
         self, model_name: str, model_catalog: Optional[CatalogTable], models_yml: Dict[str, Any]
     ) -> Dict[str, Any]:

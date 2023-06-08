@@ -150,9 +150,21 @@ class BaseDbtProject:
         """Returns the catalog entry for a model in the dbt project's catalog"""
         return self.catalog.nodes.get(unique_id)
 
-    def get_manifest_node(self, unique_id: str) -> Optional[ManifestNode]:
+    def get_manifest_entry(self, unique_id: str) -> Optional[ManifestNode]:
         """Returns the catalog entry for a model in the dbt project's catalog"""
-        return self.manifest.nodes.get(unique_id)
+        if unique_id.split(".")[0] in [
+            "model",
+            "seed",
+            "snapshot",
+            "test",
+            "analysis",
+            "snapshot",
+        ]:
+            return self.manifest.nodes.get(unique_id)
+        else:
+            pluralized = f"{unique_id.split('.')[0]}s"
+            resources = getattr(self.manifest, pluralized)
+            return resources.get(unique_id)
 
 
 class DbtProject(BaseDbtProject):
@@ -216,10 +228,13 @@ class DbtProject(BaseDbtProject):
         project_name: str,
         select: str,
         exclude: Optional[str] = None,
+        selector: Optional[str] = None,
     ) -> "DbtSubProject":
         """Create a new DbtSubProject using NodeSelection syntax."""
 
-        subproject_resources = self.select_resources(select, exclude)
+        subproject_resources = self.select_resources(
+            select=select, exclude=exclude, selector=selector, output_key="unique_id"
+        )
 
         # Construct a new project and inject the new manifest
         subproject = DbtSubProject(
@@ -242,13 +257,15 @@ class DbtSubProject(BaseDbtProject):
     def __init__(self, name: str, parent_project: DbtProject, resources: Set[str]):
         self.name = name
         self.resources = resources
-        self.parent = parent_project
+        self.parent_project = parent_project
 
-        self.manifest = parent_project.manifest.deepcopy()
+        # self.manifest = parent_project.manifest.deepcopy()
+        # i am running into a bug with the core deepcopy -- checking with michelle
+        self.manifest = copy.deepcopy(parent_project.manifest)
         self.project = copy.deepcopy(parent_project.project)
         self.catalog = parent_project.catalog
 
-        super().__init__(self.manifest, self.project, self.catalog)
+        super().__init__(self.manifest, self.project, self.catalog, self.name)
 
     def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
         """
@@ -288,9 +305,15 @@ class DbtSubProject(BaseDbtProject):
     def initialize(self, target_directory: os.PathLike):
         """Initialize this subproject as a full dbt project at the provided `target_directory`."""
 
-        # TODO: Implement project initialization
-
-        raise NotImplementedError
+        # import pdb; pdb.set_trace()
+        for resource in self.resources:
+            resource = self.get_manifest_entry(resource)
+            if resource.resource_type == "model":
+                current_path = Path(resource.original_file_path)
+                new_path = Path(self.name) / resource.original_file_path
+                new_path.parent.mkdir(parents=True, exist_ok=True)
+                current_path.rename(new_path)
+        pass
 
 
 class DbtProjectHolder:
