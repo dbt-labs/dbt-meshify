@@ -45,7 +45,7 @@ def resources_yml_to_dict(resources_yml: Dict, resource_type: str = "models"):
     )
 
 
-class DbtMeshModelYmlEditor:
+class DbtMeshYmlEditor:
     """
     Class to operate on the contents of a dbt project's dbt_project.yml file
     to add the dbt-core concepts specific to the dbt linker
@@ -85,14 +85,15 @@ class DbtMeshModelYmlEditor:
         models_yml["models"] = list(models.values())
         return models_yml
 
-    @staticmethod
-    def remove_model_yml_entry(model_name: str, models_yml: Dict[str, Any]):
+    def get_yml_entry(
+        self, resource_name: str, full_yml: Dict[str, Any], resource_type: Optional[str] = "models"
+    ):
         """Add group and access configuration to a model's YAMl properties."""
         # parse the yml file into a dictionary with model names as keys
-        models = resources_yml_to_dict(models_yml)
-        models.pop(model_name, None)
-        models_yml["models"] = list(models.values())
-        return models_yml
+        resources = resources_yml_to_dict(full_yml, resource_type)
+        resource_yml = resources.pop(resource_name, None)
+        full_yml["models"] = list(resources.values())
+        return resource_yml, full_yml
 
     def add_model_contract_to_yml(
         self, model_name: str, model_catalog: Optional[CatalogTable], models_yml: Dict[str, Any]
@@ -184,54 +185,53 @@ class DbtMeshModelYmlEditor:
         return models_yml
 
 
-class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
+class DbtMeshConstructor(DbtMeshYmlEditor):
     def __init__(
         self,
         project_path: Path,
-        model_node: ManifestNode,
-        model_catalog: Optional[CatalogTable] = None,
+        node: ManifestNode,
+        catalog: Optional[CatalogTable] = None,
+        subdirectory: Optional[Path] = None,
     ):
         self.project_path = project_path
-        self.model_node = model_node
-        self.model_catalog = model_catalog
-        self.name = model_node.name
+        self.node = node
+        self.model_catalog = catalog
+        self.name = node.name
+        self.subdirectory = subdirectory
+        self.write_path = subdirectory / project_path if subdirectory else project_path
         self.file_manager = DbtFileManager(
-            read_project_path=project_path, write_project_path=project_path
+            read_project_path=project_path, write_project_path=self.write_path
         )
 
-    def get_model_yml_path(self) -> Path:
+    def get_patch_path(self) -> Path:
         """Returns the path to the model yml file"""
-        yml_path = (
-            Path(self.model_node.patch_path.split("://")[1])
-            if self.model_node.patch_path
-            else None
-        )
+        yml_path = Path(self.node.patch_path.split("://")[1]) if self.node.patch_path else None
 
         # if the model doesn't have a patch path, create a new yml file in the models directory
         if not yml_path:
-            model_path = self.get_model_path()
+            model_path = self.get_resource_path()
 
             if model_path is None:
                 # If this happens, then the model doesn't have a model file, either, which is cause for alarm.
-                raise Exception(
-                    f"Unable to locate the file defining {self.model_node.name}. Aborting"
-                )
+                raise Exception(f"Unable to locate the file defining {self.node.name}. Aborting")
 
             yml_path = model_path.parent / "_models.yml"
             self.file_manager.write_file(yml_path, {})
         return yml_path
 
-    def get_model_path(self) -> Optional[Path]:
-        """Returns the path to the model file"""
-        return (
-            Path(self.model_node.original_file_path)
-            if self.model_node.original_file_path
-            else None
-        )
+    def get_resource_path(self) -> Optional[Path]:
+        """
+        Returns the path to the file where the resource is defined
+        for yml-only nodes (generic tests, metrics, exposures, sources)
+            this will be the path to the yml file where the definitions
+        for all others this will be the .sql or .py file for the resource
+
+        """
+        return Path(self.node.original_file_path) if self.node.original_file_path else None
 
     def add_model_contract(self) -> None:
         """Adds a model contract to the model's yaml"""
-        yml_path = self.get_model_yml_path()
+        yml_path = self.get_patch_path()
         # read the yml file
         # pass empty dict if no file contents returned
         models_yml = self.file_manager.read_file(yml_path)
@@ -240,7 +240,7 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
             raise Exception(f"Unexpected string values in dumped model data in {yml_path}.")
 
         updated_yml = self.add_model_contract_to_yml(
-            model_name=self.model_node.name,
+            model_name=self.node.name,
             model_catalog=self.model_catalog,
             models_yml=models_yml,
         )
@@ -252,13 +252,13 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
     ) -> None:
         """Adds a model version to the model's yaml"""
 
-        yml_path = self.get_model_yml_path()
+        yml_path = self.get_patch_path()
 
         # read the yml file
         # pass empty dict if no file contents returned
         models_yml = self.file_manager.read_file(yml_path) or {}
         updated_yml = self.add_model_version_to_yml(
-            model_name=self.model_node.name,
+            model_name=self.node.name,
             models_yml=models_yml,
             prerelease=prerelease,
             defined_in=defined_in,
@@ -268,36 +268,58 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
         # create the new version file
 
         # if we're incrementing the version, write the new version file with a copy of the code
-        latest_version = (
-            int(self.model_node.latest_version) if self.model_node.latest_version else 0
-        )
-        last_version_file_name = (
-            f"{self.model_node.name}_v{latest_version}.{self.model_node.language}"
-        )
+        latest_version = int(self.node.latest_version) if self.node.latest_version else 0
+        last_version_file_name = f"{self.node.name}_v{latest_version}.{self.node.language}"
         next_version_file_name = (
-            f"{defined_in}.{self.model_node.language}"
+            f"{defined_in}.{self.node.language}"
             if defined_in
-            else f"{self.model_node.name}_v{latest_version + 1}.{self.model_node.language}"
+            else f"{self.node.name}_v{latest_version + 1}.{self.node.language}"
         )
-        model_path = self.get_model_path()
+        model_path = self.get_resource_path()
 
         if model_path is None:
-            raise Exception(f"Unable to find path to model {self.model_node.name}. Aborting.")
+            raise Exception(f"Unable to find path to model {self.node.name}. Aborting.")
 
         model_folder = model_path.parent
         next_version_path = model_folder / next_version_file_name
         last_version_path = model_folder / last_version_file_name
 
         # if this is the first version, rename the original file to the next version
-        if not self.model_node.latest_version:
+        if not self.node.latest_version:
             Path(self.project_path).joinpath(model_path).rename(
                 Path(self.project_path).joinpath(next_version_path)
             )
         else:
             # if existing versions, create the new one
-            self.file_manager.write_file(next_version_path, self.model_node.raw_code)
+            self.file_manager.write_file(next_version_path, self.node.raw_code)
             # if the existing version doesn't use the _v{version} naming convention, rename it to the previous version
-            if not model_path.root.endswith(f"_v{latest_version}.{self.model_node.language}"):
+            if not model_path.root.endswith(f"_v{latest_version}.{self.node.language}"):
                 Path(self.project_path).joinpath(model_path).rename(
                     Path(self.project_path).joinpath(last_version_path)
                 )
+
+    def move_resource(self):
+        """
+        move a resource file from one project to another
+
+        """
+        current_path = self.get_resource_path()
+        new_path = self.subdirectory / current_path
+        new_path.parent.mkdir(parents=True, exist_ok=True)
+        current_path.rename(new_path)
+
+    def move_resource_yml_entry(self):
+        """
+        move a resource yml entry from one project to another
+        """
+        current_yml_path = self.get_patch_path()
+        new_yml_path = self.subdirectory / current_yml_path
+        new_yml_path.parent.mkdir(parents=True, exist_ok=True)
+        full_yml_entry = self.file_manager.read_file(current_yml_path)
+        entry, remainder = self.get_yml_entry(
+            resource_name=self.node.name,
+            full_yml=full_yml_entry,
+            resource_type=str(self.node.resource_type) + "s",
+        )
+        self.file_manager.write_file(new_yml_path, entry)
+        self.file_manager.write_file(current_yml_path, remainder)

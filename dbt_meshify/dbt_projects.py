@@ -14,6 +14,7 @@ from dbt.contracts.results import CatalogArtifact, CatalogTable
 from dbt.graph import Graph
 
 from dbt_meshify.dbt import Dbt
+from dbt_meshify.storage.yaml_editors import DbtMeshConstructor
 
 logger = logging.getLogger()
 
@@ -308,11 +309,23 @@ class DbtSubProject(BaseDbtProject):
         # import pdb; pdb.set_trace()
         for resource in self.resources:
             resource = self.get_manifest_entry(resource)
-            if resource.resource_type == "model":
-                current_path = Path(resource.original_file_path)
-                new_path = Path(self.name) / resource.original_file_path
-                new_path.parent.mkdir(parents=True, exist_ok=True)
-                current_path.rename(new_path)
+            import pdb
+
+            pdb.set_trace()
+            meshify_constructor = DbtMeshConstructor(
+                project_path=self.parent_project.path,
+                node=resource,
+                catalog=None,
+                subdirectory=target_directory,
+            )
+            if resource.resource_type in ["model", "test", "snapshot", "seed"]:
+                # ignore generic tests, as moving the yml entry will move the test too
+                if resource.resource_type == "test" and len(resource.unique_id.split(".")) == 4:
+                    continue
+                meshify_constructor.move_resource()
+                # meshify_constructor.move_resource_yml_entry()
+            # else:
+            # meshify_constructor.move_resource_yml_entry()
         pass
 
 

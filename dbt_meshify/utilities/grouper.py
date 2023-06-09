@@ -9,7 +9,7 @@ from dbt.node_types import AccessType, NodeType
 
 from dbt_meshify.dbt_projects import DbtProject
 from dbt_meshify.storage.file_manager import DbtFileManager
-from dbt_meshify.storage.yaml_editors import DbtMeshModelYmlEditor
+from dbt_meshify.storage.yaml_editors import DbtMeshYmlEditor
 
 
 class ResourceGroupingException(BaseException):
@@ -25,7 +25,7 @@ class ResourceGrouper:
 
     def __init__(self, project: DbtProject):
         self.project = project
-        self.meshify = DbtMeshModelYmlEditor()
+        self.meshify = DbtMeshYmlEditor()
         self.file_manager = DbtFileManager(read_project_path=project.path)
 
     @classmethod

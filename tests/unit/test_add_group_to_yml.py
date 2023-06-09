@@ -3,10 +3,10 @@ from dbt.contracts.graph.nodes import Group
 from dbt.contracts.graph.unparsed import Owner
 from dbt.node_types import NodeType
 
-from dbt_meshify.storage.yaml_editors import DbtMeshModelYmlEditor
+from dbt_meshify.storage.yaml_editors import DbtMeshYmlEditor
 from tests.unit import read_yml
 
-meshify = DbtMeshModelYmlEditor()
+meshify = DbtMeshYmlEditor()
 
 group_yml_empty_file = """"""
 

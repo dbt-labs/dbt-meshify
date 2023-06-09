@@ -6,7 +6,7 @@ import click
 from dbt.contracts.graph.unparsed import Owner
 
 from .dbt_projects import DbtProject, DbtProjectHolder, DbtSubProject
-from .storage.yaml_editors import DbtMeshModelConstructor
+from .storage.yaml_editors import DbtMeshConstructor
 
 # define common parameters
 project_path = click.option(
@@ -108,7 +108,7 @@ def split(project_name, select, exclude, project_path, selector):
     subproject = project.split(
         project_name=project_name, select=select, exclude=exclude, selector=selector
     )
-    subproject.initialize(project_name)
+    subproject.initialize(target_directory=Path(project_name))
 
 
 @operation.command(name="add-contract")
@@ -133,8 +133,8 @@ def add_contract(select, exclude, project_path, selector, public_only=False):
     for model_unique_id in models:
         model_node = project.get_manifest_entry(model_unique_id)
         model_catalog = project.get_catalog_entry(model_unique_id)
-        meshify_constructor = DbtMeshModelConstructor(
-            project_path=project_path, model_node=model_node, model_catalog=model_catalog
+        meshify_constructor = DbtMeshConstructor(
+            project_path=project_path, node=model_node, catalog=model_catalog
         )
         meshify_constructor.add_model_contract()
 
@@ -161,9 +161,7 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in)
     for model_unique_id in models:
         model_node = project.get_manifest_entry(model_unique_id)
         if model_node.version == model_node.latest_version:
-            meshify_constructor = DbtMeshModelConstructor(
-                project_path=project_path, model_node=model_node
-            )
+            meshify_constructor = DbtMeshConstructor(project_path=project_path, node=model_node)
             meshify_constructor.add_model_version(prerelease=prerelease, defined_in=defined_in)
 
 
