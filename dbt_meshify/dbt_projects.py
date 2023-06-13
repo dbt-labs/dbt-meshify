@@ -306,12 +306,8 @@ class DbtSubProject(BaseDbtProject):
     def initialize(self, target_directory: os.PathLike):
         """Initialize this subproject as a full dbt project at the provided `target_directory`."""
 
-        # import pdb; pdb.set_trace()
         for resource in self.resources:
             resource = self.get_manifest_entry(resource)
-            import pdb
-
-            pdb.set_trace()
             meshify_constructor = DbtMeshConstructor(
                 project_path=self.parent_project.path,
                 node=resource,
@@ -323,7 +319,7 @@ class DbtSubProject(BaseDbtProject):
                 if resource.resource_type == "test" and len(resource.unique_id.split(".")) == 4:
                     continue
                 meshify_constructor.move_resource()
-                # meshify_constructor.move_resource_yml_entry()
+                meshify_constructor.move_resource_yml_entry()
             # else:
             # meshify_constructor.move_resource_yml_entry()
         pass

@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from dbt.contracts.graph.nodes import Group, ManifestNode
 from dbt.contracts.results import CatalogTable
-from dbt.node_types import AccessType
+from dbt.node_types import AccessType, NodeType
 
 from dbt_meshify.storage.file_manager import DbtFileManager
 
@@ -36,7 +36,7 @@ def process_model_yml(model_yml: Dict[str, Any]):
     return filter_empty_dict_items(model_ordered_dict)
 
 
-def resources_yml_to_dict(resources_yml: Dict, resource_type: str = "models"):
+def resources_yml_to_dict(resources_yml: Dict, resource_type: NodeType = NodeType.Model):
     """Converts a yml dict to a named dictionary for easier operation"""
     return (
         {resource["name"]: resource for resource in resources_yml[resource_type]}
@@ -86,14 +86,28 @@ class DbtMeshYmlEditor:
         return models_yml
 
     def get_yml_entry(
-        self, resource_name: str, full_yml: Dict[str, Any], resource_type: Optional[str] = "models"
+        self,
+        resource_name: str,
+        full_yml: Dict[str, Any],
+        resource_type: Optional[NodeType] = NodeType.Model,
     ):
-        """Add group and access configuration to a model's YAMl properties."""
+        """Remove a single resource entry from a yml file, return the single entry and the remainder of the yml file"""
         # parse the yml file into a dictionary with model names as keys
-        resources = resources_yml_to_dict(full_yml, resource_type)
+        resources = resources_yml_to_dict(full_yml, resource_type.pluralize())
         resource_yml = resources.pop(resource_name, None)
         full_yml["models"] = list(resources.values())
         return resource_yml, full_yml
+
+    def add_entry_to_yml(
+        self, resource_entry: Dict[str, Any], full_yml: Dict[str, Any], resource_type: NodeType
+    ):
+        """
+        Adds a single resource yml entry to yml file
+        """
+        if not full_yml:
+            full_yml = {resource_type.pluralize(): []}
+        full_yml[resource_type.pluralize()].append(resource_entry)
+        return full_yml
 
     def add_model_contract_to_yml(
         self, model_name: str, model_catalog: Optional[CatalogTable], models_yml: Dict[str, Any]
@@ -110,7 +124,6 @@ class DbtMeshYmlEditor:
         catalog_cols = model_catalog.columns or {} if model_catalog else {}
 
         # add the data type to the yml entry for columns that are in yml
-        # import pdb; pdb.set_trace()
         yml_cols = [
             {**yml_col, "data_type": catalog_cols[yml_col["name"]].type.lower()}
             for yml_col in yml_cols
@@ -316,10 +329,17 @@ class DbtMeshConstructor(DbtMeshYmlEditor):
         new_yml_path = self.subdirectory / current_yml_path
         new_yml_path.parent.mkdir(parents=True, exist_ok=True)
         full_yml_entry = self.file_manager.read_file(current_yml_path)
-        entry, remainder = self.get_yml_entry(
+        resource_entry, remainder = self.get_yml_entry(
             resource_name=self.node.name,
             full_yml=full_yml_entry,
-            resource_type=str(self.node.resource_type) + "s",
+            resource_type=self.node.resource_type,
         )
-        self.file_manager.write_file(new_yml_path, entry)
+        try:
+            existing_yml = self.file_manager.read_file(new_yml_path)
+        except FileNotFoundError:
+            existing_yml = None
+        new_yml_contents = self.add_entry_to_yml(
+            resource_entry, existing_yml, self.node.resource_type
+        )
+        self.file_manager.write_file(new_yml_path, new_yml_contents)
         self.file_manager.write_file(current_yml_path, remainder)
