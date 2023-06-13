@@ -128,9 +128,6 @@ class DbtMeshYmlEditor:
         """
         Adds a single resource yml entry to yml file
         """
-        import pdb
-
-        pdb.set_trace()
         if not full_yml:
             full_yml = {resource_type.pluralize(): []}
         if resource_type != NodeType.Source:
