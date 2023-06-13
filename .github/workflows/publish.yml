@@ -1,0 +1,46 @@
+name: Publish
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+
+    - name: Install dependencies and build
+      run: |
+        python3 -m pip install --upgrade pip
+        pip install poetry
+        poetry build
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
+      with:
+        path: ./dist
+
+  pypi-publish:
+    needs: ['build']
+    environment: 'PypiProd'
+
+    name: upload release to PyPI
+    runs-on: ubuntu-latest
+    permissions:
+      # IMPORTANT: this permission is mandatory for trusted publishing
+      id-token: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages_dir: artifact/
