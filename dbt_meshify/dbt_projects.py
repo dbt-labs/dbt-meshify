@@ -323,9 +323,8 @@ class DbtSubProject(BaseDbtProject):
                     continue
                 meshify_constructor.move_resource()
                 meshify_constructor.move_resource_yml_entry()
-            # else:
-            # meshify_constructor.move_resource_yml_entry()
-        pass
+            else:
+                meshify_constructor.move_resource_yml_entry()
 
 
 class DbtProjectHolder:

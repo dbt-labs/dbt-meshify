@@ -85,17 +85,41 @@ class DbtMeshYmlEditor:
         models_yml["models"] = list(models.values())
         return models_yml
 
+    def get_source_yml_entry(self, resource_name: str, full_yml: Dict[str, Any], source_name: str):
+        """
+        Remove a single source entry from a source defintion block, return source definition with single source entry and the remainder of the original
+        """
+        sources = resources_yml_to_dict(full_yml, NodeType.Source)
+        source_definition = sources.get(source_name)
+        tables = source_definition.get("tables", None)
+        table = list(filter(lambda x: x["name"] == resource_name, tables))
+        remaining_tables = list(filter(lambda x: x["name"] != resource_name, tables))
+        resource_yml = source_definition.copy()
+        resource_yml["tables"] = table
+        source_definition["tables"] = remaining_tables
+        sources[source_name] = source_definition
+        full_yml["sources"] = list(sources.values())
+        return resource_yml, full_yml
+
     def get_yml_entry(
         self,
         resource_name: str,
         full_yml: Dict[str, Any],
         resource_type: NodeType = NodeType.Model,
+        source_name: Optional[str] = None,
     ):
         """Remove a single resource entry from a yml file, return the single entry and the remainder of the yml file"""
         # parse the yml file into a dictionary with model names as keys
-        resources = resources_yml_to_dict(full_yml, resource_type)
-        resource_yml = resources.pop(resource_name, None)
-        full_yml["models"] = list(resources.values())
+        if resource_type == NodeType.Source:
+            if not source_name:
+                raise ValueError('Missing source name')
+            resource_yml, full_yml = self.get_source_yml_entry(
+                resource_name, full_yml, source_name
+            )
+        else:
+            resources = resources_yml_to_dict(full_yml, resource_type)
+            resource_yml = resources.pop(resource_name, None)
+            full_yml[resource_type.pluralize()] = list(resources.values())
         return resource_yml, full_yml
 
     def add_entry_to_yml(
@@ -104,9 +128,23 @@ class DbtMeshYmlEditor:
         """
         Adds a single resource yml entry to yml file
         """
+        import pdb
+
+        pdb.set_trace()
         if not full_yml:
             full_yml = {resource_type.pluralize(): []}
-        full_yml[resource_type.pluralize()].append(resource_entry)
+        if resource_type != NodeType.Source:
+            full_yml[resource_type.pluralize()].append(resource_entry)
+        else:
+            if resource_entry["name"] not in [
+                source["name"] for source in full_yml[resource_type.pluralize()]
+            ]:
+                full_yml[resource_type.pluralize()].append(resource_entry)
+            else:
+                new_table = resource_entry["tables"][0]
+                sources = {source["name"]: source for source in full_yml["sources"]}
+                sources[resource_entry["name"]]["tables"].append(new_table)
+                full_yml["sources"] = list(sources.values())
         return full_yml
 
     def add_model_contract_to_yml(
@@ -217,18 +255,29 @@ class DbtMeshConstructor(DbtMeshYmlEditor):
         )
 
     def get_patch_path(self) -> Path:
-        """Returns the path to the model yml file"""
-        yml_path = Path(self.node.patch_path.split("://")[1]) if self.node.patch_path else None
+        """Returns the path to the yml file where the resource is defined or described"""
+        if self.node.resource_type in [
+            NodeType.Model,
+            NodeType.Seed,
+            NodeType.Snapshot,
+            NodeType.Macro,
+            NodeType.Test,
+        ]:
+            # find yml path for resoruces that are not defined
+            yml_path = Path(self.node.patch_path.split("://")[1]) if self.node.patch_path else None
+        else:
+            yml_path = Path(self.node.original_file_path)
 
         # if the model doesn't have a patch path, create a new yml file in the models directory
         if not yml_path:
-            model_path = self.get_resource_path()
+            resource_path = self.get_resource_path()
 
-            if model_path is None:
+            if resource_path is None:
                 # If this happens, then the model doesn't have a model file, either, which is cause for alarm.
                 raise Exception(f"Unable to locate the file defining {self.node.name}. Aborting")
 
-            yml_path = model_path.parent / "_models.yml"
+            filename = f"_{self.node.resource_type.pluralize()}.yml"
+            yml_path = resource_path.parent / filename
             self.file_manager.write_file(yml_path, {})
         return yml_path
 
@@ -329,10 +378,12 @@ class DbtMeshConstructor(DbtMeshYmlEditor):
         new_yml_path = self.subdirectory / current_yml_path
         new_yml_path.parent.mkdir(parents=True, exist_ok=True)
         full_yml_entry = self.file_manager.read_file(current_yml_path)
+        source_name = self.node.source_name if hasattr(self.node, "source_name") else None
         resource_entry, remainder = self.get_yml_entry(
             resource_name=self.node.name,
             full_yml=full_yml_entry,
             resource_type=self.node.resource_type,
+            source_name=source_name,
         )
         try:
             existing_yml = self.file_manager.read_file(new_yml_path)
