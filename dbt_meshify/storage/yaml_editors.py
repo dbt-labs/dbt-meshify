@@ -39,7 +39,7 @@ def process_model_yml(model_yml: Dict[str, Any]):
 def resources_yml_to_dict(resources_yml: Dict, resource_type: NodeType = NodeType.Model):
     """Converts a yml dict to a named dictionary for easier operation"""
     return (
-        {resource["name"]: resource for resource in resources_yml[resource_type]}
+        {resource["name"]: resource for resource in resources_yml[resource_type.pluralize()]}
         if resources_yml
         else {}
     )
@@ -57,7 +57,7 @@ class DbtMeshYmlEditor:
         if groups_yml is None:
             groups_yml = {}
 
-        groups = resources_yml_to_dict(groups_yml, "groups")
+        groups = resources_yml_to_dict(groups_yml, NodeType.Group)
         group_yml = groups.get(group.name) or {}
 
         group_yml.update({"name": group.name})
@@ -89,11 +89,11 @@ class DbtMeshYmlEditor:
         self,
         resource_name: str,
         full_yml: Dict[str, Any],
-        resource_type: Optional[NodeType] = NodeType.Model,
+        resource_type: NodeType = NodeType.Model,
     ):
         """Remove a single resource entry from a yml file, return the single entry and the remainder of the yml file"""
         # parse the yml file into a dictionary with model names as keys
-        resources = resources_yml_to_dict(full_yml, resource_type.pluralize())
+        resources = resources_yml_to_dict(full_yml, resource_type)
         resource_yml = resources.pop(resource_name, None)
         full_yml["models"] = list(resources.values())
         return resource_yml, full_yml

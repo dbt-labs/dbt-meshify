@@ -12,6 +12,7 @@ from dbt.contracts.graph.nodes import ManifestNode, ModelNode, SourceDefinition
 from dbt.contracts.project import Project
 from dbt.contracts.results import CatalogArtifact, CatalogTable
 from dbt.graph import Graph
+from dbt.node_types import NodeType
 
 from dbt_meshify.dbt import Dbt
 from dbt_meshify.storage.yaml_editors import DbtMeshConstructor
@@ -163,7 +164,7 @@ class BaseDbtProject:
         ]:
             return self.manifest.nodes.get(unique_id)
         else:
-            pluralized = f"{unique_id.split('.')[0]}s"
+            pluralized = NodeType(unique_id.split('.')[0]).pluralize()
             resources = getattr(self.manifest, pluralized)
             return resources.get(unique_id)
 
@@ -277,7 +278,7 @@ class DbtSubProject(BaseDbtProject):
         if exclude:
             args.extend(["--exclude", exclude])
 
-        results = self.parent.dbt.ls(self.parent.path, args)
+        results = self.parent_project.dbt.ls(self.parent_project.path, args)
 
         return set(results) - self.resources
 
@@ -294,7 +295,7 @@ class DbtSubProject(BaseDbtProject):
         # Construct a new project and inject the new manifest
         subproject = DbtSubProject(
             name=project_name,
-            parent_project=copy.deepcopy(self.parent),
+            parent_project=copy.deepcopy(self.parent_project),
             resources=subproject_resources,
         )
 
@@ -303,11 +304,13 @@ class DbtSubProject(BaseDbtProject):
 
         return subproject
 
-    def initialize(self, target_directory: os.PathLike):
+    def initialize(self, target_directory: Path):
         """Initialize this subproject as a full dbt project at the provided `target_directory`."""
 
-        for resource in self.resources:
-            resource = self.get_manifest_entry(resource)
+        for unique_id in self.resources:
+            resource = self.get_manifest_entry(unique_id)
+            if not resource:
+                raise KeyError(f"Resource {unique_id} not found in manifest")
             meshify_constructor = DbtMeshConstructor(
                 project_path=self.parent_project.path,
                 node=resource,
