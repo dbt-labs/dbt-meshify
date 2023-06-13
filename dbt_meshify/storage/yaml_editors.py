@@ -12,7 +12,7 @@ from dbt_meshify.storage.file_manager import DbtFileManager
 
 def filter_empty_dict_items(dict_to_filter: Dict[str, Any]):
     """Filters out empty dictionary items"""
-    return {k: v for k, v in dict_to_filter.items() if v is not None}
+    return {k: v for k, v in dict_to_filter.items() if v}
 
 
 def process_model_yml(model_yml: Dict[str, Any]):

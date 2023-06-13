@@ -15,7 +15,8 @@ from dbt.graph import Graph
 from dbt.node_types import NodeType
 
 from dbt_meshify.dbt import Dbt
-from dbt_meshify.storage.yaml_editors import DbtMeshConstructor
+from dbt_meshify.storage.file_manager import DbtFileManager
+from dbt_meshify.storage.yaml_editors import DbtMeshConstructor, filter_empty_dict_items
 
 logger = logging.getLogger()
 
@@ -267,7 +268,20 @@ class DbtSubProject(BaseDbtProject):
         self.project = copy.deepcopy(parent_project.project)
         self.catalog = parent_project.catalog
 
+        self._rename_project()
+
         super().__init__(self.manifest, self.project, self.catalog, self.name)
+
+    def _rename_project(self):
+        """
+        edits the project yml to take any instance of the parent project name and update it to the subproject name
+        """
+        project_dict = self.project.to_dict()
+        for key in [resource.pluralize() for resource in NodeType]:
+            if self.parent_project.name in project_dict.get(key, {}).keys():
+                project_dict[key][self.name] = project_dict[key].pop(self.parent_project.name)
+        project_dict["name"] = self.name
+        self.project = Project.from_dict(project_dict)
 
     def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
         """
@@ -304,6 +318,20 @@ class DbtSubProject(BaseDbtProject):
 
         return subproject
 
+    def write_project_file(self, target_directory: Path):
+        """
+        Writes the dbt_project.yml file for the subproject in the specified subdirectory
+        """
+        file_manager = DbtFileManager(target_directory)
+        contents = self.project.to_dict()
+        # was gettinga  weird serialization error from ruamel on this value
+        # it's been deprecated, so no reason to keep it
+        contents.pop("version")
+        # this one appears in the project yml, but i don't think it should be written
+        contents.pop("query-comment")
+        contents = filter_empty_dict_items(contents)
+        file_manager.write_file(Path("dbt_project.yml"), contents)
+
     def initialize(self, target_directory: Path):
         """Initialize this subproject as a full dbt project at the provided `target_directory`."""
 
@@ -325,6 +353,8 @@ class DbtSubProject(BaseDbtProject):
                 meshify_constructor.move_resource_yml_entry()
             else:
                 meshify_constructor.move_resource_yml_entry()
+
+        self.write_project_file(target_directory=target_directory)
 
 
 class DbtProjectHolder:
