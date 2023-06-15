@@ -103,7 +103,8 @@ class BaseDbtProject:
                 if item.package_name:
                     _hash = hashlib.md5()
                     _hash.update(item.package_name.encode("utf-8"))
-                    project_packages.append(_hash.hexdigest())
+                    if _hash.hexdigest() != self.manifest.metadata.project_id:
+                        project_packages.append(_hash.hexdigest())
         return set(project_packages)
 
     @property
@@ -267,12 +268,13 @@ class DbtSubProject(BaseDbtProject):
         self.manifest = copy.deepcopy(parent_project.manifest)
         self.project = copy.deepcopy(parent_project.project)
         self.catalog = parent_project.catalog
+        self.custom_macros = self._get_custom_macros()
 
         self._rename_project()
 
         super().__init__(self.manifest, self.project, self.catalog, self.name)
 
-    def _rename_project(self):
+    def _rename_project(self) -> None:
         """
         edits the project yml to take any instance of the parent project name and update it to the subproject name
         """
@@ -282,6 +284,25 @@ class DbtSubProject(BaseDbtProject):
                 project_dict[key][self.name] = project_dict[key].pop(self.parent_project.name)
         project_dict["name"] = self.name
         self.project = Project.from_dict(project_dict)
+
+    def _get_custom_macros(self) -> Set[str]:
+        """
+        get a set of macro unique_ids for all the selected resources
+        """
+        macro_list = []
+        for unique_id in self.resources:
+            resource = self.get_manifest_entry(unique_id)
+            if not resource:
+                continue
+            macros = resource.depends_on.macros
+            project_macros = [
+                macro
+                for macro in macros
+                if hashlib.md5((macro.split(".")[1]).encode()).hexdigest()
+                not in self.parent_project.installed_packages()
+            ]
+            macro_list.extend(project_macros)
+        return set(macro_list)
 
     def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
         """
@@ -335,7 +356,7 @@ class DbtSubProject(BaseDbtProject):
     def initialize(self, target_directory: Path):
         """Initialize this subproject as a full dbt project at the provided `target_directory`."""
 
-        for unique_id in self.resources:
+        for unique_id in self.resources | self.custom_macros:
             resource = self.get_manifest_entry(unique_id)
             if not resource:
                 raise KeyError(f"Resource {unique_id} not found in manifest")
@@ -345,12 +366,17 @@ class DbtSubProject(BaseDbtProject):
                 catalog=None,
                 subdirectory=target_directory,
             )
+            import pdb
+
+            pdb.set_trace()
             if resource.resource_type in ["model", "test", "snapshot", "seed"]:
                 # ignore generic tests, as moving the yml entry will move the test too
                 if resource.resource_type == "test" and len(resource.unique_id.split(".")) == 4:
                     continue
                 meshify_constructor.move_resource()
                 meshify_constructor.move_resource_yml_entry()
+            if resource.resource_type == "macro":
+                meshify_constructor.copy_resource()
             else:
                 meshify_constructor.move_resource_yml_entry()
 

@@ -367,6 +367,17 @@ class DbtMeshConstructor(DbtMeshYmlEditor):
         new_path.parent.mkdir(parents=True, exist_ok=True)
         current_path.rename(new_path)
 
+    def copy_resource(self):
+        """
+        copy a resource file from one project to another
+
+        """
+        current_path = self.get_resource_path()
+        new_path = self.subdirectory / current_path
+        new_path.parent.mkdir(parents=True, exist_ok=True)
+        contents = self.file_manager.read_file(current_path)
+        self.file_manager.write_file(new_path, contents)
+
     def move_resource_yml_entry(self):
         """
         move a resource yml entry from one project to another
