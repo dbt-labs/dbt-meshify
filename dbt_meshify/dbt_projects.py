@@ -269,6 +269,9 @@ class DbtSubProject(BaseDbtProject):
         self.project = copy.deepcopy(parent_project.project)
         self.catalog = parent_project.catalog
         self.custom_macros = self._get_custom_macros()
+        self.file_manager = DbtFileManager(
+            read_project_path=parent_project.path, write_project_path=Path(name)
+        )
 
         self._rename_project()
 
@@ -339,11 +342,10 @@ class DbtSubProject(BaseDbtProject):
 
         return subproject
 
-    def write_project_file(self, target_directory: Path):
+    def write_project_file(self):
         """
         Writes the dbt_project.yml file for the subproject in the specified subdirectory
         """
-        file_manager = DbtFileManager(target_directory)
         contents = self.project.to_dict()
         # was gettinga  weird serialization error from ruamel on this value
         # it's been deprecated, so no reason to keep it
@@ -351,7 +353,14 @@ class DbtSubProject(BaseDbtProject):
         # this one appears in the project yml, but i don't think it should be written
         contents.pop("query-comment")
         contents = filter_empty_dict_items(contents)
-        file_manager.write_file(Path("dbt_project.yml"), contents)
+        self.file_manager.write_file(Path("dbt_project.yml"), contents)
+
+    def write_packages_yml_file(self):
+        """
+        Writes the dbt_project.yml file for the subproject in the specified subdirectory
+        """
+        contents = self.file_manager.read_file(Path("packages.yml"))
+        self.file_manager.write_file(Path("packages.yml"), contents)
 
     def initialize(self, target_directory: Path):
         """Initialize this subproject as a full dbt project at the provided `target_directory`."""
@@ -366,9 +375,6 @@ class DbtSubProject(BaseDbtProject):
                 catalog=None,
                 subdirectory=target_directory,
             )
-            import pdb
-
-            pdb.set_trace()
             if resource.resource_type in ["model", "test", "snapshot", "seed"]:
                 # ignore generic tests, as moving the yml entry will move the test too
                 if resource.resource_type == "test" and len(resource.unique_id.split(".")) == 4:
@@ -380,7 +386,8 @@ class DbtSubProject(BaseDbtProject):
             else:
                 meshify_constructor.move_resource_yml_entry()
 
-        self.write_project_file(target_directory=target_directory)
+        self.write_project_file()
+        self.write_packages_yml_file()
 
 
 class DbtProjectHolder:

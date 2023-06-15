@@ -382,6 +382,9 @@ class DbtMeshConstructor(DbtMeshYmlEditor):
         """
         move a resource yml entry from one project to another
         """
+        import pdb
+
+        pdb.set_trace()
         current_yml_path = self.get_patch_path()
         new_yml_path = self.subdirectory / current_yml_path
         new_yml_path.parent.mkdir(parents=True, exist_ok=True)
