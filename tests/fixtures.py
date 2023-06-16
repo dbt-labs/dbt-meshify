@@ -217,7 +217,7 @@ columns:
     description: "this is the id column"
 """
 # expected result when removing the shared_model entry from model_yml_other_model
-expected_remove_model_yml__model_yml_other_model = """
+expected_remove_model_yml__default = """
 name: shared_model
 """
 
@@ -310,7 +310,7 @@ exposures:
       - ref('model')
 """
 
-expected_remove_yml__default_exposure = """
+expected_remove_exposure_yml__default = """
 name: shared_exposure
 description: "this is a test exposure"
 type: dashboard
@@ -335,4 +335,44 @@ exposures:
 
     depends_on:
       - ref('model')
+"""
+
+metric_yml_one_metric = """
+metrics:
+  - name: real_good_metric
+    label: Real Good Metric
+    model: ref('model')
+    calculation_method: sum
+    expression: "col"
+"""
+
+metric_yml_multiple_metrics = """
+metrics:
+  - name: real_good_metric
+    label: Real Good Metric
+    model: ref('model')
+    calculation_method: sum
+    expression: "col"
+  - name: real_bad_metric
+    label: Real Bad Metric
+    model: ref('model')
+    calculation_method: sum
+    expression: "col2"
+"""
+
+expected_remove_metric_yml__default = """
+name: real_good_metric
+label: Real Good Metric
+model: ref('model')
+calculation_method: sum
+expression: col
+"""
+
+expected_remainder_yml__multiple_metrics = """
+metrics:
+  - name: real_bad_metric
+    label: Real Bad Metric
+    model: ref('model')
+    calculation_method: sum
+    expression: col2
 """
