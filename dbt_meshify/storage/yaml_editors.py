@@ -1,7 +1,7 @@
 import os
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dbt.contracts.graph.nodes import Group, ManifestNode
 from dbt.contracts.results import CatalogTable
@@ -85,7 +85,9 @@ class DbtMeshYmlEditor:
         models_yml["models"] = list(models.values())
         return models_yml
 
-    def get_source_yml_entry(self, resource_name: str, full_yml: Dict[str, Any], source_name: str):
+    def get_source_yml_entry(
+        self, resource_name: str, full_yml: Dict[str, Any], source_name: str
+    ) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
         """
         Remove a single source entry from a source defintion block, return source definition with single source entry and the remainder of the original
         """
@@ -98,8 +100,11 @@ class DbtMeshYmlEditor:
         resource_yml["tables"] = table
         source_definition["tables"] = remaining_tables
         sources[source_name] = source_definition
-        full_yml["sources"] = list(sources.values())
-        return resource_yml, full_yml
+        if len(remaining_tables) == 0:
+            return resource_yml, None
+        else:
+            full_yml["sources"] = list(sources.values())
+            return resource_yml, full_yml
 
     def get_yml_entry(
         self,
@@ -107,20 +112,23 @@ class DbtMeshYmlEditor:
         full_yml: Dict[str, Any],
         resource_type: NodeType = NodeType.Model,
         source_name: Optional[str] = None,
-    ):
+    ) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
         """Remove a single resource entry from a yml file, return the single entry and the remainder of the yml file"""
         # parse the yml file into a dictionary with model names as keys
         if resource_type == NodeType.Source:
             if not source_name:
                 raise ValueError('Missing source name')
-            resource_yml, full_yml = self.get_source_yml_entry(
-                resource_name, full_yml, source_name
-            )
+            return self.get_source_yml_entry(resource_name, full_yml, source_name)
         else:
             resources = resources_yml_to_dict(full_yml, resource_type)
             resource_yml = resources.pop(resource_name, None)
-            full_yml[resource_type.pluralize()] = list(resources.values())
-        return resource_yml, full_yml
+            if len(resources.keys()) == 0:
+                return resource_yml, None
+            else:
+                full_yml[resource_type.pluralize()] = (
+                    list(resources.values()) if len(resources) > 0 else None
+                )
+                return resource_yml, full_yml
 
     def add_entry_to_yml(
         self, resource_entry: Dict[str, Any], full_yml: Dict[str, Any], resource_type: NodeType
@@ -382,9 +390,6 @@ class DbtMeshConstructor(DbtMeshYmlEditor):
         """
         move a resource yml entry from one project to another
         """
-        import pdb
-
-        pdb.set_trace()
         current_yml_path = self.get_patch_path()
         new_yml_path = self.subdirectory / current_yml_path
         new_yml_path.parent.mkdir(parents=True, exist_ok=True)
@@ -404,4 +409,7 @@ class DbtMeshConstructor(DbtMeshYmlEditor):
             resource_entry, existing_yml, self.node.resource_type
         )
         self.file_manager.write_file(new_yml_path, new_yml_contents)
-        self.file_manager.write_file(current_yml_path, remainder)
+        if remainder:
+            self.file_manager.write_file(current_yml_path, remainder)
+        else:
+            self.file_manager.delete_file(current_yml_path)

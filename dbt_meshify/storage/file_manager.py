@@ -64,3 +64,7 @@ class DbtFileManager(BaseFileManager):
             full_path.write_text(yaml.dump(file_contents))
         else:
             full_path.write_text(file_contents)  # type: ignore
+
+    def delete_file(self, path: Path) -> None:
+        """deletes the specified file"""
+        path.unlink()

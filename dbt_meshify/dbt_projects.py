@@ -381,7 +381,7 @@ class DbtSubProject(BaseDbtProject):
                     continue
                 meshify_constructor.move_resource()
                 meshify_constructor.move_resource_yml_entry()
-            if resource.resource_type == "macro":
+            elif resource.resource_type == "macro":
                 meshify_constructor.copy_resource()
             else:
                 meshify_constructor.move_resource_yml_entry()
