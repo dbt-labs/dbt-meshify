@@ -154,7 +154,7 @@ class BaseDbtProject:
         """Returns the catalog entry for a model in the dbt project's catalog"""
         return self.catalog.nodes.get(unique_id)
 
-    def get_manifest_entry(self, unique_id: str) -> Optional[ManifestNode]:
+    def get_manifest_node(self, unique_id: str) -> Optional[ManifestNode]:
         """Returns the catalog entry for a model in the dbt project's catalog"""
         if unique_id.split(".")[0] in [
             "model",
@@ -294,7 +294,7 @@ class DbtSubProject(BaseDbtProject):
         """
         macro_list = []
         for unique_id in self.resources:
-            resource = self.get_manifest_entry(unique_id)
+            resource = self.get_manifest_node(unique_id)
             if not resource:
                 continue
             macros = resource.depends_on.macros
@@ -366,7 +366,7 @@ class DbtSubProject(BaseDbtProject):
         """Initialize this subproject as a full dbt project at the provided `target_directory`."""
 
         for unique_id in self.resources | self.custom_macros:
-            resource = self.get_manifest_entry(unique_id)
+            resource = self.get_manifest_node(unique_id)
             if not resource:
                 raise KeyError(f"Resource {unique_id} not found in manifest")
             meshify_constructor = DbtMeshConstructor(

@@ -105,6 +105,7 @@ def split(project_name, select, exclude, project_path, selector):
 
     path = Path(project_path).expanduser().resolve()
     project = DbtProject.from_directory(path)
+
     subproject = project.split(
         project_name=project_name, select=select, exclude=exclude, selector=selector
     )
@@ -129,9 +130,9 @@ def add_contract(select, exclude, project_path, selector, public_only=False):
     )
     models = filter(lambda x: x.startswith("model"), resources)
     if public_only:
-        models = filter(lambda x: project.get_manifest_entry(x).access == "public", models)
+        models = filter(lambda x: project.get_manifest_node(x).access == "public", models)
     for model_unique_id in models:
-        model_node = project.get_manifest_entry(model_unique_id)
+        model_node = project.get_manifest_node(model_unique_id)
         model_catalog = project.get_catalog_entry(model_unique_id)
         meshify_constructor = DbtMeshConstructor(
             project_path=project_path, node=model_node, catalog=model_catalog
@@ -159,7 +160,7 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in)
     )
     models = filter(lambda x: x.startswith("model"), resources)
     for model_unique_id in models:
-        model_node = project.get_manifest_entry(model_unique_id)
+        model_node = project.get_manifest_node(model_unique_id)
         if model_node.version == model_node.latest_version:
             meshify_constructor = DbtMeshConstructor(project_path=project_path, node=model_node)
             meshify_constructor.add_model_version(prerelease=prerelease, defined_in=defined_in)
