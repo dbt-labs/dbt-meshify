@@ -292,7 +292,7 @@ class DbtSubProject(BaseDbtProject):
         """
         get a set of macro unique_ids for all the selected resources
         """
-        macro_list = []
+        macro_list = set()
         for unique_id in self.resources:
             resource = self.get_manifest_node(unique_id)
             if not resource:
@@ -302,9 +302,9 @@ class DbtSubProject(BaseDbtProject):
                 macro
                 for macro in macros
                 if hashlib.md5((macro.split(".")[1]).encode()).hexdigest()
-                not in self.parent_project.installed_packages()
+                == self.manifest.metadata.project_id
             ]
-            macro_list.extend(project_macros)
+            macro_list.update(project_macros)
         return set(macro_list)
 
     def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
