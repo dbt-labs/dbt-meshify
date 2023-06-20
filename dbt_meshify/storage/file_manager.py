@@ -59,11 +59,15 @@ class DbtFileManager(BaseFileManager):
         self, path: Path, file_contents: Optional[Union[Dict[str, Any], str]] = None
     ) -> None:
         """Returns the yaml for a model in the dbt project's manifest"""
-        full_path = self.write_project_path / path
-        if full_path.suffix == ".yml":
-            full_path.write_text(yaml.dump(file_contents))
+        path.parent.mkdir(parents=True, exist_ok=True)
+        if path.suffix == ".yml":
+            path.write_text(yaml.dump(file_contents))
         else:
-            full_path.write_text(file_contents)  # type: ignore
+            path.write_text(file_contents)  # type: ignore
+
+    def copy_file(self, path: Path, new_path: Path) -> None:
+        file_contents = self.read_file(path)
+        self.write_file(new_path, file_contents)
 
     def delete_file(self, path: Path) -> None:
         """deletes the specified file"""

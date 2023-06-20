@@ -5,6 +5,8 @@ from typing import Any, Dict, List, Optional, Tuple
 import click
 from dbt.contracts.graph.unparsed import Owner
 
+from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
+
 from .dbt_projects import DbtProject, DbtProjectHolder, DbtSubProject
 from .storage.yaml_editors import DbtMeshConstructor
 
@@ -14,6 +16,13 @@ project_path = click.option(
     type=click.Path(exists=True),
     default=".",
     help="The path to the dbt project to operate on. Defaults to the current directory.",
+)
+
+create_path = click.option(
+    "--create-path",
+    type=click.Path(exists=True),
+    default=None,
+    help="The path to create the new dbt project. Defaults to the name argument supplied.",
 )
 
 exclude = click.option(
@@ -89,12 +98,13 @@ def connect(projects_dir):
 
 
 @cli.command(name="split")
+@create_path
 @click.argument("project_name")
 @exclude
 @project_path
 @select
 @selector
-def split(project_name, select, exclude, project_path, selector):
+def split(project_name, select, exclude, project_path, selector, create_path):
     """
     !!! info
         This command is not yet implemented
@@ -109,7 +119,14 @@ def split(project_name, select, exclude, project_path, selector):
     subproject = project.split(
         project_name=project_name, select=select, exclude=exclude, selector=selector
     )
-    subproject.initialize(target_directory=Path(project_name))
+    target_directory = Path(create_path) if create_path else None
+    subproject_creator = DbtSubprojectCreator(
+        subproject=subproject, target_directory=target_directory
+    )
+    import pdb
+
+    pdb.set_trace()
+    subproject_creator.initialize()
 
 
 @operation.command(name="add-contract")

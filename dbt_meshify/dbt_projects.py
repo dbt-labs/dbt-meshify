@@ -262,6 +262,7 @@ class DbtSubProject(BaseDbtProject):
         self.name = name
         self.resources = resources
         self.parent_project = parent_project
+        self.default_path = Path(name)
 
         # self.manifest = parent_project.manifest.deepcopy()
         # i am running into a bug with the core deepcopy -- checking with michelle
@@ -269,9 +270,6 @@ class DbtSubProject(BaseDbtProject):
         self.project = copy.deepcopy(parent_project.project)
         self.catalog = parent_project.catalog
         self.custom_macros = self._get_custom_macros()
-        self.file_manager = DbtFileManager(
-            read_project_path=parent_project.path, write_project_path=Path(name)
-        )
 
         self._rename_project()
 
@@ -341,53 +339,6 @@ class DbtSubProject(BaseDbtProject):
         self.register_relationship(project_name, subproject_resources)
 
         return subproject
-
-    def write_project_file(self):
-        """
-        Writes the dbt_project.yml file for the subproject in the specified subdirectory
-        """
-        contents = self.project.to_dict()
-        # was gettinga  weird serialization error from ruamel on this value
-        # it's been deprecated, so no reason to keep it
-        contents.pop("version")
-        # this one appears in the project yml, but i don't think it should be written
-        contents.pop("query-comment")
-        contents = filter_empty_dict_items(contents)
-        self.file_manager.write_file(Path("dbt_project.yml"), contents)
-
-    def write_packages_yml_file(self):
-        """
-        Writes the dbt_project.yml file for the subproject in the specified subdirectory
-        """
-        contents = self.file_manager.read_file(Path("packages.yml"))
-        self.file_manager.write_file(Path("packages.yml"), contents)
-
-    def initialize(self, target_directory: Path):
-        """Initialize this subproject as a full dbt project at the provided `target_directory`."""
-
-        for unique_id in self.resources | self.custom_macros:
-            resource = self.get_manifest_node(unique_id)
-            if not resource:
-                raise KeyError(f"Resource {unique_id} not found in manifest")
-            meshify_constructor = DbtMeshConstructor(
-                project_path=self.parent_project.path,
-                node=resource,
-                catalog=None,
-                subdirectory=target_directory,
-            )
-            if resource.resource_type in ["model", "test", "snapshot", "seed"]:
-                # ignore generic tests, as moving the yml entry will move the test too
-                if resource.resource_type == "test" and len(resource.unique_id.split(".")) == 4:
-                    continue
-                meshify_constructor.move_resource()
-                meshify_constructor.move_resource_yml_entry()
-            elif resource.resource_type == "macro":
-                meshify_constructor.copy_resource()
-            else:
-                meshify_constructor.move_resource_yml_entry()
-
-        self.write_project_file()
-        self.write_packages_yml_file()
 
 
 class DbtProjectHolder:

@@ -243,21 +243,13 @@ class DbtMeshYmlEditor:
 
 class DbtMeshConstructor(DbtMeshYmlEditor):
     def __init__(
-        self,
-        project_path: Path,
-        node: ManifestNode,
-        catalog: Optional[CatalogTable] = None,
-        subdirectory: Optional[Path] = None,
+        self, project_path: Path, node: ManifestNode, catalog: Optional[CatalogTable] = None
     ):
         self.project_path = project_path
         self.node = node
         self.model_catalog = catalog
         self.name = node.name
-        self.subdirectory = subdirectory
-        self.write_path = subdirectory / project_path if subdirectory else project_path
-        self.file_manager = DbtFileManager(
-            read_project_path=project_path, write_project_path=self.write_path
-        )
+        self.file_manager = DbtFileManager(read_project_path=project_path)
 
     def get_patch_path(self) -> Path:
         """Returns the path to the yml file where the resource is defined or described"""
@@ -286,7 +278,7 @@ class DbtMeshConstructor(DbtMeshYmlEditor):
             self.file_manager.write_file(yml_path, {})
         return yml_path
 
-    def get_resource_path(self) -> Optional[Path]:
+    def get_resource_path(self) -> Path:
         """
         Returns the path to the file where the resource is defined
         for yml-only nodes (generic tests, metrics, exposures, sources)
@@ -294,7 +286,7 @@ class DbtMeshConstructor(DbtMeshYmlEditor):
         for all others this will be the .sql or .py file for the resource
 
         """
-        return Path(self.node.original_file_path) if self.node.original_file_path else None
+        return Path(self.node.original_file_path)
 
     def add_model_contract(self) -> None:
         """Adds a model contract to the model's yaml"""
@@ -364,52 +356,3 @@ class DbtMeshConstructor(DbtMeshYmlEditor):
                 Path(self.project_path).joinpath(model_path).rename(
                     Path(self.project_path).joinpath(last_version_path)
                 )
-
-    def move_resource(self):
-        """
-        move a resource file from one project to another
-
-        """
-        current_path = self.get_resource_path()
-        new_path = self.subdirectory / current_path
-        new_path.parent.mkdir(parents=True, exist_ok=True)
-        current_path.rename(new_path)
-
-    def copy_resource(self):
-        """
-        copy a resource file from one project to another
-
-        """
-        current_path = self.get_resource_path()
-        new_path = self.subdirectory / current_path
-        new_path.parent.mkdir(parents=True, exist_ok=True)
-        contents = self.file_manager.read_file(current_path)
-        self.file_manager.write_file(new_path, contents)
-
-    def move_resource_yml_entry(self):
-        """
-        move a resource yml entry from one project to another
-        """
-        current_yml_path = self.get_patch_path()
-        new_yml_path = self.subdirectory / current_yml_path
-        new_yml_path.parent.mkdir(parents=True, exist_ok=True)
-        full_yml_entry = self.file_manager.read_file(current_yml_path)
-        source_name = self.node.source_name if hasattr(self.node, "source_name") else None
-        resource_entry, remainder = self.get_yml_entry(
-            resource_name=self.node.name,
-            full_yml=full_yml_entry,
-            resource_type=self.node.resource_type,
-            source_name=source_name,
-        )
-        try:
-            existing_yml = self.file_manager.read_file(new_yml_path)
-        except FileNotFoundError:
-            existing_yml = None
-        new_yml_contents = self.add_entry_to_yml(
-            resource_entry, existing_yml, self.node.resource_type
-        )
-        self.file_manager.write_file(new_yml_path, new_yml_contents)
-        if remainder:
-            self.file_manager.write_file(current_yml_path, remainder)
-        else:
-            self.file_manager.delete_file(current_yml_path)
