@@ -30,15 +30,14 @@ class DbtSubprojectCreator:
         # this one appears in the project yml, but i don't think it should be written
         contents.pop("query-comment")
         contents = filter_empty_dict_items(contents)
-        project_file_path = self.target_directory / Path("dbt_project.yml")
-        self.file_manager.write_file(project_file_path, contents)
+        # project_file_path = self.target_directory / Path("dbt_project.yml")
+        self.file_manager.write_file(Path("dbt_project.yml"), contents)
 
     def copy_packages_yml_file(self) -> None:
         """
         Writes the dbt_project.yml file for the subproject in the specified subdirectory
         """
-        new_path = self.target_directory / Path("packages.yml")
-        self.file_manager.copy_file(Path("packages.yml"), new_path=new_path)
+        self.file_manager.copy_file(Path("packages.yml"))
 
     def initialize(self) -> None:
         """Initialize this subproject as a full dbt project at the provided `target_directory`."""
@@ -70,8 +69,7 @@ class DbtSubprojectCreator:
 
         """
         current_path = meshify_constructor.get_resource_path()
-        new_path = self.target_directory / current_path
-        current_path.rename(new_path)
+        self.file_manager.move_file(current_path)
 
     def copy_resource(self, meshify_constructor: DbtMeshConstructor) -> None:
         """
@@ -80,15 +78,14 @@ class DbtSubprojectCreator:
         """
         resource_path = meshify_constructor.get_resource_path()
         contents = self.file_manager.read_file(resource_path)
-        new_path = self.target_directory / resource_path
-        self.file_manager.write_file(new_path, contents)
+        self.file_manager.write_file(resource_path, contents)
 
     def move_resource_yml_entry(self, meshify_constructor: DbtMeshConstructor) -> None:
         """
         move a resource yml entry from one project to another
         """
         current_yml_path = meshify_constructor.get_patch_path()
-        new_yml_path = self.target_directory / current_yml_path
+        new_yml_path = self.file_manager.write_project_path / current_yml_path
         full_yml_entry = self.file_manager.read_file(current_yml_path)
         source_name = (
             meshify_constructor.node.source_name
@@ -108,8 +105,8 @@ class DbtSubprojectCreator:
         new_yml_contents = meshify_constructor.add_entry_to_yml(
             resource_entry, existing_yml, meshify_constructor.node.resource_type  # type: ignore
         )
-        self.file_manager.write_file(new_yml_path, new_yml_contents)
+        self.file_manager.write_file(current_yml_path, new_yml_contents)
         if remainder:
-            self.file_manager.write_file(current_yml_path, remainder)
+            self.file_manager.write_file(current_yml_path, remainder, writeback=True)
         else:
             self.file_manager.delete_file(current_yml_path)
