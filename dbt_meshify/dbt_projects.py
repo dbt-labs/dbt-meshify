@@ -265,7 +265,7 @@ class DbtSubProject(BaseDbtProject):
         self.name = name
         self.resources = resources
         self.parent_project = parent_project
-        self.default_path = parent_project.path / Path(name)
+        self.path = parent_project.path / Path(name)
 
         # self.manifest = parent_project.manifest.deepcopy()
         # i am running into a bug with the core deepcopy -- checking with michelle

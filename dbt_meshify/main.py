@@ -123,9 +123,6 @@ def split(project_name, select, exclude, project_path, selector, create_path):
     subproject_creator = DbtSubprojectCreator(
         subproject=subproject, target_directory=target_directory
     )
-    import pdb
-
-    pdb.set_trace()
     subproject_creator.initialize()
 
 

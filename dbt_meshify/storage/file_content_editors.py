@@ -241,7 +241,7 @@ class DbtMeshFileEditor:
         models_yml["models"] = list(models.values())
         return models_yml
 
-    def update_sql_refs(self, model_sql: str, model_name: str, project_name: str):
+    def update_sql_refs(self, model_code: str, model_name: str, project_name: str):
         import re
 
         # pattern to search for ref() with optional spaces and either single or double quotes
@@ -251,7 +251,7 @@ class DbtMeshFileEditor:
         replacement = f"{{{{ ref('{project_name}', '{model_name}') }}}}"
 
         # perform replacement
-        new_code = re.sub(pattern, replacement, model_sql)
+        new_code = re.sub(pattern, replacement, model_code)
 
         return new_code
 
@@ -385,3 +385,27 @@ class DbtMeshConstructor(DbtMeshFileEditor):
                 Path(self.project_path).joinpath(model_path).rename(
                     Path(self.project_path).joinpath(last_version_path)
                 )
+
+    def update_model_refs(self, model_name: str, project_name: str) -> None:
+        """Updates the model refs in the model's sql file"""
+        model_path = self.get_resource_path()
+
+        if model_path is None:
+            raise Exception(f"Unable to find path to model {self.node.name}. Aborting.")
+
+        # read the model file
+        model_code = str(self.file_manager.read_file(model_path))
+        if self.node.language == "sql":
+            updated_code = self.update_sql_refs(
+                model_name=model_name,
+                project_name=project_name,
+                model_code=model_code,
+            )
+        elif self.node.language == "python":
+            updated_code = self.update_python_refs(
+                model_name=model_name,
+                project_name=project_name,
+                model_code=model_code,
+            )
+        # write the updated model code to the file
+        self.file_manager.write_file(model_path, updated_code)

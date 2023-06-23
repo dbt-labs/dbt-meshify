@@ -1,13 +1,13 @@
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional, Set, Tuple
+from typing import Any, Dict, Optional, Set, Tuple, Union
 
 import networkx
 from dbt.contracts.graph.nodes import Group, ModelNode
 from dbt.contracts.graph.unparsed import Owner
 from dbt.node_types import AccessType, NodeType
 
-from dbt_meshify.dbt_projects import DbtProject
+from dbt_meshify.dbt_projects import DbtProject, DbtSubProject
 from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
 from dbt_meshify.storage.file_manager import DbtFileManager
 
@@ -23,7 +23,7 @@ class ResourceGrouper:
     recommendations based on the reference characteristics for each resource.
     """
 
-    def __init__(self, project: DbtProject):
+    def __init__(self, project: Union[DbtProject, DbtSubProject]):
         self.project = project
         self.meshify = DbtMeshFileEditor()
         self.file_manager = DbtFileManager(read_project_path=project.path)
