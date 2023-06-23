@@ -71,6 +71,15 @@ class DbtSubprojectCreator:
         """
         raise NotImplementedError("copy_packages_dir not implemented yet")
 
+    def update_dependencies_yml(self) -> None:
+        try:
+            contents = self.file_manager.read_file(Path("dependencies.yml"))
+        except FileNotFoundError:
+            contents = {"projects": []}
+
+        contents["projects"].append({"name": self.subproject.name})  # type: ignore
+        self.file_manager.write_file(Path("dependencies.yml"), contents, writeback=True)
+
     def update_child_refs(self, resource: ManifestNode) -> None:
         downstream_models = [
             node.unique_id
@@ -118,6 +127,7 @@ class DbtSubprojectCreator:
 
         self.write_project_file()
         self.copy_packages_yml_file()
+        self.update_dependencies_yml()
         # self.copy_packages_dir()
 
     def move_resource(self, meshify_constructor: DbtMeshConstructor) -> None:
