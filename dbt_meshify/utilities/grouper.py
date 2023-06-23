@@ -8,7 +8,7 @@ from dbt.contracts.graph.unparsed import Owner
 from dbt.node_types import AccessType, NodeType
 
 from dbt_meshify.dbt_projects import DbtProject
-from dbt_meshify.storage.file_content_editors import DbtMeshYmlEditor
+from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
 from dbt_meshify.storage.file_manager import DbtFileManager
 
 
@@ -25,7 +25,7 @@ class ResourceGrouper:
 
     def __init__(self, project: DbtProject):
         self.project = project
-        self.meshify = DbtMeshYmlEditor()
+        self.meshify = DbtMeshFileEditor()
         self.file_manager = DbtFileManager(read_project_path=project.path)
 
     @classmethod

@@ -1,4 +1,4 @@
-from dbt_meshify.storage.file_content_editors import DbtMeshYmlEditor
+from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
 
 from ..fixtures import (
     expected_contract_yml_all_col,
@@ -14,7 +14,7 @@ from ..fixtures import (
 )
 from . import read_yml
 
-meshify = DbtMeshYmlEditor()
+meshify = DbtMeshFileEditor()
 catalog_entry = shared_model_catalog_entry
 model_name = "shared_model"
 

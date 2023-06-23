@@ -45,10 +45,11 @@ def resources_yml_to_dict(resources_yml: Dict, resource_type: NodeType = NodeTyp
     )
 
 
-class DbtMeshYmlEditor:
+class DbtMeshFileEditor:
     """
-    Class to operate on the contents of a dbt project's dbt_project.yml file
-    to add the dbt-core concepts specific to the dbt linker
+    Class to operate on the contents of a dbt project's files
+    to add the dbt mesh functionality
+    includes editing yml entries and sql file contents
     """
 
     @staticmethod
@@ -240,8 +241,22 @@ class DbtMeshYmlEditor:
         models_yml["models"] = list(models.values())
         return models_yml
 
+    def update_sql_refs(self, model_sql: str, model_name: str, project_name: str):
+        import re
 
-class DbtMeshConstructor(DbtMeshYmlEditor):
+        # pattern to search for ref() with optional spaces and either single or double quotes
+        pattern = re.compile(r"{{\s*ref\s*\(\s*['\"]" + re.escape(model_name) + r"['\"]\s*\)\s*}}")
+
+        # replacement string with the new format
+        replacement = f"{{{{ ref('{project_name}', '{model_name}') }}}}"
+
+        # perform replacement
+        new_code = re.sub(pattern, replacement, model_sql)
+
+        return new_code
+
+
+class DbtMeshConstructor(DbtMeshFileEditor):
     def __init__(
         self, project_path: Path, node: ManifestNode, catalog: Optional[CatalogTable] = None
     ):

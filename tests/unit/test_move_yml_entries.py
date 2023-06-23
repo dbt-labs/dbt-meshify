@@ -1,7 +1,7 @@
 import yaml
 from dbt.node_types import NodeType
 
-from dbt_meshify.storage.file_content_editors import DbtMeshYmlEditor
+from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
 
 from ..fixtures import (
     expeceted_remainder_yml__source_yml_multiple_tables,
@@ -25,7 +25,7 @@ from ..fixtures import (
     source_yml_one_table,
 )
 
-meshify = DbtMeshYmlEditor()
+meshify = DbtMeshFileEditor()
 model_name = "shared_model"
 source_name = "test_source"
 source_table_name = "table"
