@@ -72,18 +72,41 @@ class DbtMeshFileEditor:
         return groups_yml
 
     @staticmethod
-    def add_group_and_access_to_model_yml(
-        model_name: str, group: Group, access_type: AccessType, models_yml: Dict[str, Any]
+    def add_access_to_model_yml(
+        model_name: str, access_type: AccessType, models_yml: Dict[str, Any]
     ):
         """Add group and access configuration to a model's YAMl properties."""
         # parse the yml file into a dictionary with model names as keys
         models = resources_yml_to_dict(models_yml)
         model_yml = models.get(model_name) or {"name": model_name, "columns": [], "config": {}}
 
-        model_yml.update({"access": access_type.value, "group": group.name})
+        model_yml.update({"access": access_type.value})
         models[model_name] = process_model_yml(model_yml)
 
         models_yml["models"] = list(models.values())
+        return models_yml
+
+    @staticmethod
+    def add_group_to_model_yml(model_name: str, group: Group, models_yml: Dict[str, Any]):
+        """Add group and access configuration to a model's YAMl properties."""
+        # parse the yml file into a dictionary with model names as keys
+        models = resources_yml_to_dict(models_yml)
+        model_yml = models.get(model_name) or {"name": model_name, "columns": [], "config": {}}
+
+        model_yml.update({"group": group.name})
+        models[model_name] = process_model_yml(model_yml)
+
+        models_yml["models"] = list(models.values())
+        return models_yml
+
+    @staticmethod
+    def add_group_and_access_to_model_yml(
+        model_name: str, group: Group, access_type: AccessType, models_yml: Dict[str, Any]
+    ):
+        """Add group and access configuration to a model's YAMl properties."""
+        # parse the yml file into a dictionary with model names as keys
+        models_yml = DbtMeshFileEditor.add_access_to_model_yml(model_name, access_type, models_yml)
+        models_yml = DbtMeshFileEditor.add_group_to_model_yml(model_name, group, models_yml)
         return models_yml
 
     def get_source_yml_entry(
@@ -330,6 +353,24 @@ class DbtMeshConstructor(DbtMeshFileEditor):
         updated_yml = self.add_model_contract_to_yml(
             model_name=self.node.name,
             model_catalog=self.model_catalog,
+            models_yml=models_yml,
+        )
+        # write the updated yml to the file
+        self.file_manager.write_file(yml_path, updated_yml)
+
+    def add_model_access(self, access_type: AccessType) -> None:
+        """Adds a model contract to the model's yaml"""
+        yml_path = self.get_patch_path()
+        # read the yml file
+        # pass empty dict if no file contents returned
+        models_yml = self.file_manager.read_file(yml_path)
+
+        if isinstance(models_yml, str):
+            raise Exception(f"Unexpected string values in dumped model data in {yml_path}.")
+
+        updated_yml = self.add_access_to_model_yml(
+            model_name=self.node.name,
+            access_type=access_type,
             models_yml=models_yml,
         )
         # write the updated yml to the file

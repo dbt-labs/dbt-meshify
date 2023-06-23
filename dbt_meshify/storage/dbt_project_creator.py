@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Optional, Set
 
 from dbt.contracts.graph.nodes import ManifestNode
+from dbt.node_types import AccessType
 
 from dbt_meshify.dbt_projects import DbtSubProject
 from dbt_meshify.storage.file_content_editors import (
@@ -104,6 +105,7 @@ class DbtSubprojectCreator:
                     continue
                 if resource.unique_id in self.subproject_boundary_models:
                     meshify_constructor.add_model_contract()
+                    meshify_constructor.add_model_access(access_type=AccessType.Public)
                     # apply access method too
                     self.update_child_refs(resource)
 
