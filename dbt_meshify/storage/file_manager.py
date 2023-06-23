@@ -82,9 +82,10 @@ class DbtFileManager(BaseFileManager):
         """
         move a file from the read project to the write project
         """
+        old_path = self.read_project_path / path
         new_path = self.write_project_path / path
         new_path.parent.mkdir(parents=True, exist_ok=True)
-        path.rename(new_path)
+        old_path.rename(new_path)
 
     def delete_file(self, path: Path) -> None:
         """deletes the specified file"""

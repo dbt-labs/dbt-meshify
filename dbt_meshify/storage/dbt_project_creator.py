@@ -39,6 +39,12 @@ class DbtSubprojectCreator:
         """
         self.file_manager.copy_file(Path("packages.yml"))
 
+    def copy_packages_dir(self) -> None:
+        """
+        Writes the dbt_packages director to the subproject's subdirectory to avoid the need for an immediate deps run
+        """
+        raise NotImplementedError("copy_packages_dir not implemented yet")
+
     def initialize(self) -> None:
         """Initialize this subproject as a full dbt project at the provided `target_directory`."""
         subproject = self.subproject
@@ -62,6 +68,7 @@ class DbtSubprojectCreator:
 
         self.write_project_file()
         self.copy_packages_yml_file()
+        # self.copy_packages_dir()
 
     def move_resource(self, meshify_constructor: DbtMeshConstructor) -> None:
         """
