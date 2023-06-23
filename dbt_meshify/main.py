@@ -8,7 +8,7 @@ from dbt.contracts.graph.unparsed import Owner
 from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
 
 from .dbt_projects import DbtProject, DbtProjectHolder, DbtSubProject
-from .storage.yaml_editors import DbtMeshConstructor
+from .storage.file_content_editors import DbtMeshConstructor
 
 # define common parameters
 project_path = click.option(

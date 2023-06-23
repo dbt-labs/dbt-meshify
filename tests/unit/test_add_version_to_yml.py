@@ -1,6 +1,6 @@
 import yaml
 
-from dbt_meshify.storage.yaml_editors import DbtMeshYmlEditor
+from dbt_meshify.storage.file_content_editors import DbtMeshYmlEditor
 
 from ..fixtures import (
     expected_versioned_model_yml_increment_version_defined_in,

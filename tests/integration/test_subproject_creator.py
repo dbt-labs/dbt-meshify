@@ -6,8 +6,8 @@ import yaml
 from dbt_meshify.dbt import Dbt
 from dbt_meshify.dbt_projects import DbtProject
 from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
+from dbt_meshify.storage.file_content_editors import DbtMeshConstructor
 from dbt_meshify.storage.file_manager import DbtFileManager
-from dbt_meshify.storage.yaml_editors import DbtMeshConstructor
 
 test_project_profile = yaml.safe_load(
     """

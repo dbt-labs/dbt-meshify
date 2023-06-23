@@ -15,8 +15,11 @@ from dbt.graph import Graph
 from dbt.node_types import NodeType
 
 from dbt_meshify.dbt import Dbt
+from dbt_meshify.storage.file_content_editors import (
+    DbtMeshConstructor,
+    filter_empty_dict_items,
+)
 from dbt_meshify.storage.file_manager import DbtFileManager
-from dbt_meshify.storage.yaml_editors import DbtMeshConstructor, filter_empty_dict_items
 
 logger = logging.getLogger()
 

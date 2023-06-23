@@ -2,8 +2,11 @@ from pathlib import Path
 from typing import Optional
 
 from dbt_meshify.dbt_projects import DbtSubProject
+from dbt_meshify.storage.file_content_editors import (
+    DbtMeshConstructor,
+    filter_empty_dict_items,
+)
 from dbt_meshify.storage.file_manager import DbtFileManager
-from dbt_meshify.storage.yaml_editors import DbtMeshConstructor, filter_empty_dict_items
 
 
 class DbtSubprojectCreator:

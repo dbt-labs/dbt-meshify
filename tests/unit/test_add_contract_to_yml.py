@@ -1,4 +1,4 @@
-from dbt_meshify.storage.yaml_editors import DbtMeshYmlEditor
+from dbt_meshify.storage.file_content_editors import DbtMeshYmlEditor
 
 from ..fixtures import (
     expected_contract_yml_all_col,

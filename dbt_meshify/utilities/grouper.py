@@ -8,8 +8,8 @@ from dbt.contracts.graph.unparsed import Owner
 from dbt.node_types import AccessType, NodeType
 
 from dbt_meshify.dbt_projects import DbtProject
+from dbt_meshify.storage.file_content_editors import DbtMeshYmlEditor
 from dbt_meshify.storage.file_manager import DbtFileManager
-from dbt_meshify.storage.yaml_editors import DbtMeshYmlEditor
 
 
 class ResourceGroupingException(BaseException):

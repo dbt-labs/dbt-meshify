@@ -1,7 +1,7 @@
 import yaml
 from dbt.node_types import NodeType
 
-from dbt_meshify.storage.yaml_editors import DbtMeshYmlEditor
+from dbt_meshify.storage.file_content_editors import DbtMeshYmlEditor
 
 from ..fixtures import (
     expeceted_remainder_yml__source_yml_multiple_tables,
