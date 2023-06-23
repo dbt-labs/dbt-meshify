@@ -35,11 +35,6 @@ models:
     description: Order overview data mart, offering key details for each order inlcluding
       if it's a customer's first order and a food vs. drink item breakdown. One row
       per order.
-    access: public
-    group: test_group
-    config:
-      contract:
-        enforced: true
     tests:
       - dbt_utils.expression_is_true:
           expression: count_food_items + count_drink_items = count_items
@@ -51,54 +46,37 @@ models:
         tests:
           - not_null
           - unique
-        data_type: varchar
       - name: customer_id
         description: The foreign key relating to the customer who placed the order.
         tests:
           - relationships:
               to: ref('stg_customers')
               field: customer_id
-        data_type: varchar
       - name: location_id
         description: The foreign key relating to the location the order was placed
           at.
-        data_type: varchar
       - name: order_total
         description: The total amount of the order in USD including tax.
-        data_type: float
       - name: ordered_at
         description: The timestamp the order was placed at.
-        data_type: timestamp
       - name: count_food_items
         description: The number of individual food items ordered.
-        data_type: hugeint
       - name: count_drink_items
         description: The number of individual drink items ordered.
-        data_type: hugeint
       - name: count_items
         description: The total number of both food and drink items ordered.
-        data_type: bigint
       - name: subtotal_food_items
         description: The sum of all the food item prices without tax.
-        data_type: double
       - name: subtotal_drink_items
         description: The sum of all the drink item prices without tax.
-        data_type: double
       - name: subtotal
         description: The sum total of both food and drink item prices without tax.
-        data_type: double
       - name: order_cost
         description: The sum of supply expenses to fulfill the order.
-        data_type: double
       - name: location_name
         description: The full location name of where this order was placed. Denormalized
           from `stg_locations`.
-        data_type: varchar
       - name: is_food_order
         description: A boolean indicating if this order included any food items.
-        data_type: boolean
       - name: is_drink_order
         description: A boolean indicating if this order included any drink items.
-        data_type: boolean
-      - name: tax_paid
-        data_type: float
