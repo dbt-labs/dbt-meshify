@@ -2,8 +2,7 @@ version: 2
 
 models:
   - name: stg_customers
-    description:
-      Customer data with basic cleaning and transformation applied, one
+    description: Customer data with basic cleaning and transformation applied, one
       row per customer.
     columns:
       - name: customer_id
@@ -13,9 +12,10 @@ models:
           - unique
 
   - name: stg_locations
-    description:
-      List of open locations with basic cleaning and transformation applied,
+    description: List of open locations with basic cleaning and transformation applied,
       one row per location.
+    access: private
+    group: test_group
     columns:
       - name: location_id
         description: The unique key for each location.
@@ -24,9 +24,10 @@ models:
           - unique
 
   - name: stg_order_items
-    description:
-      Individual food and drink items that make up our orders, one row
+    description: Individual food and drink items that make up our orders, one row
       per item.
+    access: private
+    group: test_group
     columns:
       - name: order_item_id
         description: The unique key for each order item.
@@ -35,9 +36,10 @@ models:
           - unique
 
   - name: stg_orders
-    description:
-      Order data with basic cleaning and transformation applied, one row
+    description: Order data with basic cleaning and transformation applied, one row
       per order.
+    access: private
+    group: test_group
     columns:
       - name: order_id
         description: The unique key for each order.
@@ -46,9 +48,10 @@ models:
           - unique
 
   - name: stg_products
-    description:
-      Product (food and drink items that can be ordered) data with basic
+    description: Product (food and drink items that can be ordered) data with basic
       cleaning and transformation applied, one row per product.
+    access: private
+    group: test_group
     columns:
       - name: product_id
         description: The unique key for each product.
@@ -62,6 +65,8 @@ models:
 
       One row per supply cost, not per supply. As supply costs fluctuate they receive
       a new row with a new UUID. Thus there can be multiple rows per supply_id.
+    access: private
+    group: test_group
     columns:
       - name: supply_uuid
         description: The unique key of our supplies per cost.

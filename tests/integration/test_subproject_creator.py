@@ -54,7 +54,7 @@ def get_meshify_constructor(subproject, unique_id):
     if not resource:
         raise KeyError(f"Resource {unique_id} not found in manifest")
     meshify_constructor = DbtMeshConstructor(
-        project_path=subproject.default_path, node=resource, catalog=None
+        project_path=subproject.path, node=resource, catalog=None
     )
     return meshify_constructor
 
