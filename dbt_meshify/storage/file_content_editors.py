@@ -255,6 +255,20 @@ class DbtMeshFileEditor:
 
         return new_code
 
+    def update_python_refs(self, model_code: str, model_name: str, project_name: str):
+        import re
+
+        # pattern to search for ref() with optional spaces and either single or double quotes
+        pattern = re.compile(r"dbt\.ref\s*\(\s*['\"]" + re.escape(model_name) + r"['\"]\s*\)")
+
+        # replacement string with the new format
+        replacement = f"dbt.ref('{project_name}', '{model_name}')"
+
+        # perform replacement
+        new_code = re.sub(pattern, replacement, model_code)
+
+        return new_code
+
 
 class DbtMeshConstructor(DbtMeshFileEditor):
     def __init__(
