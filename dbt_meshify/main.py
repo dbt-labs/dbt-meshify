@@ -1,77 +1,24 @@
-import functools
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Optional
 
 import click
 import yaml
 from dbt.contracts.graph.unparsed import Owner
 
+from .cli import (
+    exclude,
+    group_yml_path,
+    owner,
+    owner_email,
+    owner_name,
+    owner_properties,
+    project_path,
+    select,
+    selector,
+)
 from .dbt_projects import DbtProject, DbtProjectHolder, DbtSubProject
 from .storage.yaml_editors import DbtMeshModelConstructor
-
-# define common parameters
-project_path = click.option(
-    "--project-path",
-    type=click.Path(exists=True),
-    default=".",
-    help="The path to the dbt project to operate on. Defaults to the current directory.",
-)
-
-exclude = click.option(
-    "--exclude",
-    "-e",
-    default=None,
-    help="The dbt selection syntax specifying the resources to exclude in the operation",
-)
-
-group_yml_path = click.option(
-    "--group-yml-path",
-    type=click.Path(exists=False),
-    help="An optional path to store the new group YAML definition.",
-)
-
-select = click.option(
-    "--select",
-    "-s",
-    default=None,
-    help="The dbt selection syntax specifying the resources to include in the operation",
-)
-
-owner_name = click.option(
-    "--owner-name",
-    help="The group Owner's name.",
-)
-
-owner_email = click.option(
-    "--owner-email",
-    help="The group Owner's email address.",
-)
-
-owner_properties = click.option(
-    "--owner-properties",
-    help="Additional properties to assign to a group Owner.",
-)
-
-selector = click.option(
-    "--selector",
-    default=None,
-    help="The name of the YML selector specifying the resources to include in the operation",
-)
-
-
-def owner(func):
-    """Add click options and argument validation for creating Owner objects."""
-
-    @functools.wraps(func)
-    def wrapper_decorator(*args, **kwargs):
-        print("Validating owner configs.")
-        # Do something before
-        value = func(*args, **kwargs)
-        # Do something after
-        return value
-
-    return wrapper_decorator
 
 
 # define cli group
@@ -244,14 +191,14 @@ def create_group(
             "The provided group-yml-path is not contained within the provided dbt project."
         )
 
-    owner: Owner = Owner(
+    group_owner: Owner = Owner(
         name=owner_name, email=owner_email, _extra=yaml.safe_load(owner_properties)
     )
 
     grouper = ResourceGrouper(project)
     grouper.add_group(
         name=name,
-        owner=owner,
+        owner=group_owner,
         select=select,
         exclude=exclude,
         selector=selector,
@@ -268,6 +215,7 @@ def create_group(
 @owner_name
 @owner_email
 @owner_properties
+@owner
 @group_yml_path
 @click.pass_context
 def group(
