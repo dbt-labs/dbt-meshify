@@ -30,7 +30,7 @@ Here's how that might look for the process of creating a separate `finance` subp
 # create a group of all models tagged with "finance"
 # leaf nodes and nodes with cross-group dependencies will be `public`
 # public nodes will also have contracts added to them
-dbt-meshify group finance --owner name Monopoly Man -s +tag:finance
+dbt-meshify group finance --owner-name "Monopoly Man" -s +tag:finance
 
 # optionally use the add-version operation to add a new version to a model
 dbt-meshify operation add-version -s fct_orders
