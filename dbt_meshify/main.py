@@ -169,7 +169,7 @@ def create_group(
     select: str,
     owner_name: Optional[str] = None,
     owner_email: Optional[str] = None,
-    owner_properties: str = '{}',
+    owner_properties: Optional[str] = None,
     exclude: Optional[str] = None,
     selector: Optional[str] = None,
 ):
@@ -192,7 +192,7 @@ def create_group(
         )
 
     group_owner: Owner = Owner(
-        name=owner_name, email=owner_email, _extra=yaml.safe_load(owner_properties)
+        name=owner_name, email=owner_email, _extra=yaml.safe_load(owner_properties or '{}')
     )
 
     grouper = ResourceGrouper(project)
