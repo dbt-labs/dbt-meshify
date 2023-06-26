@@ -6,6 +6,7 @@ import networkx
 from dbt.contracts.graph.nodes import Group, ModelNode
 from dbt.contracts.graph.unparsed import Owner
 from dbt.node_types import AccessType, NodeType
+from loguru import logger
 
 from dbt_meshify.dbt_projects import DbtProject
 from dbt_meshify.storage.file_manager import DbtFileManager
@@ -53,6 +54,7 @@ class ResourceGrouper:
             node: AccessType.Public if node in boundary_nodes else AccessType.Private
             for node in nodes
         }
+        logger.info(f"Identified resource access types based on the graph: {resources}")
         return resources
 
     def _generate_resource_group(
@@ -79,6 +81,8 @@ class ResourceGrouper:
         nodes = self.project.select_resources(
             select=select, exclude=exclude, selector=selector, output_key="unique_id"
         )
+
+        logger.info(f"Selected {len(nodes)} nodes for group '{group.name}': {nodes}")
 
         # Check if any of the selected nodes are already in a group of a different name. If so, raise an exception.
         nodes = set(filter(lambda x: not x.startswith("source"), nodes))
@@ -139,8 +143,16 @@ class ResourceGrouper:
             except FileNotFoundError:
                 file_yml = {}
 
-            output_yml = self.meshify.add_group_and_access_to_model_yml(
-                model.name, group, access_type, file_yml
+            logger.info(
+                f"Adding model '{model.name}' to group '{group.name}' in file '{path.name}'"
             )
+            try:
+                output_yml = self.meshify.add_group_and_access_to_model_yml(
+                    model.name, group, access_type, file_yml
+                )
 
-            self.file_manager.write_file(path, output_yml)
+                self.file_manager.write_file(path, output_yml)
+                logger.success(f"Successfully added model '{model.name}' to group '{group.name}'")
+            except Exception as e:
+                logger.error(f"Failed to add model '{model.name}' to group '{group.name}'")
+                logger.error(e)
