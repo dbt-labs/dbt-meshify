@@ -22,7 +22,7 @@ from .cli import (
 from .dbt_projects import DbtProject, DbtProjectHolder, DbtSubProject
 from .storage.yaml_editors import DbtMeshModelConstructor
 
-log_format = "<white>{time}</white> | <level>{level}</level> | <level>{message}</level>"
+log_format = "<white>{time:HH:mm:ss}</white> | <level>{level}</level> | <level>{message}</level>"
 logger.remove()  # Remove the default sink added by Loguru
 logger.add(sys.stdout, format=log_format)
 
