@@ -29,7 +29,7 @@ class DbtSubprojectCreator:
 
     def _get_subproject_boundary_models(self) -> Set[str]:
         """
-        get a set of boundary node unique_ids for all the selected resources
+        get a set of boundary model unique_ids for all the selected resources
         """
         nodes = set(filter(lambda x: not x.startswith("source"), self.subproject.resources))
         grouper = ResourceGrouper(project=self.subproject)

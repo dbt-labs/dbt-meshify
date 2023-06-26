@@ -8,7 +8,6 @@ from dbt_meshify.dbt import Dbt
 from dbt_meshify.dbt_projects import DbtProject
 from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
 from dbt_meshify.storage.file_content_editors import DbtMeshConstructor
-from dbt_meshify.storage.file_manager import DbtFileManager
 
 test_project_profile = yaml.safe_load(
     """
@@ -137,5 +136,17 @@ class TestDbtSubprojectCreator:
         # the original path should still exist, since we take only the single model entry
         assert Path("test/packages.yml").exists()
         assert Path("test/subdir/packages.yml").exists()
+        os.chdir(starting_directory)
+        teardown_new_project()
+
+    def test_write_dependencies_yml(self) -> None:
+        starting_directory = os.getcwd()
+        os.chdir(Path("test-projects"))
+        setup_new_project(write_packages_yml=True)
+        subproject = split_project()
+        creator = DbtSubprojectCreator(subproject)
+        creator.update_dependencies_yml()
+        # the original path should still exist, since we take only the single model entry
+        assert Path("test/dependencies.yml").exists()
         os.chdir(starting_directory)
         teardown_new_project()

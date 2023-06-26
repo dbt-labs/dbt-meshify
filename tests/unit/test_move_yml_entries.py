@@ -3,7 +3,7 @@ from dbt.node_types import NodeType
 
 from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
 
-from ..fixtures import (
+from ..sql_and_yml_fixtures import (
     expeceted_remainder_yml__source_yml_multiple_tables,
     expected_remainder_yml__model_yml_other_model,
     expected_remainder_yml__multiple_exposures,

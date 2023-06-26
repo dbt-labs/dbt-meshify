@@ -1,6 +1,7 @@
 from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
 
-from ..fixtures import (
+from ..dbt_project_fixtures import shared_model_catalog_entry
+from ..sql_and_yml_fixtures import (
     expected_contract_yml_all_col,
     expected_contract_yml_no_col,
     expected_contract_yml_no_entry,
@@ -10,7 +11,6 @@ from ..fixtures import (
     model_yml_no_col_no_version,
     model_yml_one_col,
     model_yml_other_model,
-    shared_model_catalog_entry,
 )
 from . import read_yml
 
