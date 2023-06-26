@@ -25,7 +25,7 @@ shared_model_catalog_entry = CatalogTable.from_dict(
             "owner": None,
         },
         "columns": {
-            "id": {"type": "INTEGER", "index": 1, "name": "id", "comment": None},
+            "ID": {"type": "INTEGER", "index": 1, "name": "id", "comment": None},
             "colleague": {"type": "VARCHAR", "index": 2, "name": "colleague", "comment": None},
         },
         "stats": {
