@@ -82,8 +82,7 @@ class ResourceGrouper:
             select=select, exclude=exclude, selector=selector, output_key="unique_id"
         )
 
-        logger.info(f"Selected {len(nodes)} nodes for group '{group.name}': {nodes}")
-
+        logger.info(f"Selected {len(resources)} resources: {resources}")
         # Check if any of the selected nodes are already in a group of a different name. If so, raise an exception.
         nodes = set(filter(lambda x: not x.startswith("source"), nodes))
         for node in nodes:
@@ -125,6 +124,7 @@ class ResourceGrouper:
         output_yml = self.meshify.add_group_to_yml(group, group_yml)
         self.file_manager.write_file(group_path, output_yml)
 
+        logger.info(f"Adding resources to group '{group.name}'...")
         for resource, access_type in resources.items():
             # TODO: revisit this logic other resource types
             if not resource.startswith("model"):

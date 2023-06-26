@@ -159,7 +159,7 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in)
         )
     )
     models = filter(lambda x: x.startswith("model"), resources)
-    logger.info(f"Found {len(resources)} resources: {resources}")
+    logger.info(f"Selected {len(resources)} resources: {resources}")
     logger.info(f"Adding version to models in selected resources...")
     for model_unique_id in models:
         model_node = project.get_manifest_node(model_unique_id)
