@@ -1,4 +1,5 @@
 import os
+import subprocess
 from pathlib import Path
 
 import yaml
@@ -34,7 +35,7 @@ model_unique_id = "model.test.my_first_dbt_model"
 
 def setup_new_project(write_packages_yml: bool = False):
     dbt = Dbt()
-    dbt.invoke(directory=None, runner_args=["init", "test", "-s"])
+    subprocess.run(["poetry", "run", "dbt", "init", "test", "-s"])
     with open("test/profiles.yml", "w") as f:
         f.write(yaml.dump(test_project_profile))
     if write_packages_yml:
