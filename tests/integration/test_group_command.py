@@ -36,8 +36,7 @@ def test_group_command(select, expected_public_contracted_models):
         group,
         [
             "test_group",
-            "--owner",
-            "name",
+            "--owner-name",
             "Teenage Mutant Jinja Turtles",
             "--select",
             select,

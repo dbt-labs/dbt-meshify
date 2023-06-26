@@ -1,63 +1,27 @@
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Optional
 
 import click
+import yaml
 from dbt.contracts.graph.unparsed import Owner
 
 from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
 
+from .cli import (
+    create_path,
+    exclude,
+    group_yml_path,
+    owner,
+    owner_email,
+    owner_name,
+    owner_properties,
+    project_path,
+    select,
+    selector,
+)
 from .dbt_projects import DbtProject, DbtProjectHolder, DbtSubProject
 from .storage.file_content_editors import DbtMeshConstructor
-
-# define common parameters
-project_path = click.option(
-    "--project-path",
-    type=click.Path(exists=True),
-    default=".",
-    help="The path to the dbt project to operate on. Defaults to the current directory.",
-)
-
-create_path = click.option(
-    "--create-path",
-    type=click.Path(exists=True),
-    default=None,
-    help="The path to create the new dbt project. Defaults to the name argument supplied.",
-)
-
-exclude = click.option(
-    "--exclude",
-    "-e",
-    default=None,
-    help="The dbt selection syntax specifying the resources to exclude in the operation",
-)
-
-group_yml_path = click.option(
-    "--group-yml-path",
-    type=click.Path(exists=False),
-    help="An optional path to store the new group YAML definition.",
-)
-
-select = click.option(
-    "--select",
-    "-s",
-    default=None,
-    help="The dbt selection syntax specifying the resources to include in the operation",
-)
-
-owner = click.option(
-    "--owner",
-    nargs=2,
-    multiple=True,
-    type=click.Tuple([str, str]),
-    help="A tuple of Owner information for the group. For example " "`--owner name example`",
-)
-
-selector = click.option(
-    "--selector",
-    default=None,
-    help="The name of the YML selector specifying the resources to include in the operation",
-)
 
 
 # define cli group
@@ -183,14 +147,19 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in)
 @select
 @selector
 @click.argument("name")
+@owner_name
+@owner_email
+@owner_properties
 @owner
 @group_yml_path
 def create_group(
     name,
     project_path: os.PathLike,
-    owner: List[Tuple[str, str]],
     group_yml_path: os.PathLike,
     select: str,
+    owner_name: Optional[str] = None,
+    owner_email: Optional[str] = None,
+    owner_properties: Optional[str] = None,
     exclude: Optional[str] = None,
     selector: Optional[str] = None,
 ):
@@ -212,12 +181,14 @@ def create_group(
             "The provided group-yml-path is not contained within the provided dbt project."
         )
 
-    owner: Owner = Owner(**{key: value for key, value in owner})
+    group_owner: Owner = Owner(
+        name=owner_name, email=owner_email, _extra=yaml.safe_load(owner_properties or '{}')
+    )
 
     grouper = ResourceGrouper(project)
     grouper.add_group(
         name=name,
-        owner=owner,
+        owner=group_owner,
         select=select,
         exclude=exclude,
         selector=selector,
@@ -231,6 +202,9 @@ def create_group(
 @select
 @selector
 @click.argument("name")
+@owner_name
+@owner_email
+@owner_properties
 @owner
 @group_yml_path
 @click.pass_context
@@ -238,9 +212,11 @@ def group(
     ctx,
     name,
     project_path: os.PathLike,
-    owner: List[Tuple[str, str]],
     group_yml_path: os.PathLike,
     select: str,
+    owner_name: Optional[str] = None,
+    owner_email: Optional[str] = None,
+    owner_properties: Optional[str] = None,
     exclude: Optional[str] = None,
     selector: Optional[str] = None,
 ):
