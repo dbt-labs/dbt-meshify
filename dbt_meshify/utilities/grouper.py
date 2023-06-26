@@ -82,7 +82,7 @@ class ResourceGrouper:
             select=select, exclude=exclude, selector=selector, output_key="unique_id"
         )
 
-        logger.info(f"Selected {len(resources)} resources: {resources}")
+        logger.info(f"Selected {len(nodes)} resources: {nodes}")
         # Check if any of the selected nodes are already in a group of a different name. If so, raise an exception.
         nodes = set(filter(lambda x: not x.startswith("source"), nodes))
         for node in nodes:
