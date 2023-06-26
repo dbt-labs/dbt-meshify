@@ -63,6 +63,17 @@ models:
         description: "this is the id column"
 """
 
+model_yml_one_col_one_test = """
+models:
+  - name: shared_model
+    description: "this is a test model"
+    columns:
+      - name: id
+        description: "this is the id column"
+        tests:
+          - unique
+"""
+
 model_yml_all_col = """
 models:
   - name: shared_model
@@ -100,6 +111,21 @@ models:
         data_type: integer
       - name: colleague
         data_type: varchar
+"""
+
+expected_contract_yml_one_col_one_test = """
+models:
+  - name: shared_model
+    config:
+      contract:
+        enforced: true
+    description: "this is a test model"
+    columns:
+      - name: id
+        description: "this is the id column"
+        data_type: integer
+        tests:
+          - unique
 """
 
 expected_contract_yml_all_col = """
