@@ -126,6 +126,8 @@ models:
         data_type: integer
         tests:
           - unique
+      - name: colleague
+        data_type: varchar
 """
 
 expected_contract_yml_all_col = """
