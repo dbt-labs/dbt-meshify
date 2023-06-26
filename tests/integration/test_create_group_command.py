@@ -51,11 +51,9 @@ def test_create_group_command(model_yml, start_group_yml, end_group_yml):
             "shared_model",
             "--project-path",
             proj_path_string,
-            "--owner",
-            "name",
+            "--owner-name",
             "Shaina Fake",
-            "--owner",
-            "email",
+            "--owner-email",
             "fake@example.com",
         ],
     )
@@ -97,10 +95,10 @@ def test_group_group_owner_properties(name, email, end_group_yml):
     args = ["test_group", "--select", "shared_model", "--project-path", proj_path_string]
 
     if name:
-        args += ["--owner", "name", name]
+        args += ["--owner-name", name]
 
     if email:
-        args += ["--owner", "email", email]
+        args += ["--owner-email", email]
 
     runner = CliRunner()
     result = runner.invoke(create_group, args)
