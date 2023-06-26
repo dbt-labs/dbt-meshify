@@ -106,10 +106,7 @@ def connect(projects_dir):
 @selector
 def split(project_name, select, exclude, project_path, selector, create_path):
     """
-    !!! info
-        This command is not yet implemented
-
-    Splits dbt projects apart by adding all necessary dbt Mesh constructs based on the selection syntax.
+    Splits out a new subproject from a dbt project by adding all necessary dbt Mesh constructs to the resources based on the selected resources.
 
     """
 
