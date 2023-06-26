@@ -68,6 +68,25 @@ def test_create_group_command(model_yml, start_group_yml, end_group_yml):
     assert actual == yaml.safe_load(end_group_yml)
 
 
+def test_group_command_no_selection_syntax():
+    """Test that the command fails if no selection syntax is provided"""
+    runner = CliRunner()
+    result = runner.invoke(
+        create_group,
+        [
+            "test_group",
+            "--project-path",
+            proj_path_string,
+            "--owner-name",
+            "Shaina Fake",
+            "--owner-email",
+            "fake@example.com",
+        ],
+    )
+
+    assert result.exit_code == 1
+
+
 @pytest.mark.parametrize(
     "name,email,end_group_yml",
     [

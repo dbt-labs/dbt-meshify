@@ -178,6 +178,11 @@ def create_group(
     """
     from dbt_meshify.utilities.grouper import ResourceGrouper
 
+    if not (select or exclude or selector):
+        raise Exception(
+            "Groups must be a subset of the resources in your project. Please provide a select, exclude, or selector argument to filter the resources in the project."
+        )
+
     path = Path(project_path).expanduser().resolve()
     project = DbtProject.from_directory(path)
 
