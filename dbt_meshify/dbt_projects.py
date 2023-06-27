@@ -273,6 +273,7 @@ class DbtSubProject(BaseDbtProject):
         self.project = copy.deepcopy(parent_project.project)
         self.catalog = parent_project.catalog
         self.custom_macros = self._get_custom_macros()
+        self.groups = self._get_indirect_groups()
 
         self._rename_project()
 
@@ -293,7 +294,7 @@ class DbtSubProject(BaseDbtProject):
         """
         get a set of macro unique_ids for all the selected resources
         """
-        macro_list = set()
+        macros_set = set()
         for unique_id in self.resources:
             resource = self.get_manifest_node(unique_id)
             if not resource:
@@ -305,8 +306,23 @@ class DbtSubProject(BaseDbtProject):
                 if hashlib.md5((macro.split(".")[1]).encode()).hexdigest()
                 == self.manifest.metadata.project_id
             ]
-            macro_list.update(project_macros)
-        return set(macro_list)
+            macros_set.update(project_macros)
+        return macros_set
+
+    def _get_indirect_groups(self) -> Set[str]:
+        """
+        get a set of group unique_ids for all the selected resources
+        """
+        groups = set()
+        for unique_id in self.resources:
+            resource = self.get_manifest_node(unique_id)
+            if not resource or resource.resource_type in [NodeType.Source, NodeType.Exposure]:
+                continue
+            group = resource.group
+            if group:
+                group_unique_id = f"group.{self.parent_project.name}.{group}"
+                groups.update({group_unique_id})
+        return groups
 
     def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
         """

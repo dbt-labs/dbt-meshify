@@ -100,7 +100,7 @@ class DbtSubprojectCreator:
     def initialize(self) -> None:
         """Initialize this subproject as a full dbt project at the provided `target_directory`."""
         subproject = self.subproject
-        for unique_id in subproject.resources | subproject.custom_macros:
+        for unique_id in subproject.resources | subproject.custom_macros | subproject.groups:
             resource = subproject.get_manifest_node(unique_id)
             catalog = subproject.get_catalog_entry(unique_id)
             if not resource:
@@ -120,7 +120,7 @@ class DbtSubprojectCreator:
 
                 self.move_resource(meshify_constructor)
                 self.move_resource_yml_entry(meshify_constructor)
-            elif resource.resource_type == "macro":
+            elif resource.resource_type in ["macro", "group"]:
                 self.copy_resource(meshify_constructor)
             else:
                 self.move_resource_yml_entry(meshify_constructor)
