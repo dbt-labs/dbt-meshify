@@ -189,6 +189,7 @@ class DbtMeshFileEditor:
         # isolate the columns from the existing model entry
         yml_cols: List[Dict] = model_yml.get("columns", [])
         catalog_cols = model_catalog.columns or {} if model_catalog else {}
+        catalog_cols = {k.lower(): v for k, v in catalog_cols.items()}
 
         # add the data type to the yml entry for columns that are in yml
         yml_cols = [

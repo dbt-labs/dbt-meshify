@@ -1,6 +1,7 @@
 import functools
 
 import click
+from dbt.cli.options import MultiOption
 
 # define common parameters
 project_path = click.option(
@@ -20,6 +21,9 @@ create_path = click.option(
 exclude = click.option(
     "--exclude",
     "-e",
+    cls=MultiOption,
+    multiple=True,
+    type=tuple,
     default=None,
     help="The dbt selection syntax specifying the resources to exclude in the operation",
 )
@@ -33,14 +37,20 @@ group_yml_path = click.option(
 select = click.option(
     "--select",
     "-s",
+    cls=MultiOption,
+    multiple=True,
+    type=tuple,
     default=None,
     help="The dbt selection syntax specifying the resources to include in the operation",
 )
 
 selector = click.option(
     "--selector",
+    cls=MultiOption,
+    multiple=True,
+    type=tuple,
     default=None,
-    help="The name of the YML selector specifying the resources to include in the operation",
+    help="The name(s) of the YML selector specifying the resources to include in the operation",
 )
 
 owner_name = click.option(

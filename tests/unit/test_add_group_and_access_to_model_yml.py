@@ -53,6 +53,17 @@ models:
   - name: other_other_model
 """
 
+expected_model_yml_multiple_models_multi_select = """
+models:
+  - name: shared_model
+    access: public
+    group: test_group
+  - name: other_model
+    access: public
+    group: test_group
+  - name: other_other_model
+"""
+
 
 class TestAddGroupToModelYML:
     @pytest.fixture

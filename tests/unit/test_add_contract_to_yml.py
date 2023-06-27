@@ -6,10 +6,12 @@ from ..sql_and_yml_fixtures import (
     expected_contract_yml_no_col,
     expected_contract_yml_no_entry,
     expected_contract_yml_one_col,
+    expected_contract_yml_one_col_one_test,
     expected_contract_yml_other_model,
     model_yml_all_col,
     model_yml_no_col_no_version,
     model_yml_one_col,
+    model_yml_one_col_one_test,
     model_yml_other_model,
 )
 from . import read_yml
@@ -35,6 +37,14 @@ class TestAddContractToYML:
             model_name=model_name,
         )
         assert yml_dict == read_yml(expected_contract_yml_one_col)
+
+    def test_add_contract_to_yml_one_col_one_test(self):
+        yml_dict = meshify.add_model_contract_to_yml(
+            models_yml=read_yml(model_yml_one_col_one_test),
+            model_catalog=catalog_entry,
+            model_name=model_name,
+        )
+        assert yml_dict == read_yml(expected_contract_yml_one_col_one_test)
 
     def test_add_contract_to_yml_all_col(self):
         yml_dict = meshify.add_model_contract_to_yml(
