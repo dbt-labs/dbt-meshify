@@ -106,10 +106,6 @@ def test_create_group_command_multi_select(
     with open(other_model_file, "w") as f:
         f.write("select 1 as test")
 
-    import pdb
-
-    pdb.set_trace()
-
     runner = CliRunner()
     result = runner.invoke(
         create_group,
