@@ -167,11 +167,20 @@ class DbtProject(BaseDbtProject):
         """Create a new DbtProject using a dbt project directory"""
 
         dbt = Dbt()
+        project = cls._load_project(directory)
+
+        def read_catalog(directory: os.PathLike) -> CatalogArtifact:
+            catalog_path = Path(directory) / (project.target_path or "target") / "catalog.json"
+            if catalog_path.exists():
+                catalog_dict = json.loads(catalog_path.read_text())
+                return CatalogArtifact.from_dict(catalog_dict)
+            else:
+                return dbt.docs_generate(directory)
 
         return DbtProject(
             manifest=dbt.parse(directory),
-            project=cls._load_project(directory),
-            catalog=dbt.docs_generate(directory),
+            project=project,
+            catalog=read_catalog(directory),
             dbt=dbt,
             path=Path(directory),
         )
