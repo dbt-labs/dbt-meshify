@@ -5,7 +5,11 @@ import yaml
 from click.testing import CliRunner
 
 from dbt_meshify.main import create_group
-from tests.unit.test_add_group_and_access_to_model_yml import model_yml_shared_model
+from tests.unit.test_add_group_and_access_to_model_yml import (
+    expected_model_yml_multiple_models_multi_select,
+    model_yml_multiple_models,
+    model_yml_shared_model,
+)
 from tests.unit.test_add_group_to_yml import (
     expected_group_yml_existing_groups,
     expected_group_yml_no_group,
@@ -66,6 +70,74 @@ def test_create_group_command(model_yml, start_group_yml, end_group_yml):
 
     assert result.exit_code == 0
     assert actual == yaml.safe_load(end_group_yml)
+
+
+@pytest.mark.parametrize(
+    "start_model_yml, end_model_yml, start_group_yml, end_group_yml",
+    [
+        (
+            model_yml_multiple_models,
+            expected_model_yml_multiple_models_multi_select,
+            group_yml_empty_file,
+            expected_group_yml_no_group,
+        ),
+    ],
+    ids=["1"],
+)
+def test_create_group_command_multi_select(
+    start_model_yml, end_model_yml, start_group_yml, end_group_yml
+):
+    group_yml_file = proj_path / "models" / "_groups.yml"
+    model_yml_file = proj_path / "models" / "_models.yml"
+    other_model_file = proj_path / "models" / "other_model.sql"
+
+    group_yml_file.parent.mkdir(parents=True, exist_ok=True)
+    model_yml_file.parent.mkdir(parents=True, exist_ok=True)
+    other_model_file.parent.mkdir(parents=True, exist_ok=True)
+
+    start_yml_content = yaml.safe_load(start_model_yml)
+    with open(model_yml_file, "w") as f:
+        yaml.safe_dump(start_yml_content, f, sort_keys=False)
+
+    start_group_yml_content = yaml.safe_load(start_group_yml)
+    with open(group_yml_file, "w") as f:
+        yaml.safe_dump(start_group_yml_content, f, sort_keys=False)
+
+    with open(other_model_file, "w") as f:
+        f.write("select 1 as test")
+
+    import pdb
+
+    pdb.set_trace()
+
+    runner = CliRunner()
+    result = runner.invoke(
+        create_group,
+        [
+            "test_group",
+            "--select",
+            "shared_model",
+            "other_model",
+            "--project-path",
+            proj_path_string,
+            "--owner-name",
+            "Shaina Fake",
+            "--owner-email",
+            "fake@example.com",
+        ],
+    )
+
+    with open(group_yml_file, "r") as f:
+        actual_group_yml = yaml.safe_load(f)
+    with open(model_yml_file, "r") as f:
+        actual_model_yml = yaml.safe_load(f)
+
+    group_yml_file.unlink()
+    model_yml_file.unlink()
+
+    assert result.exit_code == 0
+    assert actual_group_yml == yaml.safe_load(end_group_yml)
+    assert actual_model_yml == yaml.safe_load(end_model_yml)
 
 
 @pytest.mark.parametrize(
