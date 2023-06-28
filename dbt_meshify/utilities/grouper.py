@@ -76,9 +76,12 @@ class ResourceGrouper:
             resource_type=NodeType.Group,
         )
 
-        nodes = self.project.select_resources(
-            select=select, exclude=exclude, selector=selector, output_key="unique_id"
-        )
+        if not (select or exclude or selector):
+            nodes = set()
+        else:
+            nodes = self.project.select_resources(
+                select=select, exclude=exclude, selector=selector, output_key="unique_id"
+            )
 
         # Check if any of the selected nodes are already in a group of a different name. If so, raise an exception.
         nodes = set(filter(lambda x: not x.startswith("source"), nodes))
