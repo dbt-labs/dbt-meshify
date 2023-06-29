@@ -23,15 +23,31 @@ proj_path = Path(proj_path_string)
 
 
 @pytest.mark.parametrize(
-    "model_yml,start_group_yml,end_group_yml",
+    "model_yml,select,start_group_yml,end_group_yml",
     [
-        (model_yml_shared_model, group_yml_empty_file, expected_group_yml_no_group),
-        (model_yml_shared_model, group_yml_existing_groups, expected_group_yml_existing_groups),
-        (model_yml_shared_model, group_yml_group_predefined, expected_group_yml_no_group),
+        (
+            model_yml_shared_model,
+            "shared_model",
+            group_yml_empty_file,
+            expected_group_yml_no_group,
+        ),
+        (
+            model_yml_shared_model,
+            "shared_model",
+            group_yml_existing_groups,
+            expected_group_yml_existing_groups,
+        ),
+        (
+            model_yml_shared_model,
+            "shared_model",
+            group_yml_group_predefined,
+            expected_group_yml_no_group,
+        ),
+        (model_yml_shared_model, "", group_yml_empty_file, expected_group_yml_no_group),
     ],
-    ids=["1", "2", "3"],
+    ids=["1", "2", "3", "4"],
 )
-def test_create_group_command(model_yml, start_group_yml, end_group_yml):
+def test_create_group_command(model_yml, select, start_group_yml, end_group_yml):
     group_yml_file = proj_path / "models" / "_groups.yml"
     model_yml_file = proj_path / "models" / "_models.yml"
 
@@ -52,7 +68,7 @@ def test_create_group_command(model_yml, start_group_yml, end_group_yml):
         [
             "test_group",
             "--select",
-            "shared_model",
+            select,
             "--project-path",
             proj_path_string,
             "--owner-name",
