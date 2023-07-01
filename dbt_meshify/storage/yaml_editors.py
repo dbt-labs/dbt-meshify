@@ -100,7 +100,7 @@ class DbtMeshModelYmlEditor:
         catalog_cols = model_catalog.columns or {} if model_catalog else {}
         catalog_cols = {k.lower(): v for k, v in catalog_cols.items()}
 
-        # add the data type to the yml entry for columns that are in yml        
+        # add the data type to the yml entry for columns that are in yml
         yml_cols = [
             {**yml_col, "data_type": catalog_cols[yml_col["name"]].type.lower()}
             for yml_col in yml_cols
