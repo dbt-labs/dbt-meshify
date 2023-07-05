@@ -14,6 +14,7 @@ from .cli import (
     owner_name,
     owner_properties,
     project_path,
+    read_catalog,
     select,
     selector,
 )
@@ -61,6 +62,7 @@ def connect(projects_dir):
 @cli.command(name="split")
 @exclude
 @project_path
+@read_catalog
 @select
 @selector
 def split():
@@ -98,14 +100,15 @@ def split():
 @operation.command(name="add-contract")
 @exclude
 @project_path
+@read_catalog
 @select
 @selector
-def add_contract(select, exclude, project_path, selector, public_only=False):
+def add_contract(select, exclude, project_path, selector, read_catalog, public_only=False):
     """
     Adds a contract to all selected models.
     """
     path = Path(project_path).expanduser().resolve()
-    project = DbtProject.from_directory(path)
+    project = DbtProject.from_directory(path, read_catalog)
     resources = list(
         project.select_resources(
             select=select, exclude=exclude, selector=selector, output_key="unique_id"
@@ -126,16 +129,17 @@ def add_contract(select, exclude, project_path, selector, public_only=False):
 @operation.command(name="add-version")
 @exclude
 @project_path
+@read_catalog
 @select
 @selector
 @click.option("--prerelease", "--pre", default=False, is_flag=True)
 @click.option("--defined-in", default=None)
-def add_version(select, exclude, project_path, selector, prerelease, defined_in):
+def add_version(select, exclude, project_path, selector, prerelease, defined_in, read_catalog):
     """
     Adds/increments model versions for all selected models.
     """
     path = Path(project_path).expanduser().resolve()
-    project = DbtProject.from_directory(path)
+    project = DbtProject.from_directory(path, read_catalog)
     resources = list(
         project.select_resources(
             select=select, exclude=exclude, selector=selector, output_key="unique_id"
@@ -152,21 +156,23 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in)
 
 
 @operation.command(name="create-group")
+@click.argument("name")
 @exclude
+@group_yml_path
+@owner
+@owner_email
+@owner_name
+@owner_properties
 @project_path
+@read_catalog
 @select
 @selector
-@click.argument("name")
-@owner_name
-@owner_email
-@owner_properties
-@owner
-@group_yml_path
 def create_group(
     name,
     project_path: os.PathLike,
     group_yml_path: os.PathLike,
     select: str,
+    read_catalog: bool,
     owner_name: Optional[str] = None,
     owner_email: Optional[str] = None,
     owner_properties: Optional[str] = None,
@@ -179,7 +185,7 @@ def create_group(
     from dbt_meshify.utilities.grouper import ResourceGrouper
 
     path = Path(project_path).expanduser().resolve()
-    project = DbtProject.from_directory(path)
+    project = DbtProject.from_directory(path, read_catalog)
 
     if group_yml_path is None:
         group_yml_path = (path / Path("models/_groups.yml")).resolve()
@@ -207,16 +213,17 @@ def create_group(
 
 
 @cli.command(name="group")
+@click.argument("name")
 @exclude
+@group_yml_path
+@owner
+@owner_email
+@owner_name
+@owner_properties
 @project_path
+@read_catalog
 @select
 @selector
-@click.argument("name")
-@owner_name
-@owner_email
-@owner_properties
-@owner
-@group_yml_path
 @click.pass_context
 def group(
     ctx,
@@ -224,6 +231,7 @@ def group(
     project_path: os.PathLike,
     group_yml_path: os.PathLike,
     select: str,
+    read_catalog: bool,
     owner_name: Optional[str] = None,
     owner_email: Optional[str] = None,
     owner_properties: Optional[str] = None,
