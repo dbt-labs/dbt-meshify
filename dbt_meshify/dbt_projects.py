@@ -158,7 +158,7 @@ class BaseDbtProject:
         return self.catalog.nodes.get(unique_id)
 
     def get_manifest_node(self, unique_id: str) -> Optional[ManifestNode]:
-        """Returns the catalog entry for a model in the dbt project's catalog"""
+        """Returns the manifest entry for a resource in the dbt project's manifest"""
         if unique_id.split(".")[0] in [
             "model",
             "seed",

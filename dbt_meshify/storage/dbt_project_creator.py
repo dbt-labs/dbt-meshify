@@ -15,7 +15,7 @@ from dbt_meshify.utilities.grouper import ResourceGrouper
 
 class DbtSubprojectCreator:
     """
-    Takes a dbt subproject and creates the directory structure and files for it.
+    Takes a `DbtSubProject` and creates the directory structure and files for it.
     """
 
     def __init__(self, subproject: DbtSubProject, target_directory: Optional[Path] = None):
@@ -32,9 +32,8 @@ class DbtSubprojectCreator:
         get a set of boundary model unique_ids for all the selected resources
         """
         nodes = set(filter(lambda x: not x.startswith("source"), self.subproject.resources))
-        grouper = ResourceGrouper(project=self.subproject)
         parent_project_name = self.subproject.parent_project.name
-        interface = grouper.identify_interface(
+        interface = ResourceGrouper.identify_interface(
             graph=self.subproject.graph.graph, selected_bunch=nodes
         )
         boundary_models = set(
@@ -67,7 +66,7 @@ class DbtSubprojectCreator:
 
     def copy_packages_dir(self) -> None:
         """
-        Writes the dbt_packages director to the subproject's subdirectory to avoid the need for an immediate deps run
+        Writes the dbt_packages directory to the subproject's subdirectory to avoid the need for an immediate `dbt deps` command
         """
         raise NotImplementedError("copy_packages_dir not implemented yet")
 
