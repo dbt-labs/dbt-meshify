@@ -263,6 +263,7 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
             logger.info("Model version added to model yml")
         except Exception as e:
             logger.error(f"Error adding model version to model yml: {e}")
+            logger.exception(e)
         # create the new version file
 
         # if we're incrementing the version, write the new version file with a copy of the code

@@ -136,7 +136,7 @@ def add_contract(select, exclude, project_path, selector, public_only=False):
             logger.success(f"Successfully added contract to model: {model_unique_id}")
         except Exception as e:
             logger.error(f"Error adding contract to model: {model_unique_id}")
-            logger.error(e)
+            logger.exception(e)
 
 
 @operation.command(name="add-version")
@@ -172,7 +172,7 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in)
                 logger.success(f"Successfully added version to model: {model_unique_id}")
             except Exception as e:
                 logger.error(f"Error adding version to model: {model_unique_id}")
-                logger.error(e)
+                logger.exception(e)
 
 
 @operation.command(name="create-group")
@@ -234,7 +234,7 @@ def create_group(
         logger.success(f"Successfully created group: {name}")
     except Exception as e:
         logger.error(f"Error creating group: {name}")
-        logger.error(e)
+        logger.exception(e)
 
 
 @cli.command(name="group")

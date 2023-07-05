@@ -155,4 +155,4 @@ class ResourceGrouper:
                 logger.success(f"Successfully added model '{model.name}' to group '{group.name}'")
             except Exception as e:
                 logger.error(f"Failed to add model '{model.name}' to group '{group.name}'")
-                logger.error(e)
+                logger.exception(e)
