@@ -7,6 +7,8 @@ from click.testing import CliRunner
 from dbt_meshify.main import add_version
 
 from ..fixtures import (
+    expected_versioned_model_yml_increment_prerelease_version,
+    expected_versioned_model_yml_increment_prerelease_version_with_second_prerelease,
     expected_versioned_model_yml_increment_version_defined_in,
     expected_versioned_model_yml_increment_version_no_prerelease,
     expected_versioned_model_yml_increment_version_with_prerelease,
@@ -71,8 +73,22 @@ def reset_model_files(files_list):
             ["shared_model_v1.sql"],
             [],
         ),
+        (
+            expected_versioned_model_yml_increment_version_with_prerelease,
+            expected_versioned_model_yml_increment_prerelease_version_with_second_prerelease,
+            ["shared_model_v1.sql", "shared_model_v2.sql"],
+            ["shared_model_v1.sql", "shared_model_v2.sql", "shared_model_v3.sql"],
+            ["--prerelease"],
+        ),
+        (
+            expected_versioned_model_yml_increment_version_with_prerelease,
+            expected_versioned_model_yml_increment_prerelease_version,
+            ["shared_model_v1.sql", "shared_model_v2.sql"],
+            ["shared_model_v1.sql", "shared_model_v2.sql", "shared_model_v3.sql"],
+            [],
+        ),
     ],
-    ids=["1", "2", "3", "4", "5"],
+    ids=["1", "2", "3", "4", "5", "6", "7"],
 )
 def test_add_version_to_yml(start_yml, end_yml, start_files, expected_files, command_options):
     yml_file = proj_path / "models" / "_models.yml"
@@ -88,9 +104,7 @@ def test_add_version_to_yml(start_yml, end_yml, start_files, expected_files, com
             yaml.safe_dump(start_yml_content, f, sort_keys=False)
     base_command = ["--select", "shared_model", "--project-path", proj_path_string]
     base_command.extend(command_options)
-    # import pdb; pdb.set_trace()
     result = runner.invoke(add_version, base_command)
-    # import pdb; pdb.set_trace()
     assert result.exit_code == 0
     # reset the read path to the default in the logic
     with open(yml_file, "r") as f:

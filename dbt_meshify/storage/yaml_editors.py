@@ -36,7 +36,7 @@ def process_model_yml(model_yml: Dict[str, Any]):
     return filter_empty_dict_items(model_ordered_dict)
 
 
-def resources_yml_to_dict(resources_yml: Dict, resource_type: str = "models"):
+def resources_yml_to_dict(resources_yml: Dict[str, Any], resource_type: str = "models"):
     """Converts a yml dict to a named dictionary for easier operation"""
     return (
         {resource["name"]: resource for resource in resources_yml[resource_type]}
@@ -129,6 +129,15 @@ class DbtMeshModelYmlEditor:
         models_yml["models"] = list(models.values())
         return models_yml
 
+    def get_latest_yml_defined_version(self, model_yml: Dict[str, Any]):
+        """
+        Returns the latest version defined in the yml file for a given model name
+        the format of `model_yml` should be a single model yml entry
+        if no versions, returns 0
+        """
+        model_yml_versions = model_yml.get("versions", [])
+        return max([v.get("v") for v in model_yml_versions]) if model_yml_versions else 0
+
     def add_model_version_to_yml(
         self,
         model_name,
@@ -148,6 +157,7 @@ class DbtMeshModelYmlEditor:
         # add the version to the model yml entry
         versions_list = model_yml.get("versions") or []
         latest_version = model_yml.get("latest_version") or 0
+        latest_yml_version = self.get_latest_yml_defined_version(model_yml)
         version_dict: Dict[str, Union[int, str, os.PathLike]] = {}
         if not versions_list:
             version_dict["v"] = 1
@@ -155,9 +165,9 @@ class DbtMeshModelYmlEditor:
         # if the model has versions, add the next version
         # if prerelease flag is true, do not increment the latest_version
         elif prerelease:
-            version_dict = {"v": latest_version + 1}
+            version_dict = {"v": latest_yml_version + 1}
         else:
-            version_dict = {"v": latest_version + 1}
+            version_dict = {"v": latest_yml_version + 1}
             latest_version += 1
         # add the defined_in key if it exists
         if defined_in:
@@ -248,6 +258,9 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
         # read the yml file
         # pass empty dict if no file contents returned
         models_yml = self.file_manager.read_file(yml_path) or {}
+        latest_yml_version = self.get_latest_yml_defined_version(
+            resources_yml_to_dict(models_yml).get(self.model_node.name, {})  # type: ignore
+        )
         updated_yml = self.add_model_version_to_yml(
             model_name=self.model_node.name,
             models_yml=models_yml,
@@ -256,7 +269,6 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
         )
         # write the updated yml to the file
         self.file_manager.write_file(yml_path, updated_yml)
-        # create the new version file
 
         # if we're incrementing the version, write the new version file with a copy of the code
         latest_version = (
@@ -268,7 +280,7 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
         next_version_file_name = (
             f"{defined_in}.{self.model_node.language}"
             if defined_in
-            else f"{self.model_node.name}_v{latest_version + 1}.{self.model_node.language}"
+            else f"{self.model_node.name}_v{latest_yml_version + 1}.{self.model_node.language}"
         )
         model_path = self.get_model_path()
 
@@ -288,7 +300,7 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
             # if existing versions, create the new one
             self.file_manager.write_file(next_version_path, self.model_node.raw_code)
             # if the existing version doesn't use the _v{version} naming convention, rename it to the previous version
-            if not model_path.root.endswith(f"_v{latest_version}.{self.model_node.language}"):
+            if not model_path.stem.endswith(f"_v{latest_version}"):
                 Path(self.project_path).joinpath(model_path).rename(
                     Path(self.project_path).joinpath(last_version_path)
                 )
