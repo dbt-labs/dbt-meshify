@@ -13,12 +13,16 @@ class TestLinkerSourceDependencies:
     @pytest.fixture
     def src_proj_a(self) -> DbtProject:
         """Load the `src_proj_a` project."""
-        return DbtProject.from_directory(Path("test-projects/source-hack/src_proj_a/").resolve())
+        return DbtProject.from_directory(
+            Path("test-projects/source-hack/src_proj_a/").resolve(), read_catalog=False
+        )
 
     @pytest.fixture
     def src_proj_b(self) -> DbtProject:
         """Load the `src_proj_b` project."""
-        return DbtProject.from_directory(Path("test-projects/source-hack/src_proj_b/").resolve())
+        return DbtProject.from_directory(
+            Path("test-projects/source-hack/src_proj_b/").resolve(), read_catalog=False
+        )
 
     @pytest.fixture
     def dest_proj_a(self) -> DbtProject:
@@ -29,12 +33,14 @@ class TestLinkerSourceDependencies:
         dbt = Dbt()
         dbt.invoke(path, ["deps"])
 
-        return DbtProject.from_directory(path)
+        return DbtProject.from_directory(path, read_catalog=False)
 
     @pytest.fixture
     def dest_proj_b(self) -> DbtProject:
         """Load the `dest_proj_b` project."""
-        return DbtProject.from_directory(Path("test-projects/source-hack/dest_proj_b/").resolve())
+        return DbtProject.from_directory(
+            Path("test-projects/source-hack/dest_proj_b/").resolve(), read_catalog=False
+        )
 
     def test_linker_detects_source_dependencies(self, src_proj_a, src_proj_b):
         """Verify that Linker detects source-hacked projects."""
