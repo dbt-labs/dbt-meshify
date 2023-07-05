@@ -298,9 +298,9 @@ class DbtMeshModelConstructor(DbtMeshModelYmlEditor):
             logger.info(f"Creating new version of {self.model_node.name} at {next_version_path}")
             self.file_manager.write_file(next_version_path, self.model_node.raw_code)
             # if the existing version doesn't use the _v{version} naming convention, rename it to the previous version
-            if not model_path.root.endswith(f"_v{latest_version}.{self.model_node.language}"):
+            if not model_path.stem.endswith(f"_v{latest_version}"):
                 logger.info(
-                    f"Renaming existing of {self.model_node.name} from {model_path.name} to {last_version_path.name}"
+                    f"Renaming existing version of {self.model_node.name} from {model_path.name} to {last_version_path.name}"
                 )
                 Path(self.project_path).joinpath(model_path).rename(
                     Path(self.project_path).joinpath(last_version_path)
