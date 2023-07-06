@@ -169,7 +169,7 @@ class BaseDbtProject:
         ]:
             return self.manifest.nodes.get(unique_id)
         else:
-            pluralized = NodeType(unique_id.split('.')[0]).pluralize()
+            pluralized = NodeType(unique_id.split(".")[0]).pluralize()
             resources = getattr(self.manifest, pluralized)
             return resources.get(unique_id)
 
@@ -324,16 +324,21 @@ class DbtSubProject(BaseDbtProject):
                 groups.update({group_unique_id})
         return groups
 
-    def select_resources(self, select: str, exclude: Optional[str] = None) -> Set[str]:
+    def select_resources(
+        self,
+        select: str,
+        exclude: Optional[str] = None,
+        selector: Optional[str] = None,
+        output_key: Optional[str] = None,
+    ) -> Set[str]:
         """
         Select resources using the parent DbtProject and filtering down to only include resources in this
         subproject.
         """
-        args = ["--select", select]
-        if exclude:
-            args.extend(["--exclude", exclude])
 
-        results = self.parent_project.dbt.ls(self.parent_project.path, args)
+        results = self.parent_project.select_resources(
+            select=select, exclude=exclude, selector=selector, output_key=output_key
+        )
 
         return set(results) - self.resources
 
