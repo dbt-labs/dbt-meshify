@@ -1,4 +1,4 @@
-# classes that deal specifcally with mile manipulation
+# classes that deal specifically with file manipulation
 # of dbt files to be used in the meshify dbt project
 import abc
 from abc import ABC
@@ -10,19 +10,25 @@ from ruamel.yaml.compat import StringIO
 
 
 class DbtYAML(YAML):
+    """dbt-compatible YAML class."""
+
+    def __init__(self):
+        super().__init__()
+        self.preserve_quotes = True
+        self.width = 4096
+        self.indent(mapping=2, sequence=4, offset=2)
+
     def dump(self, data, stream=None, **kw):
         inefficient = False
         if stream is None:
             inefficient = True
             stream = StringIO()
-        YAML.dump(self, data, stream, **kw)
+        super().dump(data, stream, **kw)
         if inefficient:
             return stream.getvalue()
 
 
 yaml = DbtYAML()
-yaml.width = 4096
-yaml.indent(mapping=2, sequence=4, offset=2)
 
 FileContent = Union[Dict[str, str], str]
 

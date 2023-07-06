@@ -55,6 +55,12 @@ class ResourceGrouper:
         }
         return resources
 
+    @classmethod
+    def clean_subgraph(cls, graph: networkx.DiGraph) -> networkx.DiGraph:
+        """Generate a subgraph that does not contain test resource types."""
+        test_nodes = set(node for node in graph.nodes if node.startswith('test'))
+        return graph.subgraph(set(graph.nodes) - test_nodes)
+
     def _generate_resource_group(
         self,
         name: str,
@@ -76,9 +82,12 @@ class ResourceGrouper:
             resource_type=NodeType.Group,
         )
 
-        nodes = self.project.select_resources(
-            select=select, exclude=exclude, selector=selector, output_key="unique_id"
-        )
+        if not (select or exclude or selector):
+            nodes = set()
+        else:
+            nodes = self.project.select_resources(
+                select=select, exclude=exclude, selector=selector, output_key="unique_id"
+            )
 
         # Check if any of the selected nodes are already in a group of a different name. If so, raise an exception.
         nodes = set(filter(lambda x: not x.startswith("source"), nodes))
@@ -93,7 +102,8 @@ class ResourceGrouper:
                 f"of the {existing_group} group. Please remove {node} from its group and try again."
             )
 
-        resources = self.classify_resource_access(self.project.graph.graph, nodes)
+        cleaned_subgraph = self.clean_subgraph(self.project.graph.graph)
+        resources = self.classify_resource_access(cleaned_subgraph, nodes)
 
         return group, resources
 
