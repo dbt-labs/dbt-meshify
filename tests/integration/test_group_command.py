@@ -6,9 +6,11 @@ from click.testing import CliRunner
 from dbt_meshify.dbt import Dbt
 from dbt_meshify.dbt_projects import DbtProject
 from dbt_meshify.main import group
+from tests.dbt_project_utils import setup_test_project, teardown_test_project
 
-proj_path_string = "test-projects/split/split_proj"
-proj_path = Path(proj_path_string)
+src_path_string = "test-projects/split/split_proj"
+dest_path_string = "test-projects/split/temp_proj"
+proj_path = Path(dest_path_string)
 dbt = Dbt()
 
 # this test should encapsulate the following:
@@ -28,6 +30,7 @@ dbt = Dbt()
     ids=["1"],
 )
 def test_group_command(select, expected_public_contracted_models):
+    setup_test_project(src_path_string, dest_path_string)
     dbt.invoke(directory=proj_path, runner_args=["deps"])
     dbt.invoke(directory=proj_path, runner_args=["seed"])
     dbt.invoke(directory=proj_path, runner_args=["run"])
@@ -41,7 +44,7 @@ def test_group_command(select, expected_public_contracted_models):
             "--select",
             select,
             "--project-path",
-            proj_path_string,
+            dest_path_string,
         ],
     )
     assert result.exit_code == 0
@@ -53,3 +56,4 @@ def test_group_command(select, expected_public_contracted_models):
         if model.access == "public" and model.config.contract.enforced
     ]
     assert public_contracted_models == expected_public_contracted_models
+    teardown_test_project(dest_path_string)

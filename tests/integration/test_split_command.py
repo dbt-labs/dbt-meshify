@@ -1,4 +1,3 @@
-import shutil
 from pathlib import Path
 
 import pytest
@@ -7,25 +6,15 @@ from click.testing import CliRunner
 
 from dbt_meshify.dbt import Dbt
 from dbt_meshify.main import split
+from tests.dbt_project_utils import setup_test_project, teardown_test_project
 
 src_project_path = "test-projects/split/split_proj"
 dest_project_path = "test-projects/split/temp_proj"
 
 
-def setup_test_project():
-    src_path = Path(src_project_path)
-    dest_path = Path(dest_project_path)
-    shutil.copytree(src_path, dest_path)
-
-
-def teardown_test_project():
-    dest_path = Path(dest_project_path)
-    shutil.rmtree(dest_path)
-
-
 class TestSplitCommand:
     def test_split_one_model(self):
-        setup_test_project()
+        setup_test_project(src_project_path, dest_project_path)
         runner = CliRunner()
         result = runner.invoke(
             split,
@@ -45,10 +34,10 @@ class TestSplitCommand:
         x_proj_ref = "{{ ref('my_new_project', 'stg_orders') }}"
         child_sql = (Path(dest_project_path) / "models" / "marts" / "orders.sql").read_text()
         assert x_proj_ref in child_sql
-        teardown_test_project()
+        teardown_test_project(dest_project_path)
 
     def test_split_one_model_one_source(self):
-        setup_test_project()
+        setup_test_project(src_project_path, dest_project_path)
         runner = CliRunner()
         result = runner.invoke(
             split,
@@ -83,10 +72,10 @@ class TestSplitCommand:
         x_proj_ref = "{{ ref('my_new_project', 'stg_orders') }}"
         child_sql = (Path(dest_project_path) / "models" / "marts" / "orders.sql").read_text()
         assert x_proj_ref in child_sql
-        teardown_test_project()
+        teardown_test_project(dest_project_path)
 
     def test_split_one_model_one_source_custom_macro(self):
-        setup_test_project()
+        setup_test_project(src_project_path, dest_project_path)
         runner = CliRunner()
         result = runner.invoke(
             split,
@@ -133,4 +122,4 @@ class TestSplitCommand:
         x_proj_ref = "{{ ref('my_new_project', 'stg_order_items') }}"
         child_sql = (Path(dest_project_path) / "models" / "marts" / "orders.sql").read_text()
         assert x_proj_ref in child_sql
-        teardown_test_project()
+        teardown_test_project(dest_project_path)
