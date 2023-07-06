@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from dbt.contracts.graph.nodes import Group, ManifestNode
 from dbt.contracts.results import CatalogTable
 from dbt.node_types import AccessType, NodeType
+from loguru import logger
 
 from dbt_meshify.storage.file_manager import DbtFileManager
 
@@ -329,6 +330,7 @@ class DbtMeshConstructor(DbtMeshFileEditor):
             filename = f"_{self.node.resource_type.pluralize()}.yml"
             yml_path = resource_path.parent / filename
             self.file_manager.write_file(yml_path, {})
+        logger.info(f"Schema entry for {self.node.unique_id} written to {yml_path}")
         return yml_path
 
     def get_resource_path(self) -> Path:
@@ -362,6 +364,7 @@ class DbtMeshConstructor(DbtMeshFileEditor):
     def add_model_access(self, access_type: AccessType) -> None:
         """Adds a model contract to the model's yaml"""
         yml_path = self.get_patch_path()
+        logger.info(f"Adding model contract for {self.node.name} at {yml_path}")
         # read the yml file
         # pass empty dict if no file contents returned
         models_yml = self.file_manager.read_file(yml_path)
@@ -387,14 +390,19 @@ class DbtMeshConstructor(DbtMeshFileEditor):
         # read the yml file
         # pass empty dict if no file contents returned
         models_yml = self.file_manager.read_file(yml_path) or {}
-        updated_yml = self.add_model_version_to_yml(
-            model_name=self.node.name,
-            models_yml=models_yml,
-            prerelease=prerelease,
-            defined_in=defined_in,
-        )
-        # write the updated yml to the file
-        self.file_manager.write_file(yml_path, updated_yml)
+        try:
+            updated_yml = self.add_model_version_to_yml(
+                model_name=self.node.name,
+                models_yml=models_yml,
+                prerelease=prerelease,
+                defined_in=defined_in,
+            )
+            # write the updated yml to the file
+            self.file_manager.write_file(yml_path, updated_yml)
+            logger.info("Model version added to model yml")
+        except Exception as e:
+            logger.error(f"Error adding model version to model yml: {e}")
+            logger.exception(e)
         # create the new version file
 
         # if we're incrementing the version, write the new version file with a copy of the code
@@ -416,14 +424,19 @@ class DbtMeshConstructor(DbtMeshFileEditor):
 
         # if this is the first version, rename the original file to the next version
         if not self.node.latest_version:
+            logger.info(f"Creating first version of {self.node.name} at {next_version_path}")
             Path(self.project_path).joinpath(model_path).rename(
                 Path(self.project_path).joinpath(next_version_path)
             )
         else:
             # if existing versions, create the new one
+            logger.info(f"Creating new version of {self.node.name} at {next_version_path}")
             self.file_manager.write_file(next_version_path, self.node.raw_code)
             # if the existing version doesn't use the _v{version} naming convention, rename it to the previous version
             if not model_path.root.endswith(f"_v{latest_version}.{self.node.language}"):
+                logger.info(
+                    f"Renaming existing version of {self.node.name} from {model_path.name} to {last_version_path.name}"
+                )
                 Path(self.project_path).joinpath(model_path).rename(
                     Path(self.project_path).joinpath(last_version_path)
                 )
