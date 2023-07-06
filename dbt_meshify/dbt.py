@@ -5,6 +5,7 @@ from typing import List, Optional
 from dbt.cli.main import dbtRunner
 from dbt.contracts.graph.manifest import Manifest
 from dbt.contracts.results import CatalogArtifact
+from loguru import logger
 
 
 class Dbt:
@@ -25,6 +26,7 @@ class Dbt:
         return result.result
 
     def parse(self, directory: os.PathLike):
+        logger.info("Executing dbt parse...")
         return self.invoke(directory, ["--quiet", "parse"])
 
     def ls(
@@ -50,5 +52,6 @@ class Dbt:
         """
         Excute dbt docs generate with the given arguments
         """
+        logger.info("Generating catalog with dbt docs generate...")
         args = ["--quiet", "docs", "generate"]
         return self.invoke(directory, args)
