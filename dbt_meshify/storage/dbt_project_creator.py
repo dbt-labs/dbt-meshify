@@ -3,6 +3,7 @@ from typing import Optional, Set
 
 from dbt.contracts.graph.nodes import ManifestNode
 from dbt.node_types import AccessType
+from loguru import logger
 
 from dbt_meshify.dbt_projects import DbtSubProject
 from dbt_meshify.storage.file_content_editors import (
@@ -112,17 +113,74 @@ class DbtSubprojectCreator:
                 if resource.resource_type == "test" and len(resource.unique_id.split(".")) == 4:
                     continue
                 if resource.unique_id in self.subproject_boundary_models:
-                    meshify_constructor.add_model_contract()
-                    meshify_constructor.add_model_access(access_type=AccessType.Public)
+                    logger.info(
+                        f"Adding contract to and publicizing boundary node {resource.unique_id}"
+                    )
+                    try:
+                        meshify_constructor.add_model_contract()
+                        meshify_constructor.add_model_access(access_type=AccessType.Public)
+                        logger.success(
+                            f"Successfully added contract to and publicized boundary node {resource.unique_id}"
+                        )
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to add contract to and publicize boundary node {resource.unique_id}"
+                        )
+                        logger.exception(e)
                     # apply access method too
-                    self.update_child_refs(resource)
+                    logger.info(f"Updating ref functions for children of {resource.unique_id}...")
+                    try:
+                        self.update_child_refs(resource)
+                        logger.success(
+                            f"Successfully updated ref functions for children of {resource.unique_id}"
+                        )
+                    except Exception as e:
+                        logger.error(
+                            f"Failed to update ref functions for children of {resource.unique_id}"
+                        )
+                        logger.exception(e)
 
-                self.move_resource(meshify_constructor)
-                self.move_resource_yml_entry(meshify_constructor)
+                logger.info(
+                    f"Moving {resource.unique_id} and associated YML to subproject {subproject.name}..."
+                )
+                try:
+                    self.move_resource(meshify_constructor)
+                    self.move_resource_yml_entry(meshify_constructor)
+                    logger.success(
+                        f"Successfully moved {resource.unique_id} and associated YML to subproject {subproject.name}"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to move {resource.unique_id} and associated YML to subproject {subproject.name}"
+                    )
+                    logger.exception(e)
+
             elif resource.resource_type in ["macro", "group"]:
-                self.copy_resource(meshify_constructor)
+                logger.info(f"Copying {resource.unique_id} to subproject {subproject.name}...")
+                try:
+                    self.copy_resource(meshify_constructor)
+                    logger.success(
+                        f"Successfully copied {resource.unique_id} to subproject {subproject.name}"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to copy {resource.unique_id} to subproject {subproject.name}"
+                    )
+                    logger.exception(e)
             else:
-                self.move_resource_yml_entry(meshify_constructor)
+                logger.info(
+                    f"Moving resource {resource.unique_id} to subproject {subproject.name}..."
+                )
+                try:
+                    self.move_resource_yml_entry(meshify_constructor)
+                    logger.success(
+                        f"Successfully moved resource {resource.unique_id} to subproject {subproject.name}"
+                    )
+                except Exception as e:
+                    logger.error(
+                        f"Failed to move resource {resource.unique_id} to subproject {subproject.name}"
+                    )
+                    logger.exception(e)
 
         self.write_project_file()
         self.copy_packages_yml_file()

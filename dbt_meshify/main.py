@@ -86,11 +86,18 @@ def split(project_name, select, exclude, project_path, selector, create_path):
     subproject = project.split(
         project_name=project_name, select=select, exclude=exclude, selector=selector
     )
+    logger.info(f"Selected {len(subproject.resources)} resources: {subproject.resources}")
     target_directory = Path(create_path) if create_path else None
     subproject_creator = DbtSubprojectCreator(
         subproject=subproject, target_directory=target_directory
     )
-    subproject_creator.initialize()
+    logger.info(f"Creating subproject {subproject.name}...")
+    try:
+        subproject_creator.initialize()
+        logger.success(f"Successfully created subproject {subproject.name}")
+    except Exception as e:
+        logger.error(f"Error creating subproject {subproject.name}")
+        logger.exception(e)
 
 
 @operation.command(name="add-contract")
