@@ -37,7 +37,7 @@ def process_model_yml(model_yml: Dict[str, Any]):
     return filter_empty_dict_items(model_ordered_dict)
 
 
-def resources_yml_to_dict(resources_yml: Dict, resource_type: NodeType = NodeType.Model):
+def resources_yml_to_dict(resources_yml: Optional[Dict], resource_type: NodeType = NodeType.Model):
     """Converts a yml dict to a named dictionary for easier operation"""
     return (
         {resource["name"]: resource for resource in resources_yml[resource_type.pluralize()]}
