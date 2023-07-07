@@ -30,6 +30,7 @@ models:
 
   - name: stg_orders
     description: Order data with basic cleaning and transformation applied, one row per order.
+    access: public
     columns:
       - name: order_id
         description: The unique key for each order.
