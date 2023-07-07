@@ -136,7 +136,12 @@ class DbtMeshModelYmlEditor:
         if no versions, returns 0
         """
         model_yml_versions = model_yml.get("versions", [])
-        return max([v.get("v") for v in model_yml_versions]) if model_yml_versions else 0
+        try:
+            return max([int(v.get("v")) for v in model_yml_versions]) if model_yml_versions else 0
+        except ValueError:
+            raise ValueError(
+                f"Version not an integer, can't increment version for {model_yml.get('name')}"
+            )
 
     def add_model_version_to_yml(
         self,

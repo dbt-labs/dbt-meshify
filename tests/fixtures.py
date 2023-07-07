@@ -252,3 +252,12 @@ models:
       - v: 2
         defined_in: daves_model
 """
+
+model_yml_string_version = """
+models:
+  - name: shared_model
+    latest_version: john_olerud
+    description: "this is a test model"
+    versions:
+      - v: john_olerud
+"""
