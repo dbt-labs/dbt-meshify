@@ -163,18 +163,15 @@ class DbtMeshFileEditor:
         """
         if not full_yml:
             full_yml = {resource_type.pluralize(): []}
-        if resource_type != NodeType.Source:
+            
+        if resource_type != NodeType.Source or resource_entry["name"] not in [ source["name"] for source in full_yml[resource_type.pluralize()] ]:
             full_yml[resource_type.pluralize()].append(resource_entry)
-        else:
-            if resource_entry["name"] not in [
-                source["name"] for source in full_yml[resource_type.pluralize()]
-            ]:
-                full_yml[resource_type.pluralize()].append(resource_entry)
-            else:
-                new_table = resource_entry["tables"][0]
-                sources = {source["name"]: source for source in full_yml["sources"]}
-                sources[resource_entry["name"]]["tables"].append(new_table)
-                full_yml["sources"] = list(sources.values())
+            return full_yml
+ 
+        new_table = resource_entry["tables"][0]
+        sources = {source["name"]: source for source in full_yml["sources"]}
+        sources[resource_entry["name"]]["tables"].append(new_table)
+        full_yml["sources"] = list(sources.values())
         return full_yml
 
     def add_model_contract_to_yml(
