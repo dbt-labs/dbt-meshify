@@ -76,7 +76,7 @@ def connect(projects_dir):
 @read_catalog
 @select
 @selector
-def split(project_name, select, exclude, project_path, selector, create_path):
+def split(project_name, select, exclude, project_path, selector, create_path, read_catalog):
     """
     Splits out a new subproject from a dbt project by adding all necessary dbt Mesh constructs to the resources based on the selected resources.
 
