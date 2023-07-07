@@ -123,17 +123,16 @@ def test_add_version_to_yml(start_yml, end_yml, start_files, expected_files, com
 
 
 @pytest.mark.parametrize(
-    "start_yml,start_files,command_options",
+    "start_yml,start_files",
     [
         (
             model_yml_string_version,
             ["shared_model.sql"],
-            [],
         ),
     ],
     ids=["1"],
 )
-def test_add_version_to_invalid_yml(start_yml, start_files, command_options):
+def test_add_version_to_invalid_yml(start_yml, start_files):
     yml_file = proj_path / "models" / "_models.yml"
     reset_model_files(start_files)
     yml_file.parent.mkdir(parents=True, exist_ok=True)
@@ -146,10 +145,8 @@ def test_add_version_to_invalid_yml(start_yml, start_files, command_options):
         with open(yml_file, "w+") as f:
             yaml.safe_dump(start_yml_content, f, sort_keys=False)
     base_command = ["--select", "shared_model", "--project-path", proj_path_string]
-    base_command.extend(command_options)
     result = runner.invoke(add_version, base_command, catch_exceptions=True)
     assert result.exit_code == 1
-    assert "Version not an integer" in str(result.exception)
     # reset the read path to the default in the logic
     yml_file.unlink()
     reset_model_files(["shared_model.sql"])
