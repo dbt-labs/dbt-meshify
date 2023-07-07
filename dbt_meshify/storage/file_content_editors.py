@@ -118,7 +118,7 @@ class DbtMeshFileEditor:
         """
         sources = resources_yml_to_dict(full_yml, NodeType.Source)
         source_definition = sources.get(source_name)
-        tables = source_definition.get("tables", None)
+        tables = source_definition.get("tables", [])
         table = list(filter(lambda x: x["name"] == resource_name, tables))
         remaining_tables = list(filter(lambda x: x["name"] != resource_name, tables))
         resource_yml = source_definition.copy()
@@ -127,9 +127,9 @@ class DbtMeshFileEditor:
         sources[source_name] = source_definition
         if len(remaining_tables) == 0:
             return resource_yml, None
-        else:
-            full_yml["sources"] = list(sources.values())
-            return resource_yml, full_yml
+ 
+        full_yml["sources"] = list(sources.values())
+        return resource_yml, full_yml
 
     def get_yml_entry(
         self,
@@ -447,17 +447,16 @@ class DbtMeshConstructor(DbtMeshFileEditor):
 
         # read the model file
         model_code = str(self.file_manager.read_file(model_path))
-        if self.node.language == "sql":
-            updated_code = self.update_sql_refs(
+        # This can be defined in the init for this clas.
+        ref_update_methods = {
+            'sql': self.update_sql_refs,
+            'python': self.update_python_refs
+        }
+        # Here, we're trusting the dbt-core code to check the languages for us. 🐉 
+        updated_code = ref_update_methods[self.node.language](
                 model_name=model_name,
                 project_name=project_name,
                 model_code=model_code,
-            )
-        elif self.node.language == "python":
-            updated_code = self.update_python_refs(
-                model_name=model_name,
-                project_name=project_name,
-                model_code=model_code,
-            )
+        )
         # write the updated model code to the file
         self.file_manager.write_file(model_path, updated_code)

@@ -168,10 +168,9 @@ class BaseDbtProject:
             "snapshot",
         ]:
             return self.manifest.nodes.get(unique_id)
-        else:
-            pluralized = NodeType(unique_id.split(".")[0]).pluralize()
-            resources = getattr(self.manifest, pluralized)
-            return resources.get(unique_id)
+        pluralized = NodeType(unique_id.split(".")[0]).pluralize()
+        resources = getattr(self.manifest, pluralized)
+        return resources.get(unique_id)
 
 
 class DbtProject(BaseDbtProject):
