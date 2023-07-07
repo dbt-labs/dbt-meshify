@@ -127,7 +127,7 @@ class DbtMeshFileEditor:
         sources[source_name] = source_definition
         if len(remaining_tables) == 0:
             return resource_yml, None
- 
+
         full_yml["sources"] = list(sources.values())
         return resource_yml, full_yml
 
@@ -163,11 +163,13 @@ class DbtMeshFileEditor:
         """
         if not full_yml:
             full_yml = {resource_type.pluralize(): []}
-            
-        if resource_type != NodeType.Source or resource_entry["name"] not in [ source["name"] for source in full_yml[resource_type.pluralize()] ]:
+
+        if resource_type != NodeType.Source or resource_entry["name"] not in [
+            source["name"] for source in full_yml[resource_type.pluralize()]
+        ]:
             full_yml[resource_type.pluralize()].append(resource_entry)
             return full_yml
- 
+
         new_table = resource_entry["tables"][0]
         sources = {source["name"]: source for source in full_yml["sources"]}
         sources[resource_entry["name"]]["tables"].append(new_table)
@@ -314,7 +316,7 @@ class DbtMeshConstructor(DbtMeshFileEditor):
             # find yml path for resoruces that are not defined
             yml_path = Path(self.node.patch_path.split("://")[1]) if self.node.patch_path else None
         else:
-            yml_path = Path(self.node.original_file_path)
+            yml_path = self.get_resource_path()
 
         # if the model doesn't have a patch path, create a new yml file in the models directory
         if not yml_path:
@@ -448,15 +450,12 @@ class DbtMeshConstructor(DbtMeshFileEditor):
         # read the model file
         model_code = str(self.file_manager.read_file(model_path))
         # This can be defined in the init for this clas.
-        ref_update_methods = {
-            'sql': self.update_sql_refs,
-            'python': self.update_python_refs
-        }
-        # Here, we're trusting the dbt-core code to check the languages for us. 🐉 
+        ref_update_methods = {'sql': self.update_sql_refs, 'python': self.update_python_refs}
+        # Here, we're trusting the dbt-core code to check the languages for us. 🐉
         updated_code = ref_update_methods[self.node.language](
-                model_name=model_name,
-                project_name=project_name,
-                model_code=model_code,
+            model_name=model_name,
+            project_name=project_name,
+            model_code=model_code,
         )
         # write the updated model code to the file
         self.file_manager.write_file(model_path, updated_code)

@@ -8,7 +8,16 @@ from typing import Any, Dict, MutableMapping, Optional, Set, Union
 
 import yaml
 from dbt.contracts.graph.manifest import Manifest
-from dbt.contracts.graph.nodes import ManifestNode, ModelNode, SourceDefinition
+from dbt.contracts.graph.nodes import (
+    Documentation,
+    Exposure,
+    Group,
+    Macro,
+    ManifestNode,
+    ModelNode,
+    Resource,
+    SourceDefinition,
+)
 from dbt.contracts.project import Project
 from dbt.contracts.results import CatalogArtifact, CatalogTable
 from dbt.graph import Graph
@@ -157,7 +166,7 @@ class BaseDbtProject:
         """Returns the catalog entry for a model in the dbt project's catalog"""
         return self.catalog.nodes.get(unique_id)
 
-    def get_manifest_node(self, unique_id: str) -> Optional[ManifestNode]:
+    def get_manifest_node(self, unique_id: str) -> Optional[Resource]:
         """Returns the manifest entry for a resource in the dbt project's manifest"""
         if unique_id.split(".")[0] in [
             "model",
@@ -296,9 +305,11 @@ class DbtSubProject(BaseDbtProject):
         macros_set = set()
         for unique_id in self.resources:
             resource = self.get_manifest_node(unique_id)
-            if not resource:
+            if not resource or any(
+                isinstance(resource, class_) for class_ in [Documentation, Group]
+            ):
                 continue
-            macros = resource.depends_on.macros
+            macros = resource.depends_on.macros  # type: ignore
             project_macros = [
                 macro
                 for macro in macros
@@ -314,10 +325,13 @@ class DbtSubProject(BaseDbtProject):
         """
         groups = set()
         for unique_id in self.resources:
-            resource = self.get_manifest_node(unique_id)
-            if not resource or resource.resource_type in [NodeType.Source, NodeType.Exposure]:
+            resource = self.get_manifest_node(unique_id)  # type: ignore
+            if not resource or any(
+                isinstance(resource, class_)
+                for class_ in [Documentation, Group, Exposure, SourceDefinition, Macro]
+            ):
                 continue
-            group = resource.group
+            group = resource.group  # type: ignore
             if group:
                 group_unique_id = f"group.{self.parent_project.name}.{group}"
                 groups.update({group_unique_id})
