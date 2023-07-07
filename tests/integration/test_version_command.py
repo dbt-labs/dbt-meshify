@@ -6,7 +6,7 @@ from click.testing import CliRunner
 
 from dbt_meshify.main import add_version
 
-from ..fixtures import (
+from ..sql_and_yml_fixtures import (
     expected_versioned_model_yml_increment_prerelease_version,
     expected_versioned_model_yml_increment_prerelease_version_with_second_prerelease,
     expected_versioned_model_yml_increment_version_defined_in,
