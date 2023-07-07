@@ -59,7 +59,7 @@ def connect(projects_dir):
             break
 
         path = Path(path_string).expanduser().resolve()
-        project = DbtProject.from_directory(path)
+        project = DbtProject.from_directory(path, read_catalog)
         holder.register_project(project)
 
     print(holder.project_map())
@@ -84,7 +84,7 @@ def split():
     holder = DbtProjectHolder()
 
     path = Path(path_string).expanduser().resolve()
-    project = DbtProject.from_directory(path)
+    project = DbtProject.from_directory(path, read_catalog)
     holder.register_project(project)
 
     while True:
