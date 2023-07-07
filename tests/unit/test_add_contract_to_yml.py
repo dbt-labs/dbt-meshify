@@ -1,22 +1,22 @@
-from dbt_meshify.storage.yaml_editors import DbtMeshModelYmlEditor
+from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
 
-from ..fixtures import (
+from ..dbt_project_fixtures import shared_model_catalog_entry
+from ..sql_and_yml_fixtures import (
     expected_contract_yml_all_col,
     expected_contract_yml_no_col,
     expected_contract_yml_no_entry,
     expected_contract_yml_one_col,
-    expected_contract_yml_other_model,
     expected_contract_yml_one_col_one_test,
+    expected_contract_yml_other_model,
     model_yml_all_col,
     model_yml_no_col_no_version,
     model_yml_one_col,
-    model_yml_other_model,
     model_yml_one_col_one_test,
-    shared_model_catalog_entry,
+    model_yml_other_model,
 )
 from . import read_yml
 
-meshify = DbtMeshModelYmlEditor()
+meshify = DbtMeshFileEditor()
 catalog_entry = shared_model_catalog_entry
 model_name = "shared_model"
 

@@ -8,7 +8,10 @@ import yaml
 from dbt.contracts.graph.unparsed import Owner
 from loguru import logger
 
+from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
+
 from .cli import (
+    create_path,
     exclude,
     group_yml_path,
     owner,
@@ -20,7 +23,7 @@ from .cli import (
     selector,
 )
 from .dbt_projects import DbtProject, DbtProjectHolder, DbtSubProject
-from .storage.yaml_editors import DbtMeshModelConstructor
+from .storage.file_content_editors import DbtMeshConstructor
 
 log_format = "<white>{time:HH:mm:ss}</white> | <level>{level}</level> | <level>{message}</level>"
 logger.remove()  # Remove the default sink added by Loguru
@@ -65,40 +68,36 @@ def connect(projects_dir):
 
 
 @cli.command(name="split")
+@create_path
+@click.argument("project_name")
 @exclude
 @project_path
 @select
 @selector
-def split():
+def split(project_name, select, exclude, project_path, selector, create_path):
     """
-    !!! info
-        This command is not yet implemented
-
-    Splits dbt projects apart by adding all necessary dbt Mesh constructs based on the selection syntax.
+    Splits out a new subproject from a dbt project by adding all necessary dbt Mesh constructs to the resources based on the selected resources.
 
     """
-    path_string = input("Enter the relative path to a dbt project you'd like to split: ")
 
-    holder = DbtProjectHolder()
-
-    path = Path(path_string).expanduser().resolve()
+    path = Path(project_path).expanduser().resolve()
     project = DbtProject.from_directory(path)
-    holder.register_project(project)
 
-    while True:
-        subproject_name = input("Enter the name for your subproject ('done' to finish): ")
-        if subproject_name == "done":
-            break
-        subproject_selector = input(
-            f"Enter the selector that represents the subproject {subproject_name}: "
-        )
-
-        subproject: DbtSubProject = project.split(
-            project_name=subproject_name, select=subproject_selector
-        )
-        holder.register_project(subproject)
-
-    print(holder.project_map())
+    subproject = project.split(
+        project_name=project_name, select=select, exclude=exclude, selector=selector
+    )
+    logger.info(f"Selected {len(subproject.resources)} resources: {subproject.resources}")
+    target_directory = Path(create_path) if create_path else None
+    subproject_creator = DbtSubprojectCreator(
+        subproject=subproject, target_directory=target_directory
+    )
+    logger.info(f"Creating subproject {subproject.name}...")
+    try:
+        subproject_creator.initialize()
+        logger.success(f"Successfully created subproject {subproject.name}")
+    except Exception as e:
+        logger.error(f"Error creating subproject {subproject.name}")
+        logger.exception(e)
 
 
 @operation.command(name="add-contract")
@@ -127,8 +126,8 @@ def add_contract(select, exclude, project_path, selector, public_only=False):
     for model_unique_id in models:
         model_node = project.get_manifest_node(model_unique_id)
         model_catalog = project.get_catalog_entry(model_unique_id)
-        meshify_constructor = DbtMeshModelConstructor(
-            project_path=project_path, model_node=model_node, model_catalog=model_catalog
+        meshify_constructor = DbtMeshConstructor(
+            project_path=project_path, node=model_node, catalog=model_catalog
         )
         logger.info(f"Adding contract to model: {model_unique_id}")
         try:
@@ -164,9 +163,7 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in)
     for model_unique_id in models:
         model_node = project.get_manifest_node(model_unique_id)
         if model_node.version == model_node.latest_version:
-            meshify_constructor = DbtMeshModelConstructor(
-                project_path=project_path, model_node=model_node
-            )
+            meshify_constructor = DbtMeshConstructor(project_path=project_path, node=model_node)
             try:
                 meshify_constructor.add_model_version(prerelease=prerelease, defined_in=defined_in)
                 logger.success(f"Successfully added version to model: {model_unique_id}")
