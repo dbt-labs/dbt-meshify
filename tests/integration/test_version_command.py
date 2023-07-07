@@ -6,7 +6,7 @@ from click.testing import CliRunner
 
 from dbt_meshify.main import add_version
 
-from ..fixtures import (
+from ..sql_and_yml_fixtures import (
     expected_versioned_model_yml_increment_version_defined_in,
     expected_versioned_model_yml_increment_version_no_prerelease,
     expected_versioned_model_yml_increment_version_with_prerelease,
@@ -88,9 +88,7 @@ def test_add_version_to_yml(start_yml, end_yml, start_files, expected_files, com
             yaml.safe_dump(start_yml_content, f, sort_keys=False)
     base_command = ["--select", "shared_model", "--project-path", proj_path_string]
     base_command.extend(command_options)
-    # import pdb; pdb.set_trace()
     result = runner.invoke(add_version, base_command)
-    # import pdb; pdb.set_trace()
     assert result.exit_code == 0
     # reset the read path to the default in the logic
     with open(yml_file, "r") as f:

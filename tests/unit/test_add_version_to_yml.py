@@ -1,8 +1,8 @@
 import yaml
 
-from dbt_meshify.storage.yaml_editors import DbtMeshModelYmlEditor
+from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
 
-from ..fixtures import (
+from ..sql_and_yml_fixtures import (
     expected_versioned_model_yml_increment_version_defined_in,
     expected_versioned_model_yml_increment_version_no_prerelease,
     expected_versioned_model_yml_increment_version_with_prerelease,
@@ -12,7 +12,7 @@ from ..fixtures import (
     model_yml_no_col_no_version,
 )
 
-meshify = DbtMeshModelYmlEditor()
+meshify = DbtMeshFileEditor()
 model_name = "shared_model"
 
 

@@ -17,6 +17,7 @@ renamed as (
 
         ---------- properties
         sku as product_id
+        -- {{ cents_to_dollars('any') }}
 
     from source
 

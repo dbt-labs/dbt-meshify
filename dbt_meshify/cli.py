@@ -11,6 +11,13 @@ project_path = click.option(
     help="The path to the dbt project to operate on. Defaults to the current directory.",
 )
 
+create_path = click.option(
+    "--create-path",
+    type=click.Path(exists=True),
+    default=None,
+    help="The path to create the new dbt project. Defaults to the name argument supplied.",
+)
+
 exclude = click.option(
     "--exclude",
     "-e",

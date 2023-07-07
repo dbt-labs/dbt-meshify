@@ -30,10 +30,6 @@ models:
 
   - name: stg_orders
     description: Order data with basic cleaning and transformation applied, one row per order.
-    access: public
-    config:
-      contract:
-        enforced: true
     columns:
       - name: order_id
         description: The unique key for each order.
@@ -65,7 +61,8 @@ models:
     description: >
       List of our supply expenses data with basic cleaning and transformation applied.
 
-      One row per supply cost, not per supply. As supply costs fluctuate they receive a new row with a new UUID. Thus there can be multiple rows per supply_id.
+      One row per supply cost, not per supply. As supply costs fluctuate they receive
+      a new row with a new UUID. Thus there can be multiple rows per supply_id.
     columns:
       - name: supply_uuid
         description: The unique key of our supplies per cost.
