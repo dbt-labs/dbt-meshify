@@ -1,7 +1,6 @@
 import copy
 import hashlib
 import json
-import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, MutableMapping, Optional, Set, Union
@@ -12,10 +11,9 @@ from dbt.contracts.graph.nodes import ManifestNode, ModelNode, SourceDefinition
 from dbt.contracts.project import Project
 from dbt.contracts.results import CatalogArtifact, CatalogTable
 from dbt.graph import Graph
+from loguru import logger
 
 from dbt_meshify.dbt import Dbt
-
-logger = logging.getLogger()
 
 
 class BaseDbtProject:
@@ -172,10 +170,12 @@ class DbtProject(BaseDbtProject):
         def get_catalog(directory: os.PathLike, read_catalog: bool) -> CatalogArtifact:
             catalog_path = Path(directory) / (project.target_path or "target") / "catalog.json"
             if read_catalog:
+                logger.info(f"Reading catalog from {catalog_path}")
                 try:
                     catalog_dict = json.loads(catalog_path.read_text())
                     return CatalogArtifact.from_dict(catalog_dict)
                 except FileNotFoundError:
+                    logger.info(f"Catalog not found at {catalog_path}, running dbt docs generate")
                     return dbt.docs_generate(directory)
             else:
                 return dbt.docs_generate(directory)
