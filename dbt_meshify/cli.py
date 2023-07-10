@@ -68,6 +68,14 @@ owner_properties = click.option(
     help="Additional properties to assign to a group Owner.",
 )
 
+read_catalog = click.option(
+    "--read-catalog",
+    "-r",
+    is_flag=True,
+    envvar="DBT_MESHIFY_READ_CATALOG",
+    help="Skips the dbt docs generate step and reads the local catalog.json file.",
+)
+
 
 def owner(func):
     """Add click options and argument validation for creating Owner objects."""

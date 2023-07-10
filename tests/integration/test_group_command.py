@@ -44,7 +44,7 @@ def test_group_command(select, expected_public_contracted_models):
         ],
     )
     assert result.exit_code == 0
-    project = DbtProject.from_directory(proj_path)
+    project = DbtProject.from_directory(proj_path, read_catalog=False)
     # ensure that the correct set of public models is created
     public_contracted_models = [
         model.name

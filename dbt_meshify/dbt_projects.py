@@ -1,7 +1,6 @@
 import copy
 import hashlib
 import json
-import logging
 import os
 from pathlib import Path
 from typing import Any, Dict, MutableMapping, Optional, Set, Union
@@ -22,6 +21,7 @@ from dbt.contracts.project import Project
 from dbt.contracts.results import CatalogArtifact, CatalogTable
 from dbt.graph import Graph
 from dbt.node_types import NodeType
+from loguru import logger
 
 from dbt_meshify.dbt import Dbt
 from dbt_meshify.storage.file_content_editors import (
@@ -29,8 +29,6 @@ from dbt_meshify.storage.file_content_editors import (
     filter_empty_dict_items,
 )
 from dbt_meshify.storage.file_manager import DbtFileManager
-
-logger = logging.getLogger()
 
 
 class BaseDbtProject:
@@ -190,15 +188,29 @@ class DbtProject(BaseDbtProject):
         return Project.from_dict(project_dict)
 
     @classmethod
-    def from_directory(cls, directory: os.PathLike) -> "DbtProject":
+    def from_directory(cls, directory: os.PathLike, read_catalog: bool) -> "DbtProject":
         """Create a new DbtProject using a dbt project directory"""
 
         dbt = Dbt()
+        project = cls._load_project(directory)
+
+        def get_catalog(directory: os.PathLike, read_catalog: bool) -> CatalogArtifact:
+            catalog_path = Path(directory) / (project.target_path or "target") / "catalog.json"
+            if read_catalog:
+                logger.info(f"Reading catalog from {catalog_path}")
+                try:
+                    catalog_dict = json.loads(catalog_path.read_text())
+                    return CatalogArtifact.from_dict(catalog_dict)
+                except FileNotFoundError:
+                    logger.info(f"Catalog not found at {catalog_path}, running dbt docs generate")
+                    return dbt.docs_generate(directory)
+            else:
+                return dbt.docs_generate(directory)
 
         return DbtProject(
             manifest=dbt.parse(directory),
-            project=cls._load_project(directory),
-            catalog=dbt.docs_generate(directory),
+            project=project,
+            catalog=get_catalog(directory, read_catalog),
             dbt=dbt,
             path=Path(directory),
         )
