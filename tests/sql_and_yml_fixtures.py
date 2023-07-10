@@ -192,6 +192,28 @@ models:
       - v: 2
 """
 
+expected_versioned_model_yml_increment_prerelease_version_with_second_prerelease = """
+models:
+  - name: shared_model
+    latest_version: 1
+    description: "this is a test model"
+    versions:
+      - v: 1
+      - v: 2
+      - v: 3
+"""
+
+expected_versioned_model_yml_increment_prerelease_version = """
+models:
+  - name: shared_model
+    latest_version: 2
+    description: "this is a test model"
+    versions:
+      - v: 1
+      - v: 2
+      - v: 3
+"""
+
 expected_versioned_model_yml_increment_version_defined_in = """
 models:
   - name: shared_model
@@ -201,6 +223,15 @@ models:
       - v: 1
       - v: 2
         defined_in: daves_model
+"""
+
+model_yml_string_version = """
+models:
+  - name: shared_model
+    latest_version: john_olerud
+    description: "this is a test model"
+    versions:
+      - v: john_olerud
 """
 
 # expected result when removing the shared_model entry from model_yml_no_col_no_version

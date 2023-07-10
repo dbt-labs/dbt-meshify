@@ -7,6 +7,8 @@ from click.testing import CliRunner
 from dbt_meshify.main import add_version
 
 from ..sql_and_yml_fixtures import (
+    expected_versioned_model_yml_increment_prerelease_version,
+    expected_versioned_model_yml_increment_prerelease_version_with_second_prerelease,
     expected_versioned_model_yml_increment_version_defined_in,
     expected_versioned_model_yml_increment_version_no_prerelease,
     expected_versioned_model_yml_increment_version_with_prerelease,
@@ -14,6 +16,7 @@ from ..sql_and_yml_fixtures import (
     expected_versioned_model_yml_no_yml,
     model_yml_increment_version,
     model_yml_no_col_no_version,
+    model_yml_string_version,
     shared_model_sql,
 )
 
@@ -71,8 +74,22 @@ def reset_model_files(files_list):
             ["shared_model_v1.sql"],
             [],
         ),
+        (
+            expected_versioned_model_yml_increment_version_with_prerelease,
+            expected_versioned_model_yml_increment_prerelease_version_with_second_prerelease,
+            ["shared_model_v1.sql", "shared_model_v2.sql"],
+            ["shared_model_v1.sql", "shared_model_v2.sql", "shared_model_v3.sql"],
+            ["--prerelease"],
+        ),
+        (
+            expected_versioned_model_yml_increment_version_with_prerelease,
+            expected_versioned_model_yml_increment_prerelease_version,
+            ["shared_model_v1.sql", "shared_model_v2.sql"],
+            ["shared_model_v1.sql", "shared_model_v2.sql", "shared_model_v3.sql"],
+            [],
+        ),
     ],
-    ids=["1", "2", "3", "4", "5"],
+    ids=["1", "2", "3", "4", "5", "6", "7"],
 )
 def test_add_version_to_yml(start_yml, end_yml, start_files, expected_files, command_options):
     yml_file = proj_path / "models" / "_models.yml"
@@ -103,3 +120,33 @@ def test_add_version_to_yml(start_yml, end_yml, start_files, expected_files, com
     yml_file.unlink()
     reset_model_files(["shared_model.sql"])
     assert actual == yaml.safe_load(end_yml)
+
+
+@pytest.mark.parametrize(
+    "start_yml,start_files",
+    [
+        (
+            model_yml_string_version,
+            ["shared_model.sql"],
+        ),
+    ],
+    ids=["1"],
+)
+def test_add_version_to_invalid_yml(start_yml, start_files):
+    yml_file = proj_path / "models" / "_models.yml"
+    reset_model_files(start_files)
+    yml_file.parent.mkdir(parents=True, exist_ok=True)
+    runner = CliRunner()
+    # only create file if start_yml is not None
+    # in situations where models don't have a patch path, there isn't a yml file to read from
+    if start_yml:
+        yml_file.touch()
+        start_yml_content = yaml.safe_load(start_yml)
+        with open(yml_file, "w+") as f:
+            yaml.safe_dump(start_yml_content, f, sort_keys=False)
+    base_command = ["--select", "shared_model", "--project-path", proj_path_string]
+    result = runner.invoke(add_version, base_command, catch_exceptions=True)
+    assert result.exit_code == 1
+    # reset the read path to the default in the logic
+    yml_file.unlink()
+    reset_model_files(["shared_model.sql"])

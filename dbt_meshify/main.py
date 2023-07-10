@@ -30,6 +30,16 @@ logger.remove()  # Remove the default sink added by Loguru
 logger.add(sys.stdout, format=log_format)
 
 
+class FatalMeshifyException(click.ClickException):
+    def __init__(self, message):
+        super().__init__(message)
+
+    def show(self):
+        logger.error(self.message)
+        if self.__cause__ is not None:
+            logger.exception(self.__cause__)
+
+
 # define cli group
 @click.group()
 def cli():
@@ -96,8 +106,7 @@ def split(project_name, select, exclude, project_path, selector, create_path):
         subproject_creator.initialize()
         logger.success(f"Successfully created subproject {subproject.name}")
     except Exception as e:
-        logger.error(f"Error creating subproject {subproject.name}")
-        logger.exception(e)
+        raise FatalMeshifyException(f"Error creating subproject {subproject.name}")
 
 
 @operation.command(name="add-contract")
@@ -134,8 +143,7 @@ def add_contract(select, exclude, project_path, selector, public_only=False):
             meshify_constructor.add_model_contract()
             logger.success(f"Successfully added contract to model: {model_unique_id}")
         except Exception as e:
-            logger.error(f"Error adding contract to model: {model_unique_id}")
-            logger.exception(e)
+            raise FatalMeshifyException(f"Error adding contract to model: {model_unique_id}")
 
 
 @operation.command(name="add-version")
@@ -168,8 +176,9 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in)
                 meshify_constructor.add_model_version(prerelease=prerelease, defined_in=defined_in)
                 logger.success(f"Successfully added version to model: {model_unique_id}")
             except Exception as e:
-                logger.error(f"Error adding version to model: {model_unique_id}")
-                logger.exception(e)
+                raise FatalMeshifyException(
+                    f"Error adding version to model: {model_unique_id}"
+                ) from e
 
 
 @operation.command(name="create-group")
@@ -230,8 +239,7 @@ def create_group(
         )
         logger.success(f"Successfully created group: {name}")
     except Exception as e:
-        logger.error(f"Error creating group: {name}")
-        logger.exception(e)
+        raise FatalMeshifyException(f"Error creating group: {name}")
 
 
 @cli.command(name="group")
