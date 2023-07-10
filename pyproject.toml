@@ -11,7 +11,7 @@ target-version = ['py38']
 
 [tool.poetry]
 name = "dbt-meshify"
-version = "0.1.0"
+version = "0.2.0"
 description = "a package to upgrade dbt packages to the dbt mesh framework"
 authors = [
     "Dave Connors <dave.connors@fishtownanalytics.com>",
