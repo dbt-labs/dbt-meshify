@@ -1,3 +1,4 @@
+import functools
 import os
 import sys
 from pathlib import Path
@@ -11,6 +12,7 @@ from loguru import logger
 from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
 
 from .cli import (
+    TupleCompatibleCommand,
     create_path,
     exclude,
     group_yml_path,
@@ -23,7 +25,7 @@ from .cli import (
     select,
     selector,
 )
-from .dbt_projects import DbtProject, DbtProjectHolder, DbtSubProject
+from .dbt_projects import DbtProject, DbtProjectHolder
 from .storage.file_content_editors import DbtMeshConstructor
 
 log_format = "<white>{time:HH:mm:ss}</white> | <level>{level}</level> | <level>{message}</level>"
@@ -78,7 +80,10 @@ def connect(projects_dir):
     print(holder.project_map())
 
 
-@cli.command(name="split")
+@cli.command(
+    cls=TupleCompatibleCommand,
+    name="split",
+)
 @create_path
 @click.argument("project_name")
 @exclude
@@ -86,7 +91,8 @@ def connect(projects_dir):
 @read_catalog
 @select
 @selector
-def split(project_name, select, exclude, project_path, selector, create_path, read_catalog):
+@click.pass_context
+def split(ctx, project_name, select, exclude, project_path, selector, create_path, read_catalog):
     """
     Splits out a new subproject from a dbt project by adding all necessary dbt Mesh constructs to the resources based on the selected resources.
 
@@ -185,7 +191,10 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in,
                 ) from e
 
 
-@operation.command(name="create-group")
+@operation.command(
+    name="create-group",
+    cls=TupleCompatibleCommand,
+)
 @click.argument("name")
 @exclude
 @group_yml_path
@@ -248,7 +257,7 @@ def create_group(
         raise FatalMeshifyException(f"Error creating group: {name}")
 
 
-@cli.command(name="group")
+@cli.command(name="group", cls=TupleCompatibleCommand)
 @click.argument("name")
 @exclude
 @group_yml_path
