@@ -1,6 +1,7 @@
 import functools
 
 import click
+from click import Context, HelpFormatter
 from dbt.cli.options import MultiOption
 
 # define common parameters
@@ -89,3 +90,16 @@ def owner(func):
         return func(*args, **kwargs)
 
     return wrapper_decorator
+
+
+class TupleCompatibleCommand(click.Command):
+    """
+    A Click Command with a custom formatter that adds metavar options after all arguments.
+    This is valuable for commands that uses tuple-type options, since type types will eat
+    arguments.
+    """
+
+    def format_usage(self, ctx: Context, formatter: HelpFormatter) -> None:
+        pieces = self.collect_usage_pieces(ctx)
+        pieces = pieces[1:] + [pieces[0]]
+        formatter.write_usage(ctx.command_path, " ".join(pieces))
