@@ -95,7 +95,7 @@ def owner(func):
 class TupleCompatibleCommand(click.Command):
     """
     A Click Command with a custom formatter that adds metavar options after all arguments.
-    This is valuable for commands that uses tuple-type options, since type types will eat
+    This is valuable for commands that use tuple-type options, since type types will eat
     arguments.
     """
 
