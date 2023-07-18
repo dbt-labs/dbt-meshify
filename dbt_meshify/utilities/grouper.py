@@ -9,6 +9,7 @@ from dbt.node_types import AccessType, NodeType
 from loguru import logger
 
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject
+from dbt_meshify.exceptions import ModelFileNotFoundError
 from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
 from dbt_meshify.storage.file_manager import DbtFileManager
 
@@ -144,7 +145,7 @@ class ResourceGrouper:
                 path = Path(model.patch_path.split("://")[1])
             else:
                 if not model.original_file_path:
-                    raise Exception("Unable to locate model file. Failing.")
+                    raise ModelFileNotFoundError("Unable to locate model file. Failing.")
 
                 path = Path(model.original_file_path).parent / '_models.yml'
 

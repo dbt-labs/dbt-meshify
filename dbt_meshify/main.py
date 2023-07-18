@@ -1,4 +1,3 @@
-import functools
 import os
 import sys
 from pathlib import Path
@@ -26,21 +25,12 @@ from .cli import (
     selector,
 )
 from .dbt_projects import DbtProject, DbtProjectHolder
+from .exceptions import FatalMeshifyException
 from .storage.file_content_editors import DbtMeshConstructor
 
 log_format = "<white>{time:HH:mm:ss}</white> | <level>{level}</level> | <level>{message}</level>"
 logger.remove()  # Remove the default sink added by Loguru
 logger.add(sys.stdout, format=log_format)
-
-
-class FatalMeshifyException(click.ClickException):
-    def __init__(self, message):
-        super().__init__(message)
-
-    def show(self):
-        logger.error(self.message)
-        if self.__cause__ is not None:
-            logger.exception(self.__cause__)
 
 
 # define cli group
@@ -234,7 +224,7 @@ def create_group(
     logger.info(f"Creating new model group in file {group_yml_path.name}")
 
     if not str(os.path.commonpath([group_yml_path, path])) == str(path):
-        raise Exception(
+        raise FatalMeshifyException(
             "The provided group-yml-path is not contained within the provided dbt project."
         )
 
