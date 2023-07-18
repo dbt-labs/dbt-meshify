@@ -8,6 +8,7 @@ from dbt.contracts.results import CatalogTable
 from dbt.node_types import AccessType, NodeType
 from loguru import logger
 
+from dbt_meshify.exceptions import FileEditorException, ModelFileNotFoundError
 from dbt_meshify.storage.file_manager import DbtFileManager
 
 
@@ -339,7 +340,9 @@ class DbtMeshConstructor(DbtMeshFileEditor):
 
             if resource_path is None:
                 # If this happens, then the model doesn't have a model file, either, which is cause for alarm.
-                raise Exception(f"Unable to locate the file defining {self.node.name}. Aborting")
+                raise ModelFileNotFoundError(
+                    f"Unable to locate the file defining {self.node.name}. Aborting"
+                )
 
             filename = f"_{self.node.resource_type.pluralize()}.yml"
             yml_path = resource_path.parent / filename
@@ -351,9 +354,8 @@ class DbtMeshConstructor(DbtMeshFileEditor):
         """
         Returns the path to the file where the resource is defined
         for yml-only nodes (generic tests, metrics, exposures, sources)
-            this will be the path to the yml file where the definitions
+        this will be the path to the yml file where the definitions
         for all others this will be the .sql or .py file for the resource
-
         """
         return Path(self.node.original_file_path)
 
@@ -365,7 +367,9 @@ class DbtMeshConstructor(DbtMeshFileEditor):
         models_yml = self.file_manager.read_file(yml_path)
 
         if isinstance(models_yml, str):
-            raise Exception(f"Unexpected string values in dumped model data in {yml_path}.")
+            raise FileEditorException(
+                f"Unexpected string values in dumped model data in {yml_path}."
+            )
 
         updated_yml = self.add_model_contract_to_yml(
             model_name=self.node.name,
@@ -384,7 +388,9 @@ class DbtMeshConstructor(DbtMeshFileEditor):
         models_yml = self.file_manager.read_file(yml_path)
 
         if isinstance(models_yml, str):
-            raise Exception(f"Unexpected string values in dumped model data in {yml_path}.")
+            raise FileEditorException(
+                f"Unexpected string values in dumped model data in {yml_path}."
+            )
 
         updated_yml = self.add_access_to_model_yml(
             model_name=self.node.name,
@@ -433,7 +439,9 @@ class DbtMeshConstructor(DbtMeshFileEditor):
         model_path = self.get_resource_path()
 
         if model_path is None:
-            raise Exception(f"Unable to find path to model {self.node.name}. Aborting.")
+            raise ModelFileNotFoundError(
+                f"Unable to find path to model {self.node.name}. Aborting."
+            )
 
         model_folder = model_path.parent
         next_version_path = model_folder / next_version_file_name
@@ -463,7 +471,9 @@ class DbtMeshConstructor(DbtMeshFileEditor):
         model_path = self.get_resource_path()
 
         if model_path is None:
-            raise Exception(f"Unable to find path to model {self.node.name}. Aborting.")
+            raise ModelFileNotFoundError(
+                f"Unable to find path to model {self.node.name}. Aborting."
+            )
 
         # read the model file
         model_code = str(self.file_manager.read_file(model_path))
