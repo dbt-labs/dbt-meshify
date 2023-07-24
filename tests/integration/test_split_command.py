@@ -123,3 +123,29 @@ class TestSplitCommand:
         child_sql = (Path(dest_project_path) / "models" / "marts" / "orders.sql").read_text()
         assert x_proj_ref in child_sql
         teardown_test_project(dest_project_path)
+
+    def test_split_one_model_create_path(self):
+        setup_test_project(src_project_path, dest_project_path)
+        runner = CliRunner()
+        result = runner.invoke(
+            split,
+            [
+                "my_new_project",
+                "--project-path",
+                dest_project_path,
+                "--select",
+                "stg_orders",
+                "--create-path",
+                "test-projects/split/ham_sandwich",
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert (
+            Path("test-projects/split/ham_sandwich") / "models" / "staging" / "stg_orders.sql"
+        ).exists()
+        x_proj_ref = "{{ ref('my_new_project', 'stg_orders') }}"
+        child_sql = (Path(dest_project_path) / "models" / "marts" / "orders.sql").read_text()
+        assert x_proj_ref in child_sql
+        teardown_test_project(dest_project_path)
+        teardown_test_project("test-projects/split/ham_sandwich")
