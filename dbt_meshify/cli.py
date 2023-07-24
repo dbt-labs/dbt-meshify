@@ -14,7 +14,7 @@ project_path = click.option(
 
 create_path = click.option(
     "--create-path",
-    type=click.Path(exists=True),
+    type=click.Path(exists=False),
     default=None,
     help="The path to create the new dbt project. Defaults to the name argument supplied.",
 )
