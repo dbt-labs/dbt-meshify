@@ -106,7 +106,7 @@ class TestDbtSubprojectCreator:
         subproject = split_project()
         meshify_constructor = get_meshify_constructor(subproject, model_unique_id)
         creator = DbtSubprojectCreator(subproject)
-        creator.move_resource_yml_entry(meshify_constructor)
+        creator.update_resource_yml_entry(meshify_constructor)
         # the original path should still exist, since we take only the single model entry
         assert Path("test/models/example/schema.yml").exists()
         assert Path("test/subdir/models/example/schema.yml").exists()

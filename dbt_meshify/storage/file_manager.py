@@ -55,7 +55,7 @@ class DbtFileManager(BaseFileManager):
         self.write_project_path = write_project_path if write_project_path else read_project_path
 
     def read_file(self, path: Path) -> Union[Dict[str, Any], str]:
-        """Returns the yaml for a model in the dbt project's manifest"""
+        """Returns the file contents at a given path"""
         full_path = self.read_project_path / path
         if full_path.suffix == ".yml":
             return yaml.load(full_path.read_text())
@@ -96,4 +96,5 @@ class DbtFileManager(BaseFileManager):
 
     def delete_file(self, path: Path) -> None:
         """deletes the specified file"""
-        path.unlink()
+        delete_path = self.read_project_path / path
+        delete_path.unlink()

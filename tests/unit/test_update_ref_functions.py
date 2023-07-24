@@ -38,7 +38,7 @@ def read_yml(yml_str):
 
 class TestRemoveResourceYml:
     def test_update_sql_ref_function__basic(self):
-        updated_sql = meshify.update_sql_refs(
+        updated_sql = meshify.update_refs__sql(
             model_code=simple_model_sql,
             model_name=upstream_model_name,
             project_name=upstream_project_name,
@@ -46,7 +46,7 @@ class TestRemoveResourceYml:
         assert updated_sql == expected_simple_model_sql
 
     def test_update_python_ref_function__basic(self):
-        updated_python = meshify.update_python_refs(
+        updated_python = meshify.update_refs__python(
             model_code=simple_model_python,
             model_name=upstream_model_name,
             project_name=upstream_project_name,

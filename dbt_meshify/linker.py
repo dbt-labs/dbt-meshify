@@ -1,8 +1,12 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Set
+from typing import Set, Union
 
-from dbt_meshify.dbt_projects import BaseDbtProject
+from dbt.node_types import AccessType
+
+from dbt_meshify.dbt_projects import BaseDbtProject, DbtProject
+from dbt_meshify.storage.dbt_project_creator import DbtProjectEditor
+from dbt_meshify.storage.file_content_editors import DbtMeshConstructor
 
 
 class ProjectDependencyType(str, Enum):
@@ -16,12 +20,14 @@ class ProjectDependencyType(str, Enum):
 class ProjectDependency:
     """ProjectDependencies define shared resources between two different projects"""
 
-    upstream: str
-    downstream: str
+    upstream_resource: str
+    upstream_project_name: str
+    downstream_resource: str
+    downstream_project_name: str
     type: ProjectDependencyType
 
     def __key(self):
-        return self.upstream, self.downstream, self.type
+        return self.upstream_resource, self.downstream_resource, self.type
 
     def __hash__(self):
         return hash(self.__key())
@@ -50,7 +56,9 @@ class Linker:
         return source_relations.intersection(target_relations)
 
     def _source_dependencies(
-        self, project: BaseDbtProject, other_project: BaseDbtProject
+        self,
+        project: Union[BaseDbtProject, DbtProject],
+        other_project: Union[BaseDbtProject, DbtProject],
     ) -> Set[ProjectDependency]:
         """
         Identify source-hack dependencies between projects.
@@ -74,8 +82,10 @@ class Linker:
 
         forward_dependencies = {
             ProjectDependency(
-                upstream=project.model_relation_names[relation],
-                downstream=other_project.source_relation_names[relation],
+                upstream_resource=project.model_relation_names[relation],
+                upstream_project_name=project.name,
+                downstream_resource=other_project.source_relation_names[relation],
+                downstream_project_name=other_project.name,
                 type=ProjectDependencyType.Source,
             )
             for relation in relations
@@ -96,8 +106,10 @@ class Linker:
 
         backward_dependencies = {
             ProjectDependency(
-                upstream=other_project.model_relation_names[relation],
-                downstream=project.source_relation_names[relation],
+                upstream_resource=other_project.model_relation_names[relation],
+                upstream_project_name=other_project.name,
+                downstream_resource=project.source_relation_names[relation],
+                downstream_project_name=project.name,
                 type=ProjectDependencyType.Source,
             )
             for relation in backwards_relations
@@ -106,7 +118,9 @@ class Linker:
         return forward_dependencies | backward_dependencies
 
     def _package_dependencies(
-        self, project: BaseDbtProject, other_project: BaseDbtProject
+        self,
+        project: Union[BaseDbtProject, DbtProject],
+        other_project: Union[BaseDbtProject, DbtProject],
     ) -> Set[ProjectDependency]:
         """
         Identify package-imported dependencies between projects.
@@ -133,15 +147,19 @@ class Linker:
 
         return {
             ProjectDependency(
-                upstream=project.model_relation_names[relation],
-                downstream=other_project.model_relation_names[relation],
+                upstream_resource=project.model_relation_names[relation],
+                upstream_project_name=project.model_relation_names[relation],
+                downstream_resource=other_project.model_relation_names[relation],
+                downstream_project_name=other_project.model_relation_names[relation],
                 type=ProjectDependencyType.Package,
             )
             for relation in relations
         }
 
     def dependencies(
-        self, project: BaseDbtProject, other_project: BaseDbtProject
+        self,
+        project: Union[BaseDbtProject, DbtProject],
+        other_project: Union[BaseDbtProject, DbtProject],
     ) -> Set[ProjectDependency]:
         """Detect dependencies between two projects and return a list of resources shared."""
 
@@ -156,3 +174,44 @@ class Linker:
         dependencies.update(package_dependencies)
 
         return dependencies
+
+    def resolve_dependency(
+        self,
+        dependency: ProjectDependency,
+        upstream_project: Union[DbtProject, BaseDbtProject],
+        downstream_project: Union[DbtProject, BaseDbtProject],
+    ):
+        upstream_manifest_entry = upstream_project.get_manifest_node(dependency.upstream_resource)
+        downstream_manifest_entry = downstream_project.get_manifest_node(
+            dependency.downstream_resource
+        )
+        upstream_catalog_entry = upstream_project.get_catalog_entry(dependency.upstream_resource)
+        upstream_mesh_constructor = DbtMeshConstructor(
+            project_path=upstream_project.path,
+            node=upstream_manifest_entry,
+            catalog=upstream_catalog_entry,
+        )
+        # upstream_editor = DbtProjectEditor(upstream_project)
+        downstream_mesh_constructor = DbtMeshConstructor(
+            project_path=downstream_project.path,
+            node=downstream_manifest_entry,
+            catalog=None,
+        )
+        downstream_editor = DbtProjectEditor(downstream_project)
+        if dependency.type == ProjectDependencyType.Source:
+            upstream_mesh_constructor.add_model_access(AccessType.Public)
+            upstream_mesh_constructor.add_model_contract()
+            for child in downstream_project.manifest.child_map[dependency.downstream_resource]:
+                constructor = DbtMeshConstructor(
+                    project_path=downstream_project.path,
+                    node=downstream_project.get_manifest_node(child),
+                    catalog=None,
+                )
+                constructor.replace_source_with_refs(
+                    source_unique_id=dependency.downstream_resource,
+                    model_unique_id=dependency.upstream_resource,
+                )
+            downstream_editor.update_resource_yml_entry(
+                downstream_mesh_constructor, operation_type="delete"
+            )
+            downstream_editor.update_dependencies_yml(name=upstream_project.name)

@@ -12,6 +12,30 @@ project_path = click.option(
     help="The path to the dbt project to operate on. Defaults to the current directory.",
 )
 
+project_paths = click.option(
+    "--project-paths",
+    cls=MultiOption,
+    multiple=True,
+    type=tuple,
+    default=None,
+    help="The paths to the set of dbt projects to connect. Must supply 2+ paths.",
+)
+
+projects_dir = click.option(
+    "--projects-dir",
+    type=click.Path(exists=True),
+    help="The path to a directory containing multiple dbt projects. Directory must contain 2+ projects.",
+)
+
+exclude_projects = click.option(
+    "--exclude-projects",
+    "-e",
+    multiple=True,
+    type=tuple,
+    default=None,
+    help="The set of dbt projects to exclude from the operation when using the --projects-dir option.",
+)
+
 create_path = click.option(
     "--create-path",
     type=click.Path(exists=False),

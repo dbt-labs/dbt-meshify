@@ -1,7 +1,8 @@
 import os
 import sys
+from itertools import combinations
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import click
 import yaml
@@ -14,18 +15,22 @@ from .cli import (
     TupleCompatibleCommand,
     create_path,
     exclude,
+    exclude_projects,
     group_yml_path,
     owner,
     owner_email,
     owner_name,
     owner_properties,
     project_path,
+    project_paths,
+    projects_dir,
     read_catalog,
     select,
     selector,
 )
 from .dbt_projects import DbtProject, DbtProjectHolder
 from .exceptions import FatalMeshifyException
+from .linker import Linker
 from .storage.file_content_editors import DbtMeshConstructor
 
 log_format = "<white>{time:HH:mm:ss}</white> | <level>{level}</level> | <level>{message}</level>"
@@ -48,26 +53,56 @@ def operation():
 
 
 @cli.command(name="connect")
-@click.argument("projects-dir", type=click.Path(exists=True), default=".")
-def connect(projects_dir):
+@project_paths
+@projects_dir
+@exclude_projects
+@read_catalog
+def connect(
+    project_paths: tuple, projects_dir: Path, exclude_projects: List[str], read_catalog: bool
+):
     """
-    !!! info
-        This command is not yet implemented
 
     Connects multiple dbt projects together by adding all necessary dbt Mesh constructs
+
     """
-    holder = DbtProjectHolder()
+    if project_paths and projects_dir:
+        raise click.BadOptionUsage(
+            option_name="project_paths",
+            message="Cannot specify both project_paths and projects_dir",
+        )
+    # 1. initialize all the projects supplied to the command
+    # 2. compute the dependency graph between each combination of 2 projects in that set
+    # 3. for each dependency, add the necessary dbt Mesh constructs to each project.
+    #    This includes:
+    #    - adding the dependency to the dependencies.yml file of the downstream project
+    #    - adding contracts and public access to the upstream models
+    #    - deleting the source definition of the upstream models in the downstream project
+    #    - updating the `{{ source }}` macro in the downstream project to a {{ ref }} to the upstream project
 
-    while True:
-        path_string = input("Enter the relative path to a dbt project (enter 'done' to finish): ")
-        if path_string == "done":
-            break
+    linker = Linker()
+    if project_paths:
+        dbt_projects = [
+            DbtProject.from_directory(project_path, read_catalog) for project_path in project_paths
+        ]
+        dbt_project_combinations = [combo for combo in combinations(dbt_projects, 2)]
+        for dbt_project_combo in dbt_project_combinations:
+            project_map = {project.name: project for project in dbt_project_combo}
+            for dependency in linker.dependencies(dbt_project_combo[0], dbt_project_combo[1]):
+                logger.info(
+                    f"Adding found dependency between {dbt_project_combo[0].name} and {dbt_project_combo[1].name}: {dependency}"
+                )
+                try:
+                    linker.resolve_dependency(
+                        dependency,
+                        project_map[dependency.upstream_project_name],
+                        project_map[dependency.downstream_project_name],
+                    )
+                except Exception as e:
+                    raise FatalMeshifyException(f"Error resolving dependency : {dependency}")
 
-        path = Path(path_string).expanduser().resolve()
-        project = DbtProject.from_directory(path, read_catalog)
-        holder.register_project(project)
-
-    print(holder.project_map())
+    if projects_dir:
+        # TODO: Implement this -- glob the directory for dbt_project.yml files, read projects from there
+        dbt_projects = []
 
 
 @cli.command(
@@ -230,7 +265,7 @@ def create_group(
         )
 
     group_owner: Owner = Owner(
-        name=owner_name, email=owner_email, _extra=yaml.safe_load(owner_properties or '{}')
+        name=owner_name, email=owner_email, _extra=yaml.safe_load(owner_properties or "{}")
     )
 
     grouper = ResourceGrouper(project)
@@ -279,4 +314,4 @@ def group(
     Detects the edges of the group, makes their access public, and adds contracts to them
     """
     ctx.forward(create_group)
-    ctx.invoke(add_contract, select=f'group:{name}', project_path=project_path, public_only=True)
+    ctx.invoke(add_contract, select=f"group:{name}", project_path=project_path, public_only=True)
