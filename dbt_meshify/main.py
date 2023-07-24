@@ -94,10 +94,11 @@ def split(ctx, project_name, select, exclude, project_path, selector, create_pat
         project_name=project_name, select=select, exclude=exclude, selector=selector
     )
     logger.info(f"Selected {len(subproject.resources)} resources: {subproject.resources}")
-    target_directory = Path(create_path) if create_path else None
-    subproject_creator = DbtSubprojectCreator(
-        subproject=subproject, target_directory=target_directory
-    )
+    if create_path:
+        create_path = Path(create_path).expanduser().resolve()
+        create_path.parent.mkdir(parents=True, exist_ok=True)
+
+    subproject_creator = DbtSubprojectCreator(subproject=subproject, target_directory=create_path)
     logger.info(f"Creating subproject {subproject.name}...")
     try:
         subproject_creator.initialize()
