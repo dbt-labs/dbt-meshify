@@ -102,6 +102,8 @@ class DbtSubprojectCreator(DbtProjectEditor):
     """
 
     def __init__(self, project: DbtSubProject, target_directory: Optional[Path] = None):
+        if not isinstance(project, DbtSubProject):
+            raise TypeError(f"DbtSubprojectCreator requires a DbtSubProject, got {type(project)}")
         super().__init__(project)
         self.target_directory = target_directory if target_directory else project.path
         self.file_manager = DbtFileManager(
@@ -114,8 +116,8 @@ class DbtSubprojectCreator(DbtProjectEditor):
         """
         get a set of boundary model unique_ids for all the selected resources
         """
-        nodes = set(filter(lambda x: not x.startswith("source"), self.project.resources))
-        parent_project_name = self.project.parent_project.name
+        nodes = set(filter(lambda x: not x.startswith("source"), self.project.resources))  # type: ignore
+        parent_project_name = self.project.parent_project.name  # type: ignore
         interface = ResourceGrouper.identify_interface(
             graph=self.project.graph.graph, selected_bunch=nodes
         )
@@ -164,7 +166,7 @@ class DbtSubprojectCreator(DbtProjectEditor):
             if not model_node:
                 raise KeyError(f"Resource {model} not found in manifest")
             meshify_constructor = DbtMeshConstructor(
-                project_path=self.project.parent_project.path, node=model_node, catalog=None
+                project_path=self.project.parent_project.path, node=model_node, catalog=None  # type: ignore
             )
             meshify_constructor.update_model_refs(
                 model_name=resource.name, project_name=self.project.name
@@ -173,13 +175,13 @@ class DbtSubprojectCreator(DbtProjectEditor):
     def initialize(self) -> None:
         """Initialize this subproject as a full dbt project at the provided `target_directory`."""
         subproject = self.project
-        for unique_id in subproject.resources | subproject.custom_macros | subproject.groups:
+        for unique_id in subproject.resources | subproject.custom_macros | subproject.groups:  # type: ignore
             resource = subproject.get_manifest_node(unique_id)
             catalog = subproject.get_catalog_entry(unique_id)
             if not resource:
                 raise KeyError(f"Resource {unique_id} not found in manifest")
             meshify_constructor = DbtMeshConstructor(
-                project_path=subproject.parent_project.path, node=resource, catalog=catalog
+                project_path=subproject.parent_project.path, node=resource, catalog=catalog  # type: ignore
             )
             if resource.resource_type in ["model", "test", "snapshot", "seed"]:
                 # ignore generic tests, as moving the yml entry will move the test too
@@ -203,7 +205,7 @@ class DbtSubprojectCreator(DbtProjectEditor):
                     # apply access method too
                     logger.info(f"Updating ref functions for children of {resource.unique_id}...")
                     try:
-                        self.update_child_refs(resource)
+                        self.update_child_refs(resource)  # type: ignore
                         logger.success(
                             f"Successfully updated ref functions for children of {resource.unique_id}"
                         )
