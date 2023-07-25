@@ -84,25 +84,37 @@ def connect(
         dbt_projects = [
             DbtProject.from_directory(project_path, read_catalog) for project_path in project_paths
         ]
-        dbt_project_combinations = [combo for combo in combinations(dbt_projects, 2)]
-        for dbt_project_combo in dbt_project_combinations:
-            project_map = {project.name: project for project in dbt_project_combo}
-            for dependency in linker.dependencies(dbt_project_combo[0], dbt_project_combo[1]):
-                logger.info(
-                    f"Found dependency between {dbt_project_combo[0].name} and {dbt_project_combo[1].name}: {dependency}"
-                )
-                try:
-                    linker.resolve_dependency(
-                        dependency,
-                        project_map[dependency.upstream_project_name],
-                        project_map[dependency.downstream_project_name],
-                    )
-                except Exception as e:
-                    raise FatalMeshifyException(f"Error resolving dependency : {dependency} {e}")
 
     if projects_dir:
-        # TODO: Implement this -- glob the directory for dbt_project.yml files, read projects from there
-        dbt_projects = []
+        dbt_project_paths = [path.parent for path in Path(projects_dir).glob("**/dbt_project.yml")]
+        all_dbt_projects = [
+            DbtProject.from_directory(project_path, read_catalog)
+            for project_path in dbt_project_paths
+        ]
+        dbt_projects = [
+            project for project in all_dbt_projects if project.name not in exclude_projects
+        ]
+
+    dbt_project_combinations = [combo for combo in combinations(dbt_projects, 2)]
+    for dbt_project_combo in dbt_project_combinations:
+        project_map = {project.name: project for project in dbt_project_combo}
+        dependencies = linker.dependencies(dbt_project_combo[0], dbt_project_combo[1])
+        if len(dependencies) == 0:
+            logger.info(
+                f"No dependencies found between {dbt_project_combo[0].name} and {dbt_project_combo[1].name}"
+            )
+        for dependency in linker.dependencies(dbt_project_combo[0], dbt_project_combo[1]):
+            logger.info(
+                f"Found dependency between {dbt_project_combo[0].name} and {dbt_project_combo[1].name}: {dependency}"
+            )
+            try:
+                linker.resolve_dependency(
+                    dependency,
+                    project_map[dependency.upstream_project_name],
+                    project_map[dependency.downstream_project_name],
+                )
+            except Exception as e:
+                raise FatalMeshifyException(f"Error resolving dependency : {dependency} {e}")
 
 
 @cli.command(

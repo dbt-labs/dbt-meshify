@@ -131,7 +131,10 @@ class Linker:
         project (Project B) imports Project A and references the model.
         """
 
-        if project.project_id not in other_project.installed_packages():
+        if (
+            project.project_id not in other_project.installed_packages()
+            and other_project.project_id not in project.installed_packages()
+        ):
             return set()
 
         # find which models are in both manifests
@@ -158,7 +161,7 @@ class Linker:
             for child in other_project.manifest.child_map[project.model_relation_names[relation]]
         ]
 
-        return {
+        forward_dependencies = {
             ProjectDependency(
                 upstream_resource=child['upstream_resource'],
                 upstream_project_name=project.name,
@@ -168,6 +171,43 @@ class Linker:
             )
             for child in package_children
         }
+
+        # find which models are in both manifests
+        backward_relations = self._find_relation_dependencies(
+            source_relations={
+                model.relation_name
+                for model in other_project.models.values()
+                if model.relation_name is not None
+            },
+            target_relations={
+                model.relation_name
+                for model in project.models.values()
+                if model.relation_name is not None
+            },
+        )
+
+        # find the children of the shared models in the downstream project
+        backward_package_children = [
+            {
+                'upstream_resource': other_project.model_relation_names[relation],
+                'downstream_resource': child,
+            }
+            for relation in backward_relations
+            for child in project.manifest.child_map[other_project.model_relation_names[relation]]
+        ]
+
+        backward_dependencies = {
+            ProjectDependency(
+                upstream_resource=child['upstream_resource'],
+                upstream_project_name=other_project.name,
+                downstream_resource=child['downstream_resource'],
+                downstream_project_name=project.name,
+                type=ProjectDependencyType.Package,
+            )
+            for child in backward_package_children
+        }
+
+        return forward_dependencies | backward_dependencies
 
     def dependencies(
         self,

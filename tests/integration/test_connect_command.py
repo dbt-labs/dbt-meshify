@@ -75,3 +75,40 @@ class TestConnectCommand:
 
         teardown_test_project(copy_producer_project)
         teardown_test_project(copy_package_consumer_project)
+
+    def test_packages_dir_exclude_packages(self):
+        # copy all three packages into a subdirectory to ensure no repeat project names in one directory
+        copy_producer_project = "test-projects/source-hack/subdir/src_proj_a"
+        copy_source_consumer_project = "test-projects/source-hack/subdir/src_proj_b"
+        copy_package_consumer_project = "test-projects/source-hack/subdir/dest_proj_a"
+        setup_test_project(producer_project, copy_producer_project)
+        setup_test_project(source_consumer_project, copy_source_consumer_project)
+        setup_test_project(package_consumer_project, copy_package_consumer_project)
+        runner = CliRunner()
+        result = runner.invoke(
+            connect,
+            [
+                "--projects-dir",
+                "test-projects/source-hack/subdir",
+                "--exclude-projects",
+                "src_proj_b",
+            ],
+        )
+
+        assert result.exit_code == 0
+
+        # assert that the source is replaced with a ref
+        x_proj_ref = "{{ ref('src_proj_a', 'shared_model') }}"
+        child_sql = (
+            Path(copy_package_consumer_project) / "models" / "downstream_model.sql"
+        ).read_text()
+        assert x_proj_ref in child_sql
+
+        # assert that the dependecies yml was created with a pointer to the upstream project
+        assert (
+            "src_proj_a" in (Path(copy_package_consumer_project) / "dependencies.yml").read_text()
+        )
+
+        teardown_test_project(copy_producer_project)
+        teardown_test_project(copy_package_consumer_project)
+        teardown_test_project(copy_source_consumer_project)
