@@ -7,7 +7,7 @@ from loguru import logger
 
 from dbt_meshify.dbt_projects import BaseDbtProject, DbtProject
 from dbt_meshify.exceptions import FatalMeshifyException, FileEditorException
-from dbt_meshify.storage.dbt_project_creator import DbtProjectEditor, YMLOperationType
+from dbt_meshify.storage.dbt_project_editors import DbtProjectEditor, YMLOperationType
 from dbt_meshify.storage.file_content_editors import DbtMeshConstructor
 
 

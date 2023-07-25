@@ -9,7 +9,7 @@ import yaml
 from dbt.contracts.graph.unparsed import Owner
 from loguru import logger
 
-from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
+from dbt_meshify.storage.dbt_project_editors import DbtSubprojectCreator
 
 from .cli import (
     TupleCompatibleCommand,
