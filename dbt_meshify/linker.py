@@ -3,8 +3,10 @@ from enum import Enum
 from typing import Set, Union
 
 from dbt.node_types import AccessType
+from loguru import logger
 
 from dbt_meshify.dbt_projects import BaseDbtProject, DbtProject
+from dbt_meshify.exceptions import FatalMeshifyException, FileEditorException
 from dbt_meshify.storage.dbt_project_creator import DbtProjectEditor, YMLOperationType
 from dbt_meshify.storage.file_content_editors import DbtMeshConstructor
 
@@ -214,8 +216,20 @@ class Linker:
         )
         downstream_editor = DbtProjectEditor(downstream_project)
         # for either dependency type, add contracts and make model public
-        upstream_mesh_constructor.add_model_access(AccessType.Public)
-        upstream_mesh_constructor.add_model_contract()
+        try:
+            upstream_mesh_constructor.add_model_access(AccessType.Public)
+            logger.success(
+                f"Successfully update model access : {dependency.upstream_resource} is now {AccessType.Public}"
+            )
+        except FatalMeshifyException as e:
+            logger.error(f"Failed to update model access: {dependency.upstream_resource}")
+            raise e
+        try:
+            upstream_mesh_constructor.add_model_contract()
+            logger.success(f"Successfully added contract to model: {dependency.upstream_resource}")
+        except FatalMeshifyException as e:
+            logger.error(f"Failed to add contract to model: {dependency.upstream_resource}")
+            raise e
 
         if dependency.type == ProjectDependencyType.Source:
             for child in downstream_project.manifest.child_map[dependency.downstream_resource]:
@@ -224,19 +238,51 @@ class Linker:
                     node=downstream_project.get_manifest_node(child),  # type: ignore
                     catalog=None,
                 )
-                constructor.replace_source_with_refs(
-                    source_unique_id=dependency.downstream_resource,
-                    model_unique_id=dependency.upstream_resource,
-                )
-            downstream_editor.update_resource_yml_entry(
-                downstream_mesh_constructor, operation_type=YMLOperationType.Delete
-            )
+                try:
+                    constructor.replace_source_with_refs(
+                        source_unique_id=dependency.downstream_resource,
+                        model_unique_id=dependency.upstream_resource,
+                    )
+                    logger.success(
+                        f"Successfully replaced source function with ref to upstream resource: {dependency.downstream_resource} now calls {dependency.upstream_resource} directly"
+                    )
+                except FileEditorException as e:
+                    logger.error(
+                        f"Failed to replace source function with ref to upstream resource"
+                    )
+                    raise e
+                try:
+                    downstream_editor.update_resource_yml_entry(
+                        downstream_mesh_constructor, operation_type=YMLOperationType.Delete
+                    )
+                    logger.success(
+                        f"Successfully deleted unnecessary source: {dependency.downstream_resource}"
+                    )
+                except FatalMeshifyException as e:
+                    logger.error(f"Failed to delete unnecessary source")
+                    raise e
 
         if dependency.type == ProjectDependencyType.Package:
-            downstream_mesh_constructor.update_model_refs(
-                model_name=upstream_manifest_entry.name,
-                project_name=dependency.upstream_project_name,
-            )
+            try:
+                downstream_mesh_constructor.update_model_refs(
+                    model_name=upstream_manifest_entry.name,
+                    project_name=dependency.upstream_project_name,
+                )
+                logger.success(
+                    f"Successfully updated model refs: {dependency.downstream_resource} now references {dependency.upstream_resource}"
+                )
+            except FileEditorException as e:
+                logger.error(f"Failed to update model refs")
+                raise e
 
         # for both types, add upstream project to downstream project's dependencies.yml
-        downstream_editor.update_dependencies_yml(name=upstream_project.name)
+        try:
+            downstream_editor.update_dependencies_yml(name=upstream_project.name)
+            logger.success(
+                f"Successfully added {dependency.upstream_project_name} to {dependency.downstream_project_name}'s dependencies.yml"
+            )
+        except FileEditorException as e:
+            logger.error(
+                f"Failed to add {dependency.upstream_project_name} to {dependency.downstream_project_name}'s dependencies.yml"
+            )
+            raise e

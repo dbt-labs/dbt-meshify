@@ -397,7 +397,6 @@ class DbtMeshConstructor(DbtMeshFileEditor):
             filename = f"_{self.node.resource_type.pluralize()}.yml"
             yml_path = resource_path.parent / filename
             self.file_manager.write_file(yml_path, {})
-        logger.info(f"Schema entry for {self.node.unique_id} written to {yml_path}")
         return yml_path
 
     def get_resource_path(self) -> Path:
@@ -412,6 +411,7 @@ class DbtMeshConstructor(DbtMeshFileEditor):
     def add_model_contract(self) -> None:
         """Adds a model contract to the model's yaml"""
         yml_path = self.get_patch_path()
+        logger.info(f"Adding contract to {self.node.name} at {yml_path}")
         # read the yml file
         # pass empty dict if no file contents returned
         models_yml = self.file_manager.read_file(yml_path)
@@ -432,7 +432,7 @@ class DbtMeshConstructor(DbtMeshFileEditor):
     def add_model_access(self, access_type: AccessType) -> None:
         """Adds a model contract to the model's yaml"""
         yml_path = self.get_patch_path()
-        logger.info(f"Adding model contract for {self.node.name} at {yml_path}")
+        logger.info(f"Adding {access_type} access to {self.node.name} at {yml_path}")
         # read the yml file
         # pass empty dict if no file contents returned
         models_yml = self.file_manager.read_file(yml_path)
