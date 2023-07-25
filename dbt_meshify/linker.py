@@ -193,6 +193,10 @@ class Linker:
         downstream_project: DbtProject,
     ):
         upstream_manifest_entry = upstream_project.get_manifest_node(dependency.upstream_resource)
+        if not upstream_manifest_entry:
+            raise ValueError(
+                f"Could not find upstream resource {dependency.upstream_resource} in project {upstream_project.name}"
+            )
         downstream_manifest_entry = downstream_project.get_manifest_node(
             dependency.downstream_resource
         )
@@ -209,9 +213,11 @@ class Linker:
             catalog=None,
         )
         downstream_editor = DbtProjectEditor(downstream_project)
+        # for either dependency type, add contracts and make model public
+        upstream_mesh_constructor.add_model_access(AccessType.Public)
+        upstream_mesh_constructor.add_model_contract()
+
         if dependency.type == ProjectDependencyType.Source:
-            upstream_mesh_constructor.add_model_access(AccessType.Public)
-            upstream_mesh_constructor.add_model_contract()
             for child in downstream_project.manifest.child_map[dependency.downstream_resource]:
                 constructor = DbtMeshConstructor(
                     project_path=downstream_project.path,
@@ -225,4 +231,12 @@ class Linker:
             downstream_editor.update_resource_yml_entry(
                 downstream_mesh_constructor, operation_type=YMLOperationType.Delete
             )
-            downstream_editor.update_dependencies_yml(name=upstream_project.name)
+
+        if dependency.type == ProjectDependencyType.Package:
+            downstream_mesh_constructor.update_model_refs(
+                model_name=upstream_manifest_entry.name,
+                project_name=dependency.upstream_project_name,
+            )
+
+        # for both types, add upstream project to downstream project's dependencies.yml
+        downstream_editor.update_dependencies_yml(name=upstream_project.name)
