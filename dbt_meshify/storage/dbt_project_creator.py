@@ -3,6 +3,7 @@ from pathlib import Path
 from typing import Optional, Set, Union
 
 from dbt.contracts.graph.nodes import ManifestNode
+from dbt.contracts.util import Identifier
 from dbt.node_types import AccessType
 from loguru import logger
 
@@ -82,16 +83,16 @@ class DbtProjectEditor:
         else:
             self.file_manager.delete_file(current_yml_path)
 
-    def update_dependencies_yml(self, name: str) -> None:
-        import pdb
-
-        pdb.set_trace()
+    def update_dependencies_yml(self, name: Union[str, None] = None) -> None:
         try:
             contents = self.file_manager.read_file(Path("dependencies.yml"))
         except FileNotFoundError:
             contents = {"projects": []}
 
-        contents["projects"].append({"name": name if name else self.project.name})  # type: ignore
+        import pdb
+
+        pdb.set_trace()
+        contents["projects"].append({"name": str(Identifier(name)) if name else self.project.name})  # type: ignore
         self.file_manager.write_file(Path("dependencies.yml"), contents, writeback=True)
 
 

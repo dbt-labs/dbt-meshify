@@ -89,7 +89,7 @@ def connect(
             project_map = {project.name: project for project in dbt_project_combo}
             for dependency in linker.dependencies(dbt_project_combo[0], dbt_project_combo[1]):
                 logger.info(
-                    f"Adding found dependency between {dbt_project_combo[0].name} and {dbt_project_combo[1].name}: {dependency}"
+                    f"Found dependency between {dbt_project_combo[0].name} and {dbt_project_combo[1].name}: {dependency}"
                 )
                 try:
                     linker.resolve_dependency(
@@ -98,7 +98,7 @@ def connect(
                         project_map[dependency.downstream_project_name],
                     )
                 except Exception as e:
-                    raise FatalMeshifyException(f"Error resolving dependency : {dependency}")
+                    raise FatalMeshifyException(f"Error resolving dependency : {dependency} {e}")
 
     if projects_dir:
         # TODO: Implement this -- glob the directory for dbt_project.yml files, read projects from there
@@ -133,13 +133,13 @@ def split(ctx, project_name, select, exclude, project_path, selector, create_pat
         create_path = Path(create_path).expanduser().resolve()
         create_path.parent.mkdir(parents=True, exist_ok=True)
 
-    subproject_creator = DbtSubprojectCreator(subproject=subproject, target_directory=create_path)
+    subproject_creator = DbtSubprojectCreator(project=subproject, target_directory=create_path)
     logger.info(f"Creating subproject {subproject.name}...")
     try:
         subproject_creator.initialize()
         logger.success(f"Successfully created subproject {subproject.name}")
     except Exception as e:
-        raise FatalMeshifyException(f"Error creating subproject {subproject.name}")
+        raise FatalMeshifyException(f"Error creating subproject {subproject.name}: error {e}")
 
 
 @operation.command(name="add-contract")
