@@ -89,9 +89,6 @@ class DbtProjectEditor:
         except FileNotFoundError:
             contents = {"projects": []}
 
-        import pdb
-
-        pdb.set_trace()
         contents["projects"].append({"name": str(Identifier(name)) if name else self.project.name})  # type: ignore
         self.file_manager.write_file(Path("dependencies.yml"), contents, writeback=True)
 
