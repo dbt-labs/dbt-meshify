@@ -234,7 +234,7 @@ class Linker:
             node=upstream_manifest_entry,  # type: ignore
             catalog=upstream_catalog_entry,
         )
-        # upstream_editor = DbtProjectEditor(upstream_project)
+
         downstream_mesh_constructor = DbtMeshConstructor(
             project_path=downstream_project.path,
             node=downstream_manifest_entry,  # type: ignore
