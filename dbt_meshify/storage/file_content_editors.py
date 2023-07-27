@@ -115,7 +115,8 @@ class DbtMeshFileEditor:
         self, resource_name: str, full_yml: Dict[str, Any], source_name: str
     ) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
         """
-        Remove a single source entry from a source defintion block, return source definition with single source entry and the remainder of the original
+        Remove a single source entry from a source definition block, return source definition with
+        single source entry and the remainder of the original
         """
         sources = resources_yml_to_dict(full_yml, NodeType.Source)
         source_definition = sources.get(source_name)
@@ -143,7 +144,7 @@ class DbtMeshFileEditor:
         # parse the yml file into a dictionary with model names as keys
         if resource_type == NodeType.Source:
             if not source_name:
-                raise ValueError('Missing source name')
+                raise ValueError("Missing source name")
             return self.get_source_yml_entry(resource_name, full_yml, source_name)
         else:
             resources = resources_yml_to_dict(full_yml, resource_type)
@@ -329,7 +330,7 @@ class DbtMeshConstructor(DbtMeshFileEditor):
             NodeType.Macro,
             NodeType.Test,
         ]:
-            # find yml path for resoruces that are not defined
+            # find yml path for resources that are not defined
             yml_path = Path(self.node.patch_path.split("://")[1]) if self.node.patch_path else None
         else:
             yml_path = self.get_resource_path()
@@ -477,8 +478,8 @@ class DbtMeshConstructor(DbtMeshFileEditor):
 
         # read the model file
         model_code = str(self.file_manager.read_file(model_path))
-        # This can be defined in the init for this clas.
-        ref_update_methods = {'sql': self.update_sql_refs, 'python': self.update_python_refs}
+        # This can be defined in the init for this class.
+        ref_update_methods = {"sql": self.update_sql_refs, "python": self.update_python_refs}
         # Here, we're trusting the dbt-core code to check the languages for us. 🐉
         updated_code = ref_update_methods[self.node.language](
             model_name=model_name,
