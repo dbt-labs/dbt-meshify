@@ -172,27 +172,13 @@ class Linker:
             for child in package_children
         }
 
-        # find which models are in both manifests
-        backward_relations = self._find_relation_dependencies(
-            source_relations={
-                model.relation_name
-                for model in other_project.models.values()
-                if model.relation_name is not None
-            },
-            target_relations={
-                model.relation_name
-                for model in project.models.values()
-                if model.relation_name is not None
-            },
-        )
-
         # find the children of the shared models in the downstream project
         backward_package_children = [
             {
                 'upstream_resource': other_project.model_relation_names[relation],
                 'downstream_resource': child,
             }
-            for relation in backward_relations
+            for relation in relations
             for child in project.manifest.child_map[other_project.model_relation_names[relation]]
         ]
 

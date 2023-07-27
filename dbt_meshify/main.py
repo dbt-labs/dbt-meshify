@@ -103,7 +103,7 @@ def connect(
             logger.info(
                 f"No dependencies found between {dbt_project_combo[0].name} and {dbt_project_combo[1].name}"
             )
-        for dependency in linker.dependencies(dbt_project_combo[0], dbt_project_combo[1]):
+        for dependency in dependencies:
             logger.info(
                 f"Found dependency between {dbt_project_combo[0].name} and {dbt_project_combo[1].name}: {dependency}"
             )
