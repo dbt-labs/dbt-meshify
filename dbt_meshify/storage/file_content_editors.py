@@ -346,7 +346,7 @@ class DbtMeshConstructor(DbtMeshFileEditor):
 
             filename = f"_{self.node.resource_type.pluralize()}.yml"
             yml_path = resource_path.parent / filename
-            if not yml_path.exists():
+            if not (Path(self.project_path) / yml_path).exists():
                 self.file_manager.write_file(yml_path, {})
         logger.info(f"Schema entry for {self.node.unique_id} will exist at {yml_path}")
         return yml_path
