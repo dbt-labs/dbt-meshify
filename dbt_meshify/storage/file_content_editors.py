@@ -346,8 +346,9 @@ class DbtMeshConstructor(DbtMeshFileEditor):
 
             filename = f"_{self.node.resource_type.pluralize()}.yml"
             yml_path = resource_path.parent / filename
-            self.file_manager.write_file(yml_path, {})
-        logger.info(f"Schema entry for {self.node.unique_id} written to {yml_path}")
+            if not yml_path.exists():
+                self.file_manager.write_file(yml_path, {})
+        logger.info(f"Schema entry for {self.node.unique_id} will exist at {yml_path}")
         return yml_path
 
     def get_resource_path(self) -> Path:
