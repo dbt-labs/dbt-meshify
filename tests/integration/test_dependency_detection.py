@@ -81,7 +81,12 @@ class TestLinkerSourceDependencies:
                 upstream="model.src_proj_a.shared_model",
                 downstream="model.src_proj_a.shared_model",
                 type=ProjectDependencyType.Package,
-            )
+            ),
+            ProjectDependency(
+                upstream="model.src_proj_a.new_model",
+                downstream="model.src_proj_a.new_model",
+                type=ProjectDependencyType.Package,
+            ),
         }
 
     # This doesn't exist yet as of 1.5.0. We'll test it out once it's a thing.
