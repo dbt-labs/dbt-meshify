@@ -1,23 +1,45 @@
 import dataclasses
 from enum import Enum
-from typing import Dict, Set
+from pathlib import Path
+from typing import Dict, Optional, Set
+
+from dbt.node_types import NodeType
 
 
 class Operation(str, Enum):
     """An operation describes the type of work being performed."""
 
-    create = "create"
+    add = "add"
     update = "update"
-    move = "move"
-    delete = "delete"
+    remove = "remove"
 
 
 class EntityType(str, Enum):
     """An EntityType represents the type of entity being operated on in a Change"""
 
-    project = "project"
-    resource = "resource"
-    file = "file"
+    Model = "model"
+    Analysis = "analysis"
+    Test = "test"
+    Snapshot = "snapshot"
+    Operation = "operation"
+    Seed = "seed"
+    # TODO: rm?
+    RPCCall = "rpc"
+    SqlOperation = "sql_operation"
+    Documentation = "doc"
+    Source = "source"
+    Macro = "macro"
+    Exposure = "exposure"
+    Metric = "metric"
+    Group = "group"
+    SemanticModel = "semantic_model"
+    Project = "project"
+    Code = "code"
+
+    def pluralize(self) -> str:
+        if self is self.Analysis:
+            return "analyses"
+        return f"{self}s"
 
 
 @dataclasses.dataclass
@@ -27,7 +49,7 @@ class Change:
     operation: Operation
     entity_type: EntityType
     identifier: str
-    config: Dict
+    path: Path
     data: Dict
 
 

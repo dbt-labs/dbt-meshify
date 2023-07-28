@@ -1,4 +1,5 @@
 import os
+from abc import ABC, abstractmethod
 from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -8,6 +9,7 @@ from dbt.contracts.results import CatalogTable
 from dbt.node_types import AccessType, NodeType
 from loguru import logger
 
+from dbt_meshify.change import Change, EntityType
 from dbt_meshify.exceptions import FileEditorException, ModelFileNotFoundError
 from dbt_meshify.storage.file_manager import DbtFileManager
 
@@ -38,13 +40,74 @@ def process_model_yml(model_yml: Dict[str, Any]):
     return filter_empty_dict_items(model_ordered_dict)
 
 
-def resources_yml_to_dict(resources_yml: Optional[Dict], resource_type: NodeType = NodeType.Model):
+def resources_yml_to_dict(
+    resources_yml: Optional[Dict], resource_type: Union[NodeType, EntityType] = NodeType.Model
+):
     """Converts a yml dict to a named dictionary for easier operation"""
     return (
         {resource["name"]: resource for resource in resources_yml[resource_type.pluralize()]}
         if resources_yml
         else {}
     )
+
+
+def safe_update(original: Dict[Any, Any], update: Dict[Any, Any]) -> Dict[Any, Any]:
+    """Safely update a dictionary without squashing nesting dictionary values."""
+    for key, value in update:
+        if isinstance(value, dict):
+            original[key] = safe_update(original[key], value)
+        else:
+            original[key] = value
+    return original
+
+
+class FileEditor(ABC):
+    """A class used to update ChangeableResources"""
+
+    def __init__(self, file_manager) -> None:
+        super().__init__()
+        self.file_manager = file_manager
+
+    @abstractmethod
+    def add(self, change: Change) -> None:
+        """Add a new entity to a file at a path."""
+
+
+class ResourceFileEditor(FileEditor):
+    def __init__(self, project_path: Path) -> None:
+        file_manager = DbtFileManager(read_project_path=project_path)
+        super().__init__(file_manager)
+
+    def add(self, change: Change) -> None:
+        """Add a Resource to a YAML file at a given path."""
+
+        properties = self.file_manager.read_file(change.path)
+
+        properties[change.entity_type.pluralize()] = properties.get(
+            change.entity_type.pluralize(), []
+        ).append(change.data)
+
+        self.file_manager.write_file(change.path, properties)
+
+    def update(self, change: Change) -> None:
+        """Update an existing Resource in a YAML file"""
+        properties = self.file_manager.read_file(change.path)
+        entities = resources_yml_to_dict(properties, change.entity_type)
+
+        entities[change.identifier] = safe_update(entities[change.identifier], change.data)
+
+        properties[change.entity_type.pluralize()] = list(entities[change.identifier].values())
+        self.file_manager.write_file(change.path, properties)
+
+    def remove(self, change: Change) -> None:
+        """Remove an existing resource from a YAML file"""
+        properties = self.file_manager.read_file(change.path)
+        entities = resources_yml_to_dict(properties, change.entity_type)
+
+        del entities[change.identifier]
+
+        properties[change.entity_type.pluralize()] = list(entities[change.identifier].values())
+        self.file_manager.write_file(change.path, properties)
 
 
 class DbtMeshFileEditor:
