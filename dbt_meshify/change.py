@@ -1,7 +1,7 @@
 import dataclasses
 from enum import Enum
 from pathlib import Path
-from typing import Dict, Set
+from typing import Dict, List
 
 
 class Operation(str, Enum):
@@ -54,5 +54,15 @@ class Change:
 class ChangeSet:
     """A collection of Changes that will be performed"""
 
-    def __init__(self, changes: Set[Change]) -> None:
+    def __init__(self, changes: List[Change]) -> None:
         self.changes = changes
+        self.step = 0
+
+    def __iter__(self) -> "ChangeSet":
+        return self
+
+    def __next__(self) -> Change:
+        self.step += 1
+        if self.step < len(self.changes):
+            return self.changes[self.step]
+        raise StopIteration

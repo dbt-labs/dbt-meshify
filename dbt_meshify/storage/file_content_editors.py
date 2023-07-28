@@ -118,6 +118,28 @@ class ResourceFileEditor(FileEditor):
         self.file_manager.write_file(change.path, properties)
 
 
+class ProjectFileEditor(FileEditor):
+    def add(self, change: Change) -> None:
+        raise NotImplementedError
+
+    def update(self, change: Change) -> None:
+        raise NotImplementedError
+
+    def remove(self, change: Change) -> None:
+        raise NotImplementedError
+
+
+class CodeFileEditor(FileEditor):
+    def add(self, change: Change) -> None:
+        raise NotImplementedError
+
+    def update(self, change: Change) -> None:
+        raise NotImplementedError
+
+    def remove(self, change: Change) -> None:
+        raise NotImplementedError
+
+
 class DbtMeshFileEditor:
     """
     Class to operate on the contents of a dbt project's files
