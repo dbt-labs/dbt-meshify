@@ -1,9 +1,15 @@
+import pathlib
+
 import pytest
 from dbt.contracts.graph.nodes import Group
 from dbt.contracts.graph.unparsed import Owner
 from dbt.node_types import AccessType, NodeType
 
-from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
+from dbt_meshify.change import Change, EntityType, Operation
+from dbt_meshify.storage.file_content_editors import (
+    DbtMeshFileEditor,
+    ResourceFileEditor,
+)
 from tests.unit import read_yml
 
 meshify = DbtMeshFileEditor()
@@ -71,7 +77,7 @@ class TestAddGroupToModelYML:
         return Owner(name="Shaina Fake", email="fake@example.com")
 
     @pytest.fixture
-    def new_group(self, owner: Owner) -> Group:
+    def group(self, owner: Owner) -> Group:
         return Group(
             name="test_group",
             owner=owner,
@@ -82,29 +88,29 @@ class TestAddGroupToModelYML:
             resource_type=NodeType.Group,
         )
 
-    def test_adds_group_to_model_file(self, new_group: Group):
-        yml_dict = meshify.add_group_and_access_to_model_yml(
-            model_name=model_name,
-            group=new_group,
-            access_type=AccessType.Public,
-            models_yml=read_yml(model_yml_shared_model),
+    @pytest.fixture
+    def change(self, group: Group) -> Change:
+        return Change(
+            operation=Operation.Add,
+            entity_type=EntityType.Model,
+            identifier=model_name,
+            path=pathlib.Path(group.path),
+            data={
+                "group": group.name,
+                "access": AccessType.Public.value,
+            },
+        )
+
+    def test_adds_group_to_model_file(self, change: Change):
+        yml_dict = ResourceFileEditor.update_resource(read_yml(model_yml_shared_model), change)
+        assert yml_dict == read_yml(expected_model_yml_shared_model)
+
+    def test_adds_group_overwrites_existing_group(self, change: Change):
+        yml_dict = ResourceFileEditor.update_resource(
+            read_yml(model_yml_shared_model_with_group), change
         )
         assert yml_dict == read_yml(expected_model_yml_shared_model)
 
-    def test_adds_group_overwrites_existing_groups(self, new_group: Group):
-        yml_dict = meshify.add_group_and_access_to_model_yml(
-            model_name=model_name,
-            group=new_group,
-            access_type=AccessType.Public,
-            models_yml=read_yml(model_yml_shared_model_with_group),
-        )
-        assert yml_dict == read_yml(expected_model_yml_shared_model)
-
-    def test_preserves_existing_models(self, new_group: Group):
-        yml_dict = meshify.add_group_and_access_to_model_yml(
-            model_name=model_name,
-            group=new_group,
-            access_type=AccessType.Public,
-            models_yml=read_yml(model_yml_multiple_models),
-        )
+    def test_preserves_existing_models(self, change: Change):
+        yml_dict = ResourceFileEditor.update_resource(read_yml(model_yml_multiple_models), change)
         assert yml_dict == read_yml(expected_model_yml_multiple_models)

@@ -9,9 +9,9 @@ from dbt.node_types import NodeType
 class Operation(str, Enum):
     """An operation describes the type of work being performed."""
 
-    add = "add"
-    update = "update"
-    remove = "remove"
+    Add = "add"
+    Update = "update"
+    Remove = "remove"
 
 
 class EntityType(str, Enum):
@@ -39,7 +39,7 @@ class EntityType(str, Enum):
     def pluralize(self) -> str:
         if self is self.Analysis:
             return "analyses"
-        return f"{self}s"
+        return f"{self.value}s"
 
 
 @dataclasses.dataclass

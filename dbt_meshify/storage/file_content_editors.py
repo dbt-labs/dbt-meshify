@@ -53,9 +53,9 @@ def resources_yml_to_dict(
 
 def safe_update(original: Dict[Any, Any], update: Dict[Any, Any]) -> Dict[Any, Any]:
     """Safely update a dictionary without squashing nesting dictionary values."""
-    for key, value in update:
+    for key, value in update.items():
         if isinstance(value, dict):
-            original[key] = safe_update(original[key], value)
+            original[key] = safe_update(original.get(key, {}), value)
         else:
             original[key] = value
     return original
@@ -78,35 +78,43 @@ class ResourceFileEditor(FileEditor):
         file_manager = DbtFileManager(read_project_path=project_path)
         super().__init__(file_manager)
 
-    def add(self, change: Change) -> None:
-        """Add a Resource to a YAML file at a given path."""
-
-        properties = self.file_manager.read_file(change.path)
-
+    @staticmethod
+    def add_resource(properties: Dict, change: Change) -> Dict:
         properties[change.entity_type.pluralize()] = properties.get(
             change.entity_type.pluralize(), []
         ).append(change.data)
+        return properties
 
+    @staticmethod
+    def update_resource(properties: Dict, change: Change) -> Dict:
+        entities = resources_yml_to_dict(properties, change.entity_type)
+        entities[change.identifier] = safe_update(entities[change.identifier], change.data)
+        properties[change.entity_type.pluralize()] = list(entities.values())
+        return properties
+
+    @staticmethod
+    def remove_resource(properties: Dict, change: Change) -> Dict:
+        entities = resources_yml_to_dict(properties, change.entity_type)
+        del entities[change.identifier]
+        properties[change.entity_type.pluralize()] = list(entities[change.identifier].values())
+        return properties
+
+    def add(self, change: Change) -> None:
+        """Add a Resource to a YAML file at a given path."""
+        properties = self.file_manager.read_file(change.path)
+        properties = self.update_resource(properties, change)
         self.file_manager.write_file(change.path, properties)
 
     def update(self, change: Change) -> None:
         """Update an existing Resource in a YAML file"""
         properties = self.file_manager.read_file(change.path)
-        entities = resources_yml_to_dict(properties, change.entity_type)
-
-        entities[change.identifier] = safe_update(entities[change.identifier], change.data)
-
-        properties[change.entity_type.pluralize()] = list(entities[change.identifier].values())
+        properties = self.update_resource(properties, change)
         self.file_manager.write_file(change.path, properties)
 
     def remove(self, change: Change) -> None:
         """Remove an existing resource from a YAML file"""
         properties = self.file_manager.read_file(change.path)
-        entities = resources_yml_to_dict(properties, change.entity_type)
-
-        del entities[change.identifier]
-
-        properties[change.entity_type.pluralize()] = list(entities[change.identifier].values())
+        properties = self.remove_resource(properties, change)
         self.file_manager.write_file(change.path, properties)
 
 
