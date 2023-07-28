@@ -83,7 +83,7 @@ class TestAddGroupToModelYML:
             owner=owner,
             package_name="test_package",
             original_file_path="fake_path",
-            unique_id=f"group.test_package.test_group",
+            unique_id="group.test_package.test_group",
             path="models/fake_path",
             resource_type=NodeType.Group,
         )
