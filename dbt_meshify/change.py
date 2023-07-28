@@ -1,9 +1,7 @@
 import dataclasses
 from enum import Enum
 from pathlib import Path
-from typing import Dict, Optional, Set
-
-from dbt.node_types import NodeType
+from typing import Dict, Set
 
 
 class Operation(str, Enum):
