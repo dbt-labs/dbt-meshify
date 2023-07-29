@@ -1,13 +1,15 @@
 import os
 import sys
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 import click
 import yaml
 from dbt.contracts.graph.unparsed import Owner
 from loguru import logger
 
+from dbt_meshify.change import Change, ChangeSet
+from dbt_meshify.change_set_processor import ChangeSetProcessor
 from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
 
 from .cli import (
@@ -37,6 +39,14 @@ logger.add(sys.stdout, format=log_format)
 @click.group()
 def cli():
     pass
+
+
+@cli.result_callback()
+def handle_change_sets(change_sets: List[ChangeSet]):
+    """Handle any resulting ChangeSets."""
+
+    change_set_processor = ChangeSetProcessor()
+    change_set_processor.process(change_sets)
 
 
 @cli.group()
@@ -208,7 +218,7 @@ def create_group(
     owner_properties: Optional[str] = None,
     exclude: Optional[str] = None,
     selector: Optional[str] = None,
-):
+) -> List[ChangeSet]:
     """
     Create a group and add selected resources to the group.
     """
@@ -230,12 +240,12 @@ def create_group(
         )
 
     group_owner: Owner = Owner(
-        name=owner_name, email=owner_email, _extra=yaml.safe_load(owner_properties or '{}')
+        name=owner_name, email=owner_email, _extra=yaml.safe_load(owner_properties or "{}")
     )
 
     grouper = ResourceGrouper(project)
     try:
-        grouper.add_group(
+        changes: ChangeSet = grouper.add_group(
             name=name,
             owner=group_owner,
             select=select,
@@ -243,8 +253,10 @@ def create_group(
             selector=selector,
             path=group_yml_path,
         )
-        logger.success(f"Successfully created group: {name}")
+        return [changes]
+
     except Exception as e:
+        logger.exception(e)
         raise FatalMeshifyException(f"Error creating group: {name}")
 
 
@@ -279,4 +291,4 @@ def group(
     Detects the edges of the group, makes their access public, and adds contracts to them
     """
     ctx.forward(create_group)
-    ctx.invoke(add_contract, select=f'group:{name}', project_path=project_path, public_only=True)
+    ctx.invoke(add_contract, select=f"group:{name}", project_path=project_path, public_only=True)

@@ -6,13 +6,9 @@ from dbt.contracts.graph.unparsed import Owner
 from dbt.node_types import AccessType, NodeType
 
 from dbt_meshify.change import Change, EntityType, Operation
-from dbt_meshify.storage.file_content_editors import (
-    DbtMeshFileEditor,
-    ResourceFileEditor,
-)
+from dbt_meshify.storage.file_content_editors import ResourceFileEditor
 from tests.unit import read_yml
 
-meshify = DbtMeshFileEditor()
 model_name = "shared_model"
 
 model_yml_empty_file = """"""

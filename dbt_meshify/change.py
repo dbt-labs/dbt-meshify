@@ -21,7 +21,6 @@ class EntityType(str, Enum):
     Snapshot = "snapshot"
     Operation = "operation"
     Seed = "seed"
-    # TODO: rm?
     RPCCall = "rpc"
     SqlOperation = "sql_operation"
     Documentation = "doc"
@@ -54,9 +53,13 @@ class Change:
 class ChangeSet:
     """A collection of Changes that will be performed"""
 
-    def __init__(self, changes: List[Change]) -> None:
+    def __init__(self, changes: List[Change] = []) -> None:
         self.changes = changes
-        self.step = 0
+        self.step = -1
+
+    def add(self, change: Change) -> None:
+        """Add a change to the ChangeSet."""
+        self.changes.append(change)
 
     def __iter__(self) -> "ChangeSet":
         return self

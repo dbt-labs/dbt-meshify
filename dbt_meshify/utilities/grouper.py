@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional, Set, Tuple, Union
+from typing import Any, Dict, List, Optional, Set, Tuple, Union
 
 import networkx
 from dbt.contracts.graph.nodes import Group, ModelNode
@@ -8,6 +8,7 @@ from dbt.contracts.graph.unparsed import Owner
 from dbt.node_types import AccessType, NodeType
 from loguru import logger
 
+from dbt_meshify.change import Change, ChangeSet, EntityType, Operation
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject
 from dbt_meshify.exceptions import ModelFileNotFoundError
 from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
@@ -61,7 +62,7 @@ class ResourceGrouper:
     @classmethod
     def clean_subgraph(cls, graph: networkx.DiGraph) -> networkx.DiGraph:
         """Generate a subgraph that does not contain test resource types."""
-        test_nodes = set(node for node in graph.nodes if node.startswith('test'))
+        test_nodes = set(node for node in graph.nodes if node.startswith("test"))
         return graph.subgraph(set(graph.nodes) - test_nodes)
 
     def _generate_resource_group(
@@ -119,23 +120,25 @@ class ResourceGrouper:
         select: str,
         exclude: Optional[str] = None,
         selector: Optional[str] = None,
-    ) -> None:
+    ) -> ChangeSet:
         """Create a ResourceGroup for a dbt project."""
 
         group, resources = self._generate_resource_group(
             name, owner, path, select, exclude, selector
         )
 
-        group_path = Path(group.original_file_path)
-        try:
-            group_yml: Dict[str, str] = self.file_manager.read_file(group_path)  # type: ignore
-        except FileNotFoundError:
-            group_yml = {}
+        changes = ChangeSet()
+        changes.add(
+            Change(
+                operation=Operation.Add,
+                entity_type=EntityType.Group,
+                identifier=group.unique_id,
+                path=Path(group.original_file_path),
+                # TODO: Consider updating entity serialization.
+                data={"name": group.name, "owner": group.owner},
+            )
+        )
 
-        output_yml = self.meshify.add_group_to_yml(group, group_yml)
-        self.file_manager.write_file(group_path, output_yml)
-
-        logger.info(f"Adding resources to group '{group.name}'...")
         for resource, access_type in resources.items():
             # TODO: revisit this logic other resource types
             if not resource.startswith("model"):
@@ -147,23 +150,18 @@ class ResourceGrouper:
                 if not model.original_file_path:
                     raise ModelFileNotFoundError("Unable to locate model file. Failing.")
 
-                path = Path(model.original_file_path).parent / '_models.yml'
+                path = Path(model.original_file_path).parent / "_models.yml"
 
-            try:
-                file_yml: Dict[str, Any] = self.file_manager.read_file(path)  # type: ignore
-            except FileNotFoundError:
-                file_yml = {}
-
-            logger.info(
-                f"Adding model '{model.name}' to group '{group.name}' in file '{path.name}'"
-            )
-            try:
-                output_yml = self.meshify.add_group_and_access_to_model_yml(
-                    model.name, group, access_type, file_yml
+            changes.add(
+                Change(
+                    operation=Operation.Update,
+                    entity_type=EntityType.Model,
+                    identifier=model.unique_id,
+                    path=path,
+                    data={"group": group.name, "access": access_type},
                 )
+            )
 
-                self.file_manager.write_file(path, output_yml)
-                logger.success(f"Successfully added model '{model.name}' to group '{group.name}'")
-            except Exception as e:
-                logger.error(f"Failed to add model '{model.name}' to group '{group.name}'")
-                logger.exception(e)
+        print(changes.changes)
+
+        return changes

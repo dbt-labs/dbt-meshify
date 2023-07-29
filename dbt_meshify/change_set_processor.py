@@ -6,7 +6,6 @@ from loguru import logger
 from dbt_meshify.change import ChangeSet, EntityType
 from dbt_meshify.storage.file_content_editors import (
     CodeFileEditor,
-    FileEditor,
     ProjectFileEditor,
     ResourceFileEditor,
 )
