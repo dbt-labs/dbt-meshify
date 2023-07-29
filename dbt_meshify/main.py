@@ -8,7 +8,7 @@ import yaml
 from dbt.contracts.graph.unparsed import Owner
 from loguru import logger
 
-from dbt_meshify.change import Change, ChangeSet
+from dbt_meshify.change import ChangeSet
 from dbt_meshify.change_set_processor import ChangeSetProcessor
 from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
 
@@ -37,15 +37,16 @@ logger.add(sys.stdout, format=log_format)
 
 # define cli group
 @click.group()
-def cli():
+@click.option("--dry-run", is_flag=True)
+def cli(dry_run: bool):
     pass
 
 
 @cli.result_callback()
-def handle_change_sets(change_sets: List[ChangeSet]):
+def handle_change_sets(change_sets: List[ChangeSet], dry_run):
     """Handle any resulting ChangeSets."""
 
-    change_set_processor = ChangeSetProcessor()
+    change_set_processor = ChangeSetProcessor(dry_run=dry_run)
     change_set_processor.process(change_sets)
 
 
@@ -94,8 +95,8 @@ def connect(projects_dir):
 @click.pass_context
 def split(ctx, project_name, select, exclude, project_path, selector, create_path, read_catalog):
     """
-    Splits out a new subproject from a dbt project by adding all necessary dbt Mesh constructs to the resources based on the selected resources.
-
+    Splits out a new subproject from a dbt project by adding all necessary dbt Mesh constructs to the
+    resources based on the selected resources.
     """
     path = Path(project_path).expanduser().resolve()
     project = DbtProject.from_directory(path, read_catalog)
@@ -113,7 +114,7 @@ def split(ctx, project_name, select, exclude, project_path, selector, create_pat
     try:
         subproject_creator.initialize()
         logger.success(f"Successfully created subproject {subproject.name}")
-    except Exception as e:
+    except Exception:
         raise FatalMeshifyException(f"Error creating subproject {subproject.name}")
 
 
@@ -140,7 +141,7 @@ def add_contract(select, exclude, project_path, selector, read_catalog, public_o
     models = filter(lambda x: x.startswith("model"), resources)
     if public_only:
         models = filter(lambda x: project.get_manifest_node(x).access == "public", models)
-    logger.info(f"Adding contracts to models in selected resources...")
+    logger.info("Adding contracts to models in selected resources...")
     for model_unique_id in models:
         model_node = project.get_manifest_node(model_unique_id)
         model_catalog = project.get_catalog_entry(model_unique_id)
@@ -178,7 +179,7 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in,
     )
     models = filter(lambda x: x.startswith("model"), resources)
     logger.info(f"Selected {len(resources)} resources: {resources}")
-    logger.info(f"Adding version to models in selected resources...")
+    logger.info("Adding version to models in selected resources...")
     for model_unique_id in models:
         model_node = project.get_manifest_node(model_unique_id)
         if model_node.version == model_node.latest_version:
@@ -252,6 +253,7 @@ def create_group(
             exclude=exclude,
             selector=selector,
             path=group_yml_path,
+            project_path=path,
         )
         return [changes]
 

@@ -88,7 +88,7 @@ class ResourceFileEditor(FileEditor):
     @staticmethod
     def update_resource(properties: Dict, change: Change) -> Dict:
         entities = resources_yml_to_dict(properties, change.entity_type)
-        entities[change.identifier] = safe_update(entities[change.identifier], change.data)
+        entities[change.identifier] = safe_update(entities.get(change.identifier, {}), change.data)
         properties[change.entity_type.pluralize()] = list(entities.values())
         return properties
 
@@ -101,7 +101,12 @@ class ResourceFileEditor(FileEditor):
 
     def add(self, change: Change) -> None:
         """Add a Resource to a YAML file at a given path."""
-        properties = self.file_manager.read_file(change.path)
+
+        # Make the file if it does not exist.
+        if not change.path.exists():
+            open(change.path, "w").close()
+
+        properties = self.file_manager.read_file(change.path) or {}
         properties = self.update_resource(properties, change)
         self.file_manager.write_file(change.path, properties)
 

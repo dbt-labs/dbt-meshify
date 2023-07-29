@@ -116,8 +116,9 @@ class ResourceGrouper:
         self,
         name: str,
         owner: Owner,
-        path: os.PathLike,
+        path: Path,
         select: str,
+        project_path: Path,
         exclude: Optional[str] = None,
         selector: Optional[str] = None,
     ) -> ChangeSet:
@@ -132,10 +133,10 @@ class ResourceGrouper:
             Change(
                 operation=Operation.Add,
                 entity_type=EntityType.Group,
-                identifier=group.unique_id,
-                path=Path(group.original_file_path),
+                identifier=group.name,
+                path=path,
                 # TODO: Consider updating entity serialization.
-                data={"name": group.name, "owner": group.owner},
+                data={"name": group.name, "owner": group.owner.to_dict()},
             )
         )
 
@@ -145,23 +146,21 @@ class ResourceGrouper:
                 continue
             model: ModelNode = self.project.models[resource]
             if model.patch_path:
-                path = Path(model.patch_path.split("://")[1])
+                resource_path = Path(model.patch_path.split("://")[1])
             else:
                 if not model.original_file_path:
                     raise ModelFileNotFoundError("Unable to locate model file. Failing.")
 
-                path = Path(model.original_file_path).parent / "_models.yml"
+                resource_path = Path(model.original_file_path).parent / "_models.yml"
 
             changes.add(
                 Change(
                     operation=Operation.Update,
                     entity_type=EntityType.Model,
-                    identifier=model.unique_id,
-                    path=path,
-                    data={"group": group.name, "access": access_type},
+                    identifier=model.name,
+                    path=project_path / resource_path,
+                    data={"group": group.name, "access": access_type.value},
                 )
             )
-
-        print(changes.changes)
 
         return changes
