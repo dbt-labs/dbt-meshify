@@ -9,7 +9,7 @@ import yaml
 from dbt.contracts.graph.unparsed import Owner
 from loguru import logger
 
-from dbt_meshify.change import ChangeSet, EntityType
+from dbt_meshify.change import Change, ChangeSet, EntityType, Operation
 from dbt_meshify.change_set_processor import ChangeSetProcessor
 from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
 
@@ -29,7 +29,7 @@ from .cli import (
 )
 from .dbt_projects import DbtProject, DbtProjectHolder
 from .exceptions import FatalMeshifyException
-from .storage.file_content_editors import DbtMeshConstructor
+from .storage.file_content_editors import DbtMeshConstructor, NamedList
 
 log_format = "<white>{time:HH:mm:ss}</white> | <level>{level}</level> | <level>{message}</level>"
 logger.remove()  # Remove the default sink added by Loguru
@@ -132,10 +132,15 @@ def split(ctx, project_name, select, exclude, project_path, selector, create_pat
 @read_catalog
 @select
 @selector
-def add_contract(select, exclude, project_path, selector, read_catalog, public_only=False):
+def add_contract(
+    select, exclude, project_path, selector, read_catalog, public_only=False
+) -> List[ChangeSet]:
     """
     Adds a contract to all selected models.
     """
+
+    from dbt.contracts.graph.nodes import ModelNode
+
     path = Path(project_path).expanduser().resolve()
     logger.info(f"Reading dbt project at {path}")
     project = DbtProject.from_directory(path, read_catalog)
@@ -148,20 +153,53 @@ def add_contract(select, exclude, project_path, selector, read_catalog, public_o
     logger.info(f"Selected {len(resources)} resources: {resources}")
     models = filter(lambda x: x.startswith("model"), resources)
     if public_only:
-        models = filter(lambda x: project.get_manifest_node(x).access == "public", models)
-    logger.info("Adding contracts to models in selected resources...")
-    for model_unique_id in models:
-        model_node = project.get_manifest_node(model_unique_id)
-        model_catalog = project.get_catalog_entry(model_unique_id)
-        meshify_constructor = DbtMeshConstructor(
-            project_path=project_path, node=model_node, catalog=model_catalog
+        models = filter(
+            lambda x: project.get_manifest_node(x).access == "public", models  # type: ignore
         )
-        logger.info(f"Adding contract to model: {model_unique_id}")
-        try:
-            meshify_constructor.add_model_contract()
-            logger.success(f"Successfully added contract to model: {model_unique_id}")
-        except Exception:
-            raise FatalMeshifyException(f"Error adding contract to model: {model_unique_id}")
+
+    logger.info("Adding contracts to models in selected resources...")
+
+    change_set = ChangeSet()
+
+    try:
+        for model_unique_id in models:
+            model_node = project.get_manifest_node(model_unique_id)
+            model_catalog = project.get_catalog_entry(model_unique_id)
+
+            # TODO: Replace with something more lightweight. Maybe put logic in Project.
+            meshify_constructor = DbtMeshConstructor(
+                project_path=project_path, node=model_node, catalog=model_catalog
+            )
+
+            # For each model, create a Change that describes the new Model properties.
+            if not model_catalog or not model_catalog.columns:
+                columns = None
+            else:
+                columns = [
+                    {"name": name.lower(), "data_type": value.type.lower()}
+                    for name, value in model_catalog.columns.items()
+                ]
+
+            model_data = {
+                "name": model_node.name,
+                "config": {"contract": {"enforced": True}},
+                "columns": NamedList(columns),
+            }
+
+            change_set.add(
+                Change(
+                    operation=Operation.Update,
+                    entity_type=EntityType.Model,
+                    identifier=model_node.name,
+                    path=project.path / meshify_constructor.get_patch_path(),
+                    data=model_data,
+                )
+            )
+
+    except Exception:
+        raise FatalMeshifyException(f"Error generating contract for model: {model_unique_id}")
+
+    return [change_set]
 
 
 @operation.command(name="add-version")

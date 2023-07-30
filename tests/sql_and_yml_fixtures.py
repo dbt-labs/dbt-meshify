@@ -59,10 +59,10 @@ models:
 expected_contract_yml_no_col = """
 models:
   - name: shared_model
+    description: "this is a test model"
     config:
       contract:
         enforced: true
-    description: "this is a test model"
     columns:
       - name: id
         data_type: integer
@@ -73,10 +73,10 @@ models:
 expected_contract_yml_one_col_one_test = """
 models:
   - name: shared_model
+    description: "this is a test model"
     config:
       contract:
         enforced: true
-    description: "this is a test model"
     columns:
       - name: id
         description: "this is the id column"
@@ -90,10 +90,10 @@ models:
 expected_contract_yml_one_col = """
 models:
   - name: shared_model
+    description: "this is a test model"
     config:
       contract:
         enforced: true
-    description: "this is a test model"
     columns:
       - name: id
         description: "this is the id column"
@@ -105,10 +105,10 @@ models:
 expected_contract_yml_all_col = """
 models:
   - name: shared_model
+    description: "this is a test model"
     config:
       contract:
         enforced: true
-    description: "this is a test model"
     columns:
       - name: id
         description: "this is the id column"

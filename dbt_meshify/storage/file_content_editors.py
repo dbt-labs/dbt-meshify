@@ -17,8 +17,13 @@ from dbt_meshify.storage.file_manager import DbtFileManager
 class NamedList(dict):
     """An NamedList is a Dict generated from a list with an indexable "name" value."""
 
-    def __init__(self, source_list: List[Dict]):
+    def __init__(self, source_list: Optional[List[Dict]] = None):
         data = {}
+
+        # Allow empty source lists
+        if source_list is None:
+            source_list = []
+
         for item in source_list:
             for key, value in item.items():
                 if isinstance(value, list) and isinstance(value[0], dict) and "name" in value[0]:
@@ -107,7 +112,9 @@ def safe_update(original: Dict[Any, Any], update: Dict[Any, Any]) -> Dict[Any, A
 
     for key, value in update.items():
         if isinstance(value, dict) or isinstance(value, NamedList):
-            original[key] = safe_update(original.get(key, {}), value)
+            original[key] = safe_update(
+                original.get(key, NamedList() if isinstance(value, NamedList) else {}), value
+            )
         elif value is None and key in original:
             del original[key]
         elif value is not None:

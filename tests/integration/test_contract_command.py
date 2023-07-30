@@ -5,7 +5,7 @@ import yaml
 from click.testing import CliRunner
 
 from dbt_meshify.dbt import Dbt
-from dbt_meshify.main import add_contract
+from dbt_meshify.main import add_contract, cli
 
 from ..sql_and_yml_fixtures import (
     expected_contract_yml_all_col,
@@ -50,7 +50,15 @@ def test_add_contract_to_yml(start_yml, end_yml):
         with open(yml_file, "w+") as f:
             yaml.safe_dump(start_yml_content, f, sort_keys=False)
     result = runner.invoke(
-        add_contract, ["--select", "shared_model", "--project-path", proj_path_string]
+        cli,
+        [
+            "operation",
+            "add-contract",
+            "--select",
+            "shared_model",
+            "--project-path",
+            proj_path_string,
+        ],
     )
     assert result.exit_code == 0
     # reset the read path to the default in the logic
@@ -82,10 +90,18 @@ def test_add_contract_read_catalog(start_yml, end_yml, read_catalog, caplog):
         start_yml_content = yaml.safe_load(start_yml)
         with open(yml_file, "w+") as f:
             yaml.safe_dump(start_yml_content, f, sort_keys=False)
-    args = ["--select", "shared_model", "--project-path", proj_path_string]
+    args = [
+        "operation",
+        "add-contract",
+        "--select",
+        "shared_model",
+        "--project-path",
+        proj_path_string,
+    ]
     if read_catalog:
         args.append("--read-catalog")
-    result = runner.invoke(add_contract, args)
+    result = runner.invoke(cli, args)
+    print(result.output)
     assert result.exit_code == 0
     # reset the read path to the default in the logic
     with open(yml_file, "r") as f:
