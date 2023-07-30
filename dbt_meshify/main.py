@@ -166,6 +166,9 @@ def add_contract(
             model_node = project.get_manifest_node(model_unique_id)
             model_catalog = project.get_catalog_entry(model_unique_id)
 
+            if model_node is None or not isinstance(model_node, ModelNode):
+                continue
+
             # TODO: Replace with something more lightweight. Maybe put logic in Project.
             meshify_constructor = DbtMeshConstructor(
                 project_path=project_path, node=model_node, catalog=model_catalog
