@@ -56,7 +56,9 @@ def safe_update(original: Dict[Any, Any], update: Dict[Any, Any]) -> Dict[Any, A
     for key, value in update.items():
         if isinstance(value, dict):
             original[key] = safe_update(original.get(key, {}), value)
-        else:
+        elif value is None and key in original:
+            del original[key]
+        elif value is not None:
             original[key] = value
     return original
 

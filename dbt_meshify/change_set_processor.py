@@ -27,7 +27,7 @@ class ChangeSetProcessor:
 
         # TODO: Implement exception handling
         logger.info(
-            f"{change.operation.value.capitalize()} {change.entity_type.value} {change.path}"
+            f"{change.operation.value.capitalize()} {change.entity_type.value} {change.identifier} in {change.path}"
         )
         file_editor.__getattribute__(change.operation)(change)
 

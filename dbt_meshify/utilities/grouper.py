@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Set, Tuple, Union
+from typing import Dict, Optional, Set, Tuple, Union
 
 import networkx
 from dbt.contracts.graph.nodes import Group, ModelNode
@@ -129,6 +129,8 @@ class ResourceGrouper:
         )
 
         changes = ChangeSet()
+        print(changes.changes)
+
         changes.add(
             Change(
                 operation=Operation.Add,
@@ -144,6 +146,7 @@ class ResourceGrouper:
             # TODO: revisit this logic other resource types
             if not resource.startswith("model"):
                 continue
+
             model: ModelNode = self.project.models[resource]
             if model.patch_path:
                 resource_path = Path(model.patch_path.split("://")[1])

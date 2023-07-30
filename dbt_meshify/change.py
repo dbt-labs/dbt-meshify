@@ -53,8 +53,8 @@ class Change:
 class ChangeSet:
     """A collection of Changes that will be performed"""
 
-    def __init__(self, changes: List[Change] = []) -> None:
-        self.changes = changes
+    def __init__(self) -> None:
+        self.changes: List[Change] = []
         self.step = -1
 
     def add(self, change: Change) -> None:

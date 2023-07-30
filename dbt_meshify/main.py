@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback
 from pathlib import Path
 from typing import List, Optional
 
@@ -46,8 +47,15 @@ def cli(dry_run: bool):
 def handle_change_sets(change_sets: List[ChangeSet], dry_run):
     """Handle any resulting ChangeSets."""
 
-    change_set_processor = ChangeSetProcessor(dry_run=dry_run)
-    change_set_processor.process(change_sets)
+    # TODO: REMOVE EXCEPTION HANDLING
+    try:
+        change_set_processor = ChangeSetProcessor(dry_run=dry_run)
+        change_set_processor.process(change_sets)
+    except Exception as e:
+        print(e)
+
+        print(traceback.format_exc())
+        raise e
 
 
 @cli.group()

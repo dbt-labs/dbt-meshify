@@ -4,7 +4,7 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
-from dbt_meshify.main import create_group
+from dbt_meshify.main import cli
 from tests.unit.test_add_group_and_access_to_model_yml import (
     expected_model_yml_multiple_models_multi_select,
     model_yml_multiple_models,
@@ -64,8 +64,10 @@ def test_create_group_command(model_yml, select, start_group_yml, end_group_yml)
 
     runner = CliRunner()
     result = runner.invoke(
-        create_group,
+        cli,
         [
+            "operation",
+            "create-group",
             "test_group",
             "--select",
             select,
@@ -124,8 +126,10 @@ def test_create_group_command_multi_select(
 
     runner = CliRunner()
     result = runner.invoke(
-        create_group,
+        cli,
         [
+            "operation",
+            "create-group",
             "test_group",
             "--select",
             "shared_model",
@@ -162,7 +166,7 @@ def test_create_group_command_multi_select(
     ],
     ids=["1", "2", "3"],
 )
-def test_group_group_owner_properties(name, email, end_group_yml):
+def test_group_owner_properties(name, email, end_group_yml):
     group_yml_file = proj_path / "models" / "_groups.yml"
     model_yml_file = proj_path / "models" / "_models.yml"
 
@@ -177,7 +181,15 @@ def test_group_group_owner_properties(name, email, end_group_yml):
     with open(group_yml_file, "w") as f:
         yaml.safe_dump(start_group_yml_content, f, sort_keys=False)
 
-    args = ["test_group", "--select", "shared_model", "--project-path", proj_path_string]
+    args = [
+        "operation",
+        "create-group",
+        "test_group",
+        "--select",
+        "shared_model",
+        "--project-path",
+        proj_path_string,
+    ]
 
     if name:
         args += ["--owner-name", name]
@@ -186,14 +198,14 @@ def test_group_group_owner_properties(name, email, end_group_yml):
         args += ["--owner-email", email]
 
     runner = CliRunner()
-    result = runner.invoke(create_group, args)
+    result = runner.invoke(cli, args)
 
     with open(group_yml_file, "r") as f:
         actual = yaml.safe_load(f)
 
     group_yml_file.unlink()
     model_yml_file.unlink()
-
+    print(result.output)
     assert result.exit_code == 0
 
     end_group_content = yaml.safe_load(end_group_yml)
