@@ -2,7 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 from dbt.contracts.graph.nodes import Group, ManifestNode
 from dbt.contracts.results import CatalogTable
@@ -12,6 +12,33 @@ from loguru import logger
 from dbt_meshify.change import Change, EntityType
 from dbt_meshify.exceptions import FileEditorException, ModelFileNotFoundError
 from dbt_meshify.storage.file_manager import DbtFileManager
+
+
+class NamedList(dict):
+    """An NamedList is a Dict generated from a list with an indexable "name" value."""
+
+    def __init__(self, source_list: List[Dict]):
+        data = {}
+        for item in source_list:
+            for key, value in item.items():
+                if isinstance(value, list) and isinstance(value[0], dict) and "name" in value[0]:
+                    item[key] = NamedList(value)
+
+            data[item["name"]] = item
+
+        data = {item.get("name"): item for item in source_list}
+        super().__init__(data)
+
+    def to_list(self) -> List[Dict]:
+        """Create a List from an IndexableList"""
+        output = []
+        for _, item in self.items():
+            for key, value in item.items():
+                if isinstance(value, NamedList):
+                    item[key] = value.to_list()
+
+            output.append(item)
+        return output
 
 
 def filter_empty_dict_items(dict_to_filter: Dict[str, Any]):
@@ -153,25 +180,6 @@ class DbtMeshFileEditor:
     to add the dbt mesh functionality
     includes editing yml entries and sql file contents
     """
-
-    @staticmethod
-    def add_group_to_yml(group: Group, groups_yml: Dict[str, Any]):
-        """Add a group to a yml file"""
-        if groups_yml is None:
-            groups_yml = {}
-
-        groups = resources_yml_to_dict(groups_yml, NodeType.Group)
-        group_yml = groups.get(group.name) or {}
-
-        group_yml.update({"name": group.name})
-        owner = group_yml.get("owner", {})
-        owner.update(filter_empty_dict_items(group.owner.to_dict()))
-        group_yml["owner"] = owner
-
-        groups[group.name] = filter_empty_dict_items(group_yml)
-
-        groups_yml["groups"] = list(groups.values())
-        return groups_yml
 
     @staticmethod
     def add_access_to_model_yml(
