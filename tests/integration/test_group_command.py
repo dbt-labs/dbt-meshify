@@ -4,7 +4,7 @@ import pytest
 from click.testing import CliRunner
 
 from dbt_meshify.dbt_projects import DbtProject
-from dbt_meshify.main import group
+from dbt_meshify.main import cli
 from tests.dbt_project_utils import setup_test_project, teardown_test_project
 
 src_path_string = "test-projects/split/split_proj"
@@ -32,8 +32,9 @@ def test_group_command(select, expected_public_contracted_models):
     setup_test_project(src_path_string, dest_path_string)
     runner = CliRunner()
     result = runner.invoke(
-        group,
+        cli,
         [
+            "group",
             "test_group",
             "--owner-name",
             "Teenage Mutant Jinja Turtles",
@@ -48,7 +49,7 @@ def test_group_command(select, expected_public_contracted_models):
     # ensure that the correct set of public models is created
     public_contracted_models = [
         model.name
-        for model_key, model in project.models.items()
+        for _, model in project.models.items()
         if model.access == "public" and model.config.contract.enforced
     ]
     assert public_contracted_models == expected_public_contracted_models

@@ -9,7 +9,7 @@ import yaml
 from dbt.contracts.graph.unparsed import Owner
 from loguru import logger
 
-from dbt_meshify.change import ChangeSet
+from dbt_meshify.change import ChangeSet, EntityType
 from dbt_meshify.change_set_processor import ChangeSetProcessor
 from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
 
@@ -44,7 +44,7 @@ def cli(dry_run: bool):
 
 
 @cli.result_callback()
-def handle_change_sets(change_sets: List[ChangeSet], dry_run):
+def handle_change_sets(change_sets=List[ChangeSet], dry_run=False):
     """Handle any resulting ChangeSets."""
 
     # TODO: REMOVE EXCEPTION HANDLING
@@ -295,10 +295,32 @@ def group(
     owner_properties: Optional[str] = None,
     exclude: Optional[str] = None,
     selector: Optional[str] = None,
-):
+) -> List[ChangeSet]:
     """
     Creates a new dbt group based on the selection syntax
     Detects the edges of the group, makes their access public, and adds contracts to them
     """
-    ctx.forward(create_group)
-    ctx.invoke(add_contract, select=f"group:{name}", project_path=project_path, public_only=True)
+
+    group_changes: List[ChangeSet] = ctx.forward(create_group)
+
+    # Here's where things get a little weird. We only want to add contracts to projects
+    # that have a public access configuration on the boundary of our group. But, we don't
+    # actually want to update our manifest yet. This puts us between a rock and a hard place.
+    # to work around this, we can "trust" that create_group will always return a change for
+    # each public model, and rewrite our selection criteria to only select the models that
+    # will be having a public access config.
+
+    contract_changes = ctx.invoke(
+        add_contract,
+        select=" ".join(
+            [
+                change.identifier
+                for change in group_changes[0]
+                if change.entity_type == EntityType.Model and change.data["access"] == "public"
+            ]
+        ),
+        project_path=project_path,
+    )
+
+    # TODO: Wire up contract changes
+    return group_changes

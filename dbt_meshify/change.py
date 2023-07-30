@@ -68,4 +68,5 @@ class ChangeSet:
         self.step += 1
         if self.step < len(self.changes):
             return self.changes[self.step]
+        self.step = -1
         raise StopIteration
