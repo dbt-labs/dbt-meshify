@@ -160,7 +160,7 @@ def add_contract(select, exclude, project_path, selector, read_catalog, public_o
         try:
             meshify_constructor.add_model_contract()
             logger.success(f"Successfully added contract to model: {model_unique_id}")
-        except Exception as e:
+        except Exception:
             raise FatalMeshifyException(f"Error adding contract to model: {model_unique_id}")
 
 
@@ -310,7 +310,7 @@ def group(
     # each public model, and rewrite our selection criteria to only select the models that
     # will be having a public access config.
 
-    contract_changes = ctx.invoke(
+    contract_changes = ctx.invoke(  # noqa: F841
         add_contract,
         select=" ".join(
             [
