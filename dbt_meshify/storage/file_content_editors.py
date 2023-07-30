@@ -46,6 +46,30 @@ def filter_empty_dict_items(dict_to_filter: Dict[str, Any]):
     return {k: v for k, v in dict_to_filter.items() if v}
 
 
+def format_resource(entity_type: EntityType, resource: Dict[str, Any]):
+    """Process a resource to be written back to a file in a given order."""
+
+    sort_order = None
+    if entity_type == EntityType.Model:
+        sort_order = [
+            "name",
+            "description",
+            "latest_version",
+            "access",
+            "group",
+            "config",
+            "meta",
+            "tests",
+            "columns",
+            "versions",
+        ]
+
+    if not sort_order:
+        return resource
+
+    return {key: resource[key] for key in sort_order if key in resource}
+
+
 def process_model_yml(model_yml: Dict[str, Any]):
     """Processes the yml contents to be written back to a file"""
     model_ordered_dict = OrderedDict.fromkeys(
@@ -80,8 +104,9 @@ def resources_yml_to_dict(
 
 def safe_update(original: Dict[Any, Any], update: Dict[Any, Any]) -> Dict[Any, Any]:
     """Safely update a dictionary without squashing nesting dictionary values."""
+
     for key, value in update.items():
-        if isinstance(value, dict):
+        if isinstance(value, dict) or isinstance(value, NamedList):
             original[key] = safe_update(original.get(key, {}), value)
         elif value is None and key in original:
             del original[key]
@@ -111,21 +136,22 @@ class ResourceFileEditor(FileEditor):
     def add_resource(properties: Dict, change: Change) -> Dict:
         properties[change.entity_type.pluralize()] = properties.get(
             change.entity_type.pluralize(), []
-        ).append(change.data)
+        ).append(format_resource(change.entity_type, change.data))
         return properties
 
     @staticmethod
     def update_resource(properties: Dict, change: Change) -> Dict:
-        entities = resources_yml_to_dict(properties, change.entity_type)
-        entities[change.identifier] = safe_update(entities.get(change.identifier, {}), change.data)
-        properties[change.entity_type.pluralize()] = list(entities.values())
+        entities = NamedList(properties.get(change.entity_type.pluralize(), []))
+        updated_entities = safe_update(entities.get(change.identifier, {}), change.data)
+        entities[change.identifier] = format_resource(change.entity_type, updated_entities)
+        properties[change.entity_type.pluralize()] = entities.to_list()
         return properties
 
     @staticmethod
     def remove_resource(properties: Dict, change: Change) -> Dict:
-        entities = resources_yml_to_dict(properties, change.entity_type)
+        entities = NamedList(properties.get(change.entity_type.pluralize(), []))
         del entities[change.identifier]
-        properties[change.entity_type.pluralize()] = list(entities[change.identifier].values())
+        properties[change.entity_type.pluralize()] = entities.to_list()
         return properties
 
     def add(self, change: Change) -> None:
