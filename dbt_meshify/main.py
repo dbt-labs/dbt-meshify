@@ -363,5 +363,4 @@ def group(
         project_path=project_path,
     )
 
-    # TODO: Wire up contract changes
-    return group_changes
+    return group_changes + contract_changes
