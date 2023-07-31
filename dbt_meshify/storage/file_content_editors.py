@@ -178,7 +178,10 @@ class DbtMeshFileEditor:
         return full_yml
 
     def add_model_contract_to_yml(
-        self, model_name: str, model_catalog: Optional[CatalogTable], models_yml: Dict[str, Any]
+        self,
+        model_name: str,
+        model_catalog: Optional[CatalogTable],
+        models_yml: Union[Dict[str, Any], None],
     ) -> Dict[str, Any]:
         """Adds a model contract to the model's yaml"""
         # set up yml order
@@ -346,9 +349,6 @@ class DbtMeshConstructor(DbtMeshFileEditor):
 
             filename = f"_{self.node.resource_type.pluralize()}.yml"
             yml_path = resource_path.parent / filename
-            if not (Path(self.project_path) / yml_path).exists():
-                self.file_manager.write_file(yml_path, {})
-        logger.info(f"Schema entry for {self.node.unique_id} will exist at {yml_path}")
         return yml_path
 
     def get_resource_path(self) -> Path:
@@ -410,7 +410,7 @@ class DbtMeshConstructor(DbtMeshFileEditor):
 
         # read the yml file
         # pass empty dict if no file contents returned
-        models_yml = self.file_manager.read_file(yml_path) or {}
+        models_yml = self.file_manager.read_file(yml_path)
         latest_yml_version = self.get_latest_yml_defined_version(
             resources_yml_to_dict(models_yml).get(self.node.name, {})  # type: ignore
         )

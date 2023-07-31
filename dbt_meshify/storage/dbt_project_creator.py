@@ -72,9 +72,8 @@ class DbtSubprojectCreator:
         raise NotImplementedError("copy_packages_dir not implemented yet")
 
     def update_dependencies_yml(self) -> None:
-        try:
-            contents = self.file_manager.read_file(Path("dependencies.yml"))
-        except FileNotFoundError:
+        contents = self.file_manager.read_file(Path("dependencies.yml"))
+        if not contents:
             contents = {"projects": []}
 
         contents["projects"].append({"name": self.subproject.name})  # type: ignore

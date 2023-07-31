@@ -35,7 +35,7 @@ FileContent = Union[Dict[str, str], str]
 
 class BaseFileManager(ABC):
     @abc.abstractmethod
-    def read_file(self, path: Path) -> Union[Dict[str, Any], str]:
+    def read_file(self, path: Path) -> Union[Dict[str, Any], str, None]:
         """Returns the content from a file."""
         pass
 
@@ -54,10 +54,13 @@ class DbtFileManager(BaseFileManager):
         self.read_project_path = read_project_path
         self.write_project_path = write_project_path if write_project_path else read_project_path
 
-    def read_file(self, path: Path) -> Union[Dict[str, Any], str]:
+    def read_file(self, path: Path) -> Union[Dict[str, Any], str, None]:
         """Returns the yaml for a model in the dbt project's manifest"""
+        is_yml = path.suffix == ".yml"
         full_path = self.read_project_path / path
-        if full_path.suffix == ".yml":
+        if not full_path.exists():
+            return {} if is_yml else None
+        if is_yml:
             return yaml.load(full_path.read_text())
         else:
             return full_path.read_text()
