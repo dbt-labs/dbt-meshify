@@ -2,7 +2,7 @@ import os
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from dbt.contracts.graph.nodes import Group, ManifestNode
 from dbt.contracts.results import CatalogTable

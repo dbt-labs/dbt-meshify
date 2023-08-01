@@ -69,7 +69,8 @@ class DbtFileManager(BaseFileManager):
         writeback=False,
     ) -> None:
         """Returns the yaml for a model in the dbt project's manifest"""
-        # workaround to let the same DbtFileManager write back to the same project in the event that it's managing movements between two project paths
+        # workaround to let the same DbtFileManager write back to the same project in the event that it's
+        # managing movements between two project paths
         # let it be known I do not like this
         if not writeback:
             full_path = self.write_project_path / path
