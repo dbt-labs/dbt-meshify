@@ -129,7 +129,6 @@ class ResourceGrouper:
         )
 
         changes = ChangeSet()
-        print(changes.changes)
 
         changes.add(
             Change(
