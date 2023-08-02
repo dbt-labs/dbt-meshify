@@ -1,4 +1,5 @@
 import os
+import shutil
 from abc import ABC, abstractmethod
 from collections import OrderedDict
 from pathlib import Path
@@ -9,7 +10,7 @@ from dbt.contracts.results import CatalogTable
 from dbt.node_types import AccessType, NodeType
 from loguru import logger
 
-from dbt_meshify.change import Change, EntityType
+from dbt_meshify.change import Change, EntityType, FileChange, ResourceChange
 from dbt_meshify.exceptions import FileEditorException, ModelFileNotFoundError
 from dbt_meshify.storage.file_manager import DbtFileManager
 
@@ -127,32 +128,58 @@ def safe_update(original: Dict[Any, Any], update: Dict[Any, Any]) -> Dict[Any, A
     return original
 
 
-class FileEditor(ABC):
+class FileEditor:
     """A class used to update ChangeableResources"""
 
-    def __init__(self, file_manager) -> None:
-        super().__init__()
+    def __init__(self, file_manager: Optional[DbtFileManager] = None) -> None:
         self.file_manager = file_manager
 
-    @abstractmethod
-    def add(self, change: Change) -> None:
-        """Add a new entity to a file at a path."""
+
+class RawFileEditor(FileEditor):
+    """A class used to perform Raw operations on Files"""
+
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+
+    def update(self, change: FileChange):
+        """Update data to a new file."""
+
+        if not change.path.exists():
+            raise FileNotFoundError(f"Unable to find file {change.path}.")
+
+        with open(change.path, "w") as file:
+            if change.data:
+                file.write(change.data)
+
+    def copy(self, change: FileChange):
+        """Copy a file from one location to another."""
+        if change.source is None:
+            raise FileEditorException("None source value provided in Copy operation.")
+
+        shutil.copy(change.source, change.path)
+
+    def move(self, change: FileChange):
+        """Move a file from one location to another."""
+        if change.source is None:
+            raise FileEditorException("None source value provided in Copy operation.")
+
+        shutil.move(change.source, change.path)
 
 
 class ResourceFileEditor(FileEditor):
     def __init__(self, project_path: Path) -> None:
-        file_manager = DbtFileManager(read_project_path=project_path)
-        super().__init__(file_manager)
+        self.file_manager: DbtFileManager = DbtFileManager(read_project_path=project_path)
+        super().__init__(self.file_manager)
 
     @staticmethod
-    def add_resource(properties: Dict, change: Change) -> Dict:
+    def add_resource(properties: Dict, change: ResourceChange) -> Dict:
         properties[change.entity_type.pluralize()] = properties.get(
             change.entity_type.pluralize(), []
         ).append(format_resource(change.entity_type, change.data))
         return properties
 
     @staticmethod
-    def update_resource(properties: Dict, change: Change) -> Dict:
+    def update_resource(properties: Dict[Any, Any], change: ResourceChange) -> Dict:
         entities = NamedList(properties.get(change.entity_type.pluralize(), []))
         updated_entities = safe_update(entities.get(change.identifier, {}), change.data)
         entities[change.identifier] = format_resource(change.entity_type, updated_entities)
@@ -160,32 +187,40 @@ class ResourceFileEditor(FileEditor):
         return properties
 
     @staticmethod
-    def remove_resource(properties: Dict, change: Change) -> Dict:
+    def remove_resource(properties: Dict, change: ResourceChange) -> Dict:
         entities = NamedList(properties.get(change.entity_type.pluralize(), []))
         del entities[change.identifier]
         properties[change.entity_type.pluralize()] = entities.to_list()
         return properties
 
-    def add(self, change: Change) -> None:
+    def __read_file(self, path: Path) -> Dict:
+        """Read a properties yaml file"""
+
+        properties = self.file_manager.read_file(path)
+        if not isinstance(properties, dict):
+            raise FileEditorException(f"Unexpected type returned when reading {path}")
+        return properties
+
+    def add(self, change: ResourceChange) -> None:
         """Add a Resource to a YAML file at a given path."""
 
         # Make the file if it does not exist.
         if not change.path.exists():
             open(change.path, "w").close()
 
-        properties = self.file_manager.read_file(change.path) or {}
+        properties = self.__read_file(change.path) or {}
         properties = self.update_resource(properties, change)
         self.file_manager.write_file(change.path, properties)
 
-    def update(self, change: Change) -> None:
+    def update(self, change: ResourceChange) -> None:
         """Update an existing Resource in a YAML file"""
-        properties = self.file_manager.read_file(change.path)
+        properties = self.__read_file(change.path)
         properties = self.update_resource(properties, change)
         self.file_manager.write_file(change.path, properties)
 
-    def remove(self, change: Change) -> None:
+    def remove(self, change: ResourceChange) -> None:
         """Remove an existing resource from a YAML file"""
-        properties = self.file_manager.read_file(change.path)
+        properties = self.__read_file(change.path)
         properties = self.remove_resource(properties, change)
         self.file_manager.write_file(change.path, properties)
 

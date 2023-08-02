@@ -5,15 +5,15 @@ from loguru import logger
 
 from dbt_meshify.change import Change, ChangeSet, EntityType
 from dbt_meshify.storage.file_content_editors import (
-    CodeFileEditor,
     ProjectFileEditor,
+    RawFileEditor,
     ResourceFileEditor,
 )
 
 FILE_EDITORS = {
     # TODO: Update with actual file editors
     EntityType.Project: ProjectFileEditor,
-    EntityType.Code: CodeFileEditor,
+    EntityType.Code: RawFileEditor,
 }
 
 

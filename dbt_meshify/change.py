@@ -1,7 +1,7 @@
 import dataclasses
 from enum import Enum
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, Iterable, List, Optional, Protocol
 
 
 class Operation(str, Enum):
@@ -10,6 +10,8 @@ class Operation(str, Enum):
     Add = "add"
     Update = "update"
     Remove = "remove"
+    Copy = "copy"
+    Move = "move"
 
 
 class EntityType(str, Enum):
@@ -39,15 +41,36 @@ class EntityType(str, Enum):
         return f"{self.value}s"
 
 
-@dataclasses.dataclass
-class Change:
-    """A change represents a unit of work that should be performed on a dbt project."""
+class Change(Protocol):
+    """A change represents a unit of work that should be performed within a dbt project."""
 
     operation: Operation
     entity_type: EntityType
     identifier: str
     path: Path
+
+
+@dataclasses.dataclass
+class BaseChange:
+    operation: Operation
+    entity_type: EntityType
+    identifier: str
+    path: Path
+
+
+@dataclasses.dataclass
+class ResourceChange(BaseChange):
+    """A ResourceChange represents a unit of work that should be performed on a Resource in a dbt project."""
+
     data: Dict
+
+
+@dataclasses.dataclass
+class FileChange(BaseChange):
+    """A ResourceChange represents a unit of work that should be performed on a File in a dbt project."""
+
+    data: Optional[str] = None
+    source: Optional[Path] = None
 
 
 class ChangeSet:
@@ -60,6 +83,10 @@ class ChangeSet:
     def add(self, change: Change) -> None:
         """Add a change to the ChangeSet."""
         self.changes.append(change)
+
+    def extend(self, changes: Iterable[Change]) -> None:
+        """Extend a ChangeSet with an iterable of Changes."""
+        self.changes.extend(changes)
 
     def __iter__(self) -> "ChangeSet":
         return self

@@ -6,10 +6,11 @@ from typing import List, Optional
 
 import click
 import yaml
+from dbt.contracts.graph.nodes import ModelNode
 from dbt.contracts.graph.unparsed import Owner
 from loguru import logger
 
-from dbt_meshify.change import Change, ChangeSet, EntityType, Operation
+from dbt_meshify.change import ChangeSet, EntityType, Operation, ResourceChange
 from dbt_meshify.change_set_processor import ChangeSetProcessor
 from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
 from dbt_meshify.utilities.versioner import ModelVersioner
@@ -191,7 +192,7 @@ def add_contract(
             }
 
             change_set.add(
-                Change(
+                ResourceChange(
                     operation=Operation.Update,
                     entity_type=EntityType.Model,
                     identifier=model_node.name,
@@ -214,7 +215,15 @@ def add_contract(
 @selector
 @click.option("--prerelease", "--pre", default=False, is_flag=True)
 @click.option("--defined-in", default=None)
-def add_version(select, exclude, project_path, selector, prerelease, defined_in, read_catalog):
+def add_version(
+    select,
+    exclude,
+    project_path,
+    selector,
+    prerelease: bool,
+    defined_in: Optional[Path],
+    read_catalog,
+):
     """
     Adds/increments model versions for all selected models.
     """
@@ -236,11 +245,16 @@ def add_version(select, exclude, project_path, selector, prerelease, defined_in,
         for model_unique_id in models:
             model_node = project.get_manifest_node(model_unique_id)
 
+            if not isinstance(model_node, ModelNode):
+                continue
+
             if model_node.version != model_node.latest_version:
                 continue
 
-            change = versioner.generate_version(model=model_node)
-            change_set.add(change)
+            changes: ChangeSet = versioner.generate_version(
+                model=model_node, prerelease=prerelease, defined_in=defined_in
+            )
+            change_set.extend(changes)
         return [change_set]
 
     except Exception as e:
@@ -362,7 +376,9 @@ def group(
             [
                 change.identifier
                 for change in group_changes[0]
-                if change.entity_type == EntityType.Model and change.data["access"] == "public"
+                if isinstance(change, ResourceChange)
+                and change.entity_type == EntityType.Model
+                and change.data["access"] == "public"
             ]
         ),
         project_path=project_path,
