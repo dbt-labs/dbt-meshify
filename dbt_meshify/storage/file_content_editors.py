@@ -1,6 +1,5 @@
 import os
 import shutil
-from abc import ABC, abstractmethod
 from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
@@ -197,8 +196,10 @@ class ResourceFileEditor(FileEditor):
         """Read a properties yaml file"""
 
         properties = self.file_manager.read_file(path)
-        if not isinstance(properties, dict):
-            raise FileEditorException(f"Unexpected type returned when reading {path}")
+        if isinstance(properties, str):
+            raise FileEditorException(
+                f"Unexpected type returned when reading {path}. ({type(properties)})"
+            )
         return properties
 
     def add(self, change: ResourceChange) -> None:

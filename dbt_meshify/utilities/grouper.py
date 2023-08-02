@@ -8,7 +8,7 @@ from dbt.contracts.graph.unparsed import Owner
 from dbt.node_types import AccessType, NodeType
 from loguru import logger
 
-from dbt_meshify.change import Change, ChangeSet, EntityType, Operation
+from dbt_meshify.change import ChangeSet, EntityType, Operation, ResourceChange
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject
 from dbt_meshify.exceptions import ModelFileNotFoundError
 from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
@@ -131,7 +131,7 @@ class ResourceGrouper:
         changes = ChangeSet()
 
         changes.add(
-            Change(
+            ResourceChange(
                 operation=Operation.Add,
                 entity_type=EntityType.Group,
                 identifier=group.name,
@@ -156,7 +156,7 @@ class ResourceGrouper:
                 resource_path = Path(model.original_file_path).parent / "_models.yml"
 
             changes.add(
-                Change(
+                ResourceChange(
                     operation=Operation.Update,
                     entity_type=EntityType.Model,
                     identifier=model.name,

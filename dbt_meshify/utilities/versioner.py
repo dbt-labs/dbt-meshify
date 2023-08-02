@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional, Union
 from dbt.contracts.graph.nodes import ModelNode
 
 from dbt_meshify.change import (
-    Change,
     ChangeSet,
     EntityType,
     FileChange,
