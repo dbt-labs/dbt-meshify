@@ -59,7 +59,12 @@ class ModelVersioner:
     ) -> ChangeSet:
         """Create a Change that adds a Version config to a Model."""
         path = self.project.resolve_patch_path(model)
-        model_yml = self.load_model_yml(path, model.name)
+
+        try:
+            model_yml = self.load_model_yml(path, model.name)
+        except FileNotFoundError:
+            model_yml = {}
+
         model_versions: NamedList = self.get_model_versions(model_yml)
 
         current_version = model_yml.get("latest_version", 0)
@@ -82,7 +87,7 @@ class ModelVersioner:
 
         change_set.add(
             ResourceChange(
-                operation=Operation.Update,
+                operation=Operation.Update if path.exists() else Operation.Add,
                 entity_type=EntityType.Model,
                 identifier=model.name,
                 path=path,

@@ -4,7 +4,7 @@ import pytest
 import yaml
 from click.testing import CliRunner
 
-from dbt_meshify.main import add_version
+from dbt_meshify.main import cli
 
 from ..sql_and_yml_fixtures import (
     expected_versioned_model_yml_increment_prerelease_version,
@@ -103,9 +103,16 @@ def test_add_version_to_yml(start_yml, end_yml, start_files, expected_files, com
         start_yml_content = yaml.safe_load(start_yml)
         with open(yml_file, "w+") as f:
             yaml.safe_dump(start_yml_content, f, sort_keys=False)
-    base_command = ["--select", "shared_model", "--project-path", proj_path_string]
+    base_command = [
+        "operation",
+        "add-version",
+        "--select",
+        "shared_model",
+        "--project-path",
+        proj_path_string,
+    ]
     base_command.extend(command_options)
-    result = runner.invoke(add_version, base_command)
+    result = runner.invoke(cli, base_command)
     assert result.exit_code == 0
     # reset the read path to the default in the logic
     with open(yml_file, "r") as f:
@@ -114,7 +121,7 @@ def test_add_version_to_yml(start_yml, end_yml, start_files, expected_files, com
         path = proj_path / "models" / file
         try:
             assert path.is_file()
-        except:
+        except Exception:
             print(f"File {file} not found")
         path.unlink()
     yml_file.unlink()
@@ -144,8 +151,15 @@ def test_add_version_to_invalid_yml(start_yml, start_files):
         start_yml_content = yaml.safe_load(start_yml)
         with open(yml_file, "w+") as f:
             yaml.safe_dump(start_yml_content, f, sort_keys=False)
-    base_command = ["--select", "shared_model", "--project-path", proj_path_string]
-    result = runner.invoke(add_version, base_command, catch_exceptions=True)
+    base_command = [
+        "operation",
+        "add-version",
+        "--select",
+        "shared_model",
+        "--project-path",
+        proj_path_string,
+    ]
+    result = runner.invoke(cli, base_command, catch_exceptions=True)
     assert result.exit_code == 1
     # reset the read path to the default in the logic
     yml_file.unlink()

@@ -5,7 +5,7 @@ import yaml
 from click.testing import CliRunner
 
 from dbt_meshify.dbt import Dbt
-from dbt_meshify.main import add_contract, cli
+from dbt_meshify.main import cli
 
 from ..sql_and_yml_fixtures import (
     expected_contract_yml_all_col,
