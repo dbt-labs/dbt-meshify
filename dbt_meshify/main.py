@@ -223,7 +223,7 @@ def add_version(
     prerelease: bool,
     defined_in: Optional[Path],
     read_catalog,
-):
+) -> List[ChangeSet]:
     """
     Adds/increments model versions for all selected models.
     """
