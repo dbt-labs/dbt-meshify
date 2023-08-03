@@ -351,50 +351,6 @@ class DbtMeshFileEditor:
         full_yml["sources"] = list(sources.values())
         return full_yml
 
-    def add_model_contract_to_yml(
-        self, model_name: str, model_catalog: Optional[CatalogTable], models_yml: Dict[str, Any]
-    ) -> Dict[str, Any]:
-        """Adds a model contract to the model's yaml"""
-        # set up yml order
-
-        # parse the yml file into a dictionary with model names as keys
-        models = resources_yml_to_dict(models_yml)
-        model_yml = models.get(model_name) or {"name": model_name, "columns": [], "config": {}}
-
-        # isolate the columns from the existing model entry
-        yml_cols: List[Dict] = model_yml.get("columns", [])
-        catalog_cols = model_catalog.columns or {} if model_catalog else {}
-        catalog_cols = {k.lower(): v for k, v in catalog_cols.items()}
-
-        # add the data type to the yml entry for columns that are in yml
-        yml_cols = [
-            {**yml_col, "data_type": catalog_cols[yml_col["name"]].type.lower()}
-            for yml_col in yml_cols
-            if yml_col.get("name") in catalog_cols.keys()
-        ]
-
-        # append missing columns in the table to the yml entry
-        yml_col_names = [col["name"].lower() for col in yml_cols]
-        for col_name, col in catalog_cols.items():
-            if col_name.lower() not in yml_col_names:
-                yml_cols.append({"name": col_name.lower(), "data_type": col.type.lower()})
-
-        # update the columns in the model yml entry
-        model_yml.update({"columns": yml_cols})
-        # add contract to the model yml entry
-        # this part should come from the same service as what we use for the standalone command when we get there
-        model_config = model_yml.get("config", {})
-        model_config.update({"contract": {"enforced": True}})
-        model_yml["config"] = model_config
-        # update the model entry in the full yml file
-        # if no entries exist, add the model entry
-        # otherwise, update the existing model entry in place
-        processed = process_model_yml(model_yml)
-        models[model_name] = processed
-
-        models_yml["models"] = list(models.values())
-        return models_yml
-
     def get_latest_yml_defined_version(self, model_yml: Dict[str, Any]):
         """
         Returns the latest version defined in the yml file for a given model name
@@ -532,26 +488,6 @@ class DbtMeshConstructor(DbtMeshFileEditor):
         for all others this will be the .sql or .py file for the resource
         """
         return Path(self.node.original_file_path)
-
-    def add_model_contract(self) -> None:
-        """Adds a model contract to the model's yaml"""
-        yml_path = self.get_patch_path()
-        # read the yml file
-        # pass empty dict if no file contents returned
-        models_yml = self.file_manager.read_file(yml_path)
-
-        if isinstance(models_yml, str):
-            raise FileEditorException(
-                f"Unexpected string values in dumped model data in {yml_path}."
-            )
-
-        updated_yml = self.add_model_contract_to_yml(
-            model_name=self.node.name,
-            model_catalog=self.model_catalog,
-            models_yml=models_yml,
-        )
-        # write the updated yml to the file
-        self.file_manager.write_file(yml_path, updated_yml)
 
     def add_model_access(self, access_type: AccessType) -> None:
         """Adds a model contract to the model's yaml"""
