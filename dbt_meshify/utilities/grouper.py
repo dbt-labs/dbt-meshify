@@ -117,9 +117,9 @@ class ResourceGrouper:
     ) -> ResourceChange:
         """Generate a Change to set the access level for a model."""
 
-        data: Dict[str, Any] = {"access": access.value}
+        data: Dict[str, str] = {"access": access.value}
         if group:
-            data["group"] = group
+            data["group"] = group.name
 
         return ResourceChange(
             operation=Operation.Update,

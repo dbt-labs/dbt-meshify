@@ -31,10 +31,12 @@ class Contractor:
             "columns": NamedList(columns),
         }
 
+        patch_path = self.project.resolve_patch_path(model)
+
         return ResourceChange(
-            operation=Operation.Update,
+            operation=Operation.Update if patch_path.exists() else Operation.Add,
             entity_type=EntityType.Model,
             identifier=model.name,
-            path=self.project.resolve_patch_path(model),
+            path=patch_path,
             data=model_data,
         )

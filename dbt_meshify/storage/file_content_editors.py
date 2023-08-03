@@ -215,6 +215,7 @@ class ResourceFileEditor(FileEditor):
 
     def update(self, change: ResourceChange) -> None:
         """Update an existing Resource in a YAML file"""
+
         properties = self.__read_file(change.path)
         properties = self.update_resource(properties, change)
         self.file_manager.write_file(change.path, properties)
@@ -281,16 +282,6 @@ class DbtMeshFileEditor:
         models[model_name] = process_model_yml(model_yml)
 
         models_yml["models"] = list(models.values())
-        return models_yml
-
-    @staticmethod
-    def add_group_and_access_to_model_yml(
-        model_name: str, group: Group, access_type: AccessType, models_yml: Dict[str, Any]
-    ):
-        """Add group and access configuration to a model's YAMl properties."""
-        # parse the yml file into a dictionary with model names as keys
-        models_yml = DbtMeshFileEditor.add_access_to_model_yml(model_name, access_type, models_yml)
-        models_yml = DbtMeshFileEditor.add_group_to_model_yml(model_name, group, models_yml)
         return models_yml
 
     def get_source_yml_entry(
