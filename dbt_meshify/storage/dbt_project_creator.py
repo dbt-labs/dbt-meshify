@@ -1,17 +1,23 @@
 from pathlib import Path
-from typing import Optional, Set
+from typing import Dict, Optional, Set
 
-from dbt.contracts.graph.nodes import ManifestNode
+from dbt.contracts.graph.nodes import CompiledNode, ModelNode, NodeType, Resource
 from dbt.node_types import AccessType
 from loguru import logger
 
-from dbt_meshify.dbt_projects import DbtSubProject
-from dbt_meshify.storage.file_content_editors import (
-    DbtMeshConstructor,
-    filter_empty_dict_items,
+from dbt_meshify.change import (
+    ChangeSet,
+    EntityType,
+    FileChange,
+    Operation,
+    ResourceChange,
 )
+from dbt_meshify.dbt_projects import DbtSubProject
+from dbt_meshify.storage.file_content_editors import NamedList, filter_empty_dict_items
 from dbt_meshify.storage.file_manager import DbtFileManager
+from dbt_meshify.utilities.contractor import Contractor
 from dbt_meshify.utilities.grouper import ResourceGrouper
+from dbt_meshify.utilities.references import ReferenceUpdater
 
 
 class DbtSubprojectCreator:
@@ -28,6 +34,30 @@ class DbtSubprojectCreator:
         )
         self.subproject_boundary_models = self._get_subproject_boundary_models()
 
+    def load_resource_yml(
+        self, path: Path, name: str, resource_type: NodeType, nested_name: Optional[str] = None
+    ) -> Dict:
+        """Load the Model patch YAML for a given ModelNode."""
+        raw_yml = self.file_manager.read_file(path)
+
+        if not isinstance(raw_yml, dict):
+            raise Exception(
+                f"Unexpected contents in {path}. Expected yaml but found {type(raw_yml)}."
+            )
+
+        if resource_type == NodeType.Source:
+            if nested_name is None:
+                raise ValueError("Missing source name")
+
+            return (
+                NamedList(raw_yml.get(resource_type.pluralize(), []))
+                .get(nested_name, {})
+                .get("tables", {})
+                .get(name, {})
+            )
+
+        return NamedList(raw_yml.get(resource_type.pluralize(), [])).get(name, {})
+
     def _get_subproject_boundary_models(self) -> Set[str]:
         """
         get a set of boundary model unique_ids for all the selected resources
@@ -39,75 +69,88 @@ class DbtSubprojectCreator:
         )
         boundary_models = set(
             filter(
-                lambda x: (x.startswith("model") and x.split('.')[1] == parent_project_name),
+                lambda x: (x.startswith("model") and x.split(".")[1] == parent_project_name),
                 interface,
             )
         )
         return boundary_models
 
-    def write_project_file(self) -> None:
+    def write_project_file(self) -> FileChange:
+        from dbt_meshify.storage.file_manager import yaml
+
         """
         Writes the dbt_project.yml file for the subproject in the specified subdirectory
         """
         contents = self.subproject.project.to_dict()
-        # was gettinga  weird serialization error from ruamel on this value
+        # was getting a weird serialization error from ruamel on this value
         # it's been deprecated, so no reason to keep it
         contents.pop("version")
         # this one appears in the project yml, but i don't think it should be written
         contents.pop("query-comment")
         contents = filter_empty_dict_items(contents)
         # project_file_path = self.target_directory / Path("dbt_project.yml")
-        self.file_manager.write_file(Path("dbt_project.yml"), contents)
+        return FileChange(
+            operation=Operation.Add,
+            entity_type=EntityType.Code,
+            identifier="dbt_project.yml",
+            path=self.subproject.path / Path("dbt_project.yml"),
+            data=yaml.dump(contents),
+        )
 
-    def copy_packages_yml_file(self) -> None:
+    def copy_packages_yml_file(self) -> FileChange:
         """
         Writes the dbt_project.yml file for the subproject in the specified subdirectory
         """
-        self.file_manager.copy_file(Path("packages.yml"))
+        return FileChange(
+            operation=Operation.Copy,
+            entity_type=EntityType.Code,
+            identifier="packages.yml",
+            path=self.subproject.path / Path("packages.yml"),
+            source=self.subproject.parent_project.path / Path("packages.yml"),
+        )
 
     def copy_packages_dir(self) -> None:
         """
-        Writes the dbt_packages directory to the subproject's subdirectory to avoid the need for an immediate `dbt deps` command
+        Writes the dbt_packages directory to the subproject's subdirectory to avoid the need for an immediate
+        `dbt deps` command
         """
         raise NotImplementedError("copy_packages_dir not implemented yet")
 
-    def update_dependencies_yml(self) -> None:
+    def update_dependencies_yml(self) -> FileChange:
+        from dbt_meshify.storage.file_manager import yaml
+
         try:
             contents = self.file_manager.read_file(Path("dependencies.yml"))
         except FileNotFoundError:
             contents = {"projects": []}
 
         contents["projects"].append({"name": self.subproject.name})  # type: ignore
-        self.file_manager.write_file(Path("dependencies.yml"), contents, writeback=True)
 
-    def update_child_refs(self, resource: ManifestNode) -> None:
-        downstream_models = [
-            node.unique_id
-            for node in self.subproject.manifest.nodes.values()
-            if node.resource_type == "model" and resource.unique_id in node.depends_on.nodes  # type: ignore
-        ]
-        for model in downstream_models:
-            model_node = self.subproject.get_manifest_node(model)
-            if not model_node:
-                raise KeyError(f"Resource {model} not found in manifest")
-            meshify_constructor = DbtMeshConstructor(
-                project_path=self.subproject.parent_project.path, node=model_node, catalog=None
-            )
-            meshify_constructor.update_model_refs(
-                model_name=resource.name, project_name=self.subproject.name
-            )
+        return FileChange(
+            operation=Operation.Add,
+            entity_type=EntityType.Code,
+            identifier="dependencies.yml",
+            path=self.subproject.path / Path("dependencies.yml"),
+            data=yaml.dump(contents),
+        )
 
-    def initialize(self) -> None:
+    def initialize(self) -> ChangeSet:
         """Initialize this subproject as a full dbt project at the provided `target_directory`."""
+
+        change_set = ChangeSet()
+
         subproject = self.subproject
+
+        contractor = Contractor(project=subproject)
+        grouper = ResourceGrouper(project=subproject)
+        reference_updater = ReferenceUpdater(project=subproject)
+
         for unique_id in subproject.resources | subproject.custom_macros | subproject.groups:
             resource = subproject.get_manifest_node(unique_id)
-            catalog = subproject.get_catalog_entry(unique_id)
+
             if not resource:
                 raise KeyError(f"Resource {unique_id} not found in manifest")
-            meshify_constructor = DbtMeshConstructor(
-                project_path=subproject.parent_project.path, node=resource, catalog=catalog
-            )
+
             if resource.resource_type in ["model", "test", "snapshot", "seed"]:
                 # ignore generic tests, as moving the yml entry will move the test too
                 if resource.resource_type == "test" and len(resource.unique_id.split(".")) == 4:
@@ -116,36 +159,44 @@ class DbtSubprojectCreator:
                     logger.info(
                         f"Adding contract to and publicizing boundary node {resource.unique_id}"
                     )
-                    try:
-                        meshify_constructor.add_model_contract()
-                        meshify_constructor.add_model_access(access_type=AccessType.Public)
-                        logger.success(
-                            f"Successfully added contract to and publicized boundary node {resource.unique_id}"
-                        )
-                    except Exception as e:
-                        logger.error(
-                            f"Failed to add contract to and publicize boundary node {resource.unique_id}"
-                        )
-                        logger.exception(e)
+                    if isinstance(resource, ModelNode):
+                        try:
+                            change_set.add(contractor.generate_contract(resource))
+                            change_set.add(
+                                grouper.generate_access(model=resource, access=AccessType.Public)
+                            )
+
+                            # TODO: Remove unnecessary logging!
+                            logger.success(
+                                f"Successfully added contract to and publicized boundary node {resource.unique_id}"
+                            )
+                        except Exception as e:
+                            logger.error(
+                                f"Failed to add contract to and publicize boundary node {resource.unique_id}"
+                            )
+                            logger.exception(e)
                     # apply access method too
-                    logger.info(f"Updating ref functions for children of {resource.unique_id}...")
-                    try:
-                        self.update_child_refs(resource)
-                        logger.success(
-                            f"Successfully updated ref functions for children of {resource.unique_id}"
+                    if isinstance(resource, CompiledNode):
+                        logger.info(
+                            f"Updating ref functions for children of {resource.unique_id}..."
                         )
-                    except Exception as e:
-                        logger.error(
-                            f"Failed to update ref functions for children of {resource.unique_id}"
-                        )
-                        logger.exception(e)
+                        try:
+                            change_set.add(reference_updater.generate_reference_update(resource))
+                            logger.success(
+                                f"Successfully updated ref functions for children of {resource.unique_id}"
+                            )
+                        except Exception as e:
+                            logger.error(
+                                f"Failed to update ref functions for children of {resource.unique_id}"
+                            )
+                            logger.exception(e)
 
                 logger.info(
                     f"Moving {resource.unique_id} and associated YML to subproject {subproject.name}..."
                 )
                 try:
-                    self.move_resource(meshify_constructor)
-                    self.move_resource_yml_entry(meshify_constructor)
+                    change_set.add(self.move_resource(resource))
+                    change_set.extend(self.move_resource_yml_entry(resource))
                     logger.success(
                         f"Successfully moved {resource.unique_id} and associated YML to subproject {subproject.name}"
                     )
@@ -158,7 +209,10 @@ class DbtSubprojectCreator:
             elif resource.resource_type in ["macro", "group"]:
                 logger.info(f"Copying {resource.unique_id} to subproject {subproject.name}...")
                 try:
-                    self.copy_resource(meshify_constructor)
+                    if hasattr(resource, "patch_path") and resource.patch_path:
+                        change_set.add(self.copy_resource_yml(resource))
+                    change_set.add(self.copy_resource(resource))
+
                     logger.success(
                         f"Successfully copied {resource.unique_id} to subproject {subproject.name}"
                     )
@@ -172,7 +226,8 @@ class DbtSubprojectCreator:
                     f"Moving resource {resource.unique_id} to subproject {subproject.name}..."
                 )
                 try:
-                    self.move_resource_yml_entry(meshify_constructor)
+                    change_set.extend(self.move_resource_yml_entry(resource))
+
                     logger.success(
                         f"Successfully moved resource {resource.unique_id} to subproject {subproject.name}"
                     )
@@ -182,55 +237,93 @@ class DbtSubprojectCreator:
                     )
                     logger.exception(e)
 
-        self.write_project_file()
-        self.copy_packages_yml_file()
-        self.update_dependencies_yml()
+        change_set.add(self.write_project_file())
+        change_set.add(self.copy_packages_yml_file())
+        change_set.add(self.update_dependencies_yml())
+
+        return change_set
+
         # self.copy_packages_dir()
 
-    def move_resource(self, meshify_constructor: DbtMeshConstructor) -> None:
+    def move_resource(self, resource: Resource) -> FileChange:
         """
         move a resource file from one project to another
+        """
+
+        return FileChange(
+            operation=Operation.Move,
+            entity_type=EntityType.Code,
+            identifier=resource.name,
+            path=self.subproject.resolve_file_path(resource),
+            source=self.subproject.parent_project.resolve_file_path(resource),
+        )
+
+    def copy_resource(self, resource: Resource) -> FileChange:
+        """
+        Copy a resource file from one project to another
+        """
+
+        return FileChange(
+            operation=Operation.Copy,
+            entity_type=EntityType.Code,
+            identifier=resource.name,
+            path=self.subproject.resolve_file_path(resource),
+            source=self.subproject.parent_project.resolve_file_path(resource),
+        )
+
+    def copy_resource_yml(self, resource: Resource) -> ResourceChange:
+        """
+        copy a resource yaml from one project to another
 
         """
-        current_path = meshify_constructor.get_resource_path()
-        self.file_manager.move_file(current_path)
 
-    def copy_resource(self, meshify_constructor: DbtMeshConstructor) -> None:
-        """
-        copy a resource file from one project to another
+        current_yml_path = self.subproject.parent_project.resolve_patch_path(resource)
+        new_yml_path = self.subproject.resolve_patch_path(resource)
 
-        """
-        resource_path = meshify_constructor.get_resource_path()
-        contents = self.file_manager.read_file(resource_path)
-        self.file_manager.write_file(resource_path, contents)
+        source_name = resource.source_name if hasattr(resource, "source_name") else None
 
-    def move_resource_yml_entry(self, meshify_constructor: DbtMeshConstructor) -> None:
+        resource_entry = self.load_resource_yml(
+            current_yml_path, resource.name, resource.resource_type, source_name
+        )
+        return ResourceChange(
+            operation=Operation.Add,
+            entity_type=EntityType[resource.resource_type.value],
+            identifier=resource.name,
+            path=new_yml_path,
+            data=resource_entry,
+        )
+
+    def move_resource_yml_entry(self, resource: Resource) -> ChangeSet:
         """
         move a resource yml entry from one project to another
         """
-        current_yml_path = meshify_constructor.get_patch_path()
-        new_yml_path = self.file_manager.write_project_path / current_yml_path
-        full_yml_entry = self.file_manager.read_file(current_yml_path)
-        source_name = (
-            meshify_constructor.node.source_name
-            if hasattr(meshify_constructor.node, "source_name")
-            else None
+        change_set = ChangeSet()
+        current_yml_path = self.subproject.parent_project.resolve_patch_path(resource)
+        new_yml_path = self.subproject.resolve_patch_path(resource)
+
+        source_name = resource.source_name if hasattr(resource, "source_name") else None
+
+        resource_entry = self.load_resource_yml(
+            current_yml_path, resource.name, resource.resource_type, source_name
         )
-        resource_entry, remainder = meshify_constructor.get_yml_entry(
-            resource_name=meshify_constructor.node.name,
-            full_yml=full_yml_entry,  # type: ignore
-            resource_type=meshify_constructor.node.resource_type,
-            source_name=source_name,
+
+        change_set.extend(
+            [
+                ResourceChange(
+                    operation=Operation.Add,
+                    entity_type=EntityType(resource.resource_type.value),
+                    identifier=resource.name,
+                    path=new_yml_path,
+                    data=resource_entry,
+                ),
+                ResourceChange(
+                    operation=Operation.Remove,
+                    entity_type=EntityType(resource.resource_type.value),
+                    identifier=resource.name,
+                    path=current_yml_path,
+                    data={},
+                ),
+            ]
         )
-        try:
-            existing_yml = self.file_manager.read_file(new_yml_path)
-        except FileNotFoundError:
-            existing_yml = None
-        new_yml_contents = meshify_constructor.add_entry_to_yml(
-            resource_entry, existing_yml, meshify_constructor.node.resource_type  # type: ignore
-        )
-        self.file_manager.write_file(current_yml_path, new_yml_contents)
-        if remainder:
-            self.file_manager.write_file(current_yml_path, remainder, writeback=True)
-        else:
-            self.file_manager.delete_file(current_yml_path)
+
+        return change_set

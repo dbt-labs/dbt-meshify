@@ -8,6 +8,7 @@ from typing import Any, Dict, MutableMapping, Optional, Set, Union
 import yaml
 from dbt.contracts.graph.manifest import Manifest
 from dbt.contracts.graph.nodes import (
+    CompiledNode,
     Documentation,
     Exposure,
     Group,
@@ -175,7 +176,35 @@ class BaseDbtProject:
         return resources.get(unique_id)
 
 
-class DbtProject(BaseDbtProject):
+class PathedProject:
+    path: Path
+
+    def resolve_file_path(self, node: Union[Resource, CompiledNode]) -> Path:
+        """
+        Returns the path to the file where the resource is defined
+        for yml-only nodes (generic tests, metrics, exposures, sources)
+        this will be the path to the yml file where the definitions
+        for all others this will be the .sql or .py file for the resource
+        """
+        return Path(node.original_file_path)
+
+    def resolve_patch_path(self, node: Union[Resource, CompiledNode]) -> Path:
+        """Get a YML patch path for a node"""
+        if isinstance(node, ParsedNode):
+            if not node.patch_path and not node.original_file_path:
+                raise FileNotFoundError(
+                    f"Unable to identify patch path for resource {node.unique_id}"
+                )
+
+            if not node.patch_path:
+                return self.path / Path(node.original_file_path).parent / "_models.yml"
+
+            return self.path / Path(node.patch_path.split(":")[-1][2:])
+
+        return self.path / Path(node.original_file_path)
+
+
+class DbtProject(BaseDbtProject, PathedProject):
     @staticmethod
     def _load_project(path) -> Project:
         """Load a dbt Project configuration"""
@@ -268,23 +297,8 @@ class DbtProject(BaseDbtProject):
 
         return subproject
 
-    def resolve_patch_path(self, node: Resource) -> Path:
-        """Get a YML patch path for a node"""
-        if isinstance(node, ParsedNode):
-            if not node.patch_path and not node.original_file_path:
-                raise FileNotFoundError(
-                    f"Unable to identify patch path for resource {node.unique_id}"
-                )
 
-            if not node.patch_path:
-                return self.path / Path(node.original_file_path).parent / "_models.yml"
-
-            return self.path / Path(node.patch_path.split(":")[-1][2:])
-
-        return self.path / Path(node.original_file_path)
-
-
-class DbtSubProject(BaseDbtProject):
+class DbtSubProject(BaseDbtProject, PathedProject):
     """
     DbtSubProjects are a filtered representation of a dbt project that leverage
     a parent DbtProject for their manifest and project definitions until a real DbtProject
@@ -308,21 +322,6 @@ class DbtSubProject(BaseDbtProject):
         self._rename_project()
 
         super().__init__(self.manifest, self.project, self.catalog, self.name)
-
-    def resolve_patch_path(self, node: Resource) -> Path:
-        """Get a YML patch path for a node"""
-        if isinstance(node, ParsedNode):
-            if not node.patch_path and not node.original_file_path:
-                raise FileNotFoundError(
-                    f"Unable to identify patch path for resource {node.unique_id}"
-                )
-
-            if not node.patch_path:
-                return self.path / Path(node.original_file_path).parent / "_models.yml"
-
-            return self.path / Path(node.patch_path.split(":")[-1][2:])
-
-        return self.path / Path(node.original_file_path)
 
     def _rename_project(self) -> None:
         """

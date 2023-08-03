@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Dict, Optional, Set, Tuple, Union
+from typing import Any, Dict, Optional, Set, Tuple, Union
 
 import networkx
 from dbt.contracts.graph.nodes import Group, ModelNode
@@ -8,7 +8,7 @@ from dbt.contracts.graph.unparsed import Owner
 from dbt.node_types import AccessType, NodeType
 from loguru import logger
 
-from dbt_meshify.change import ChangeSet, EntityType, Operation, ResourceChange
+from dbt_meshify.change import Change, ChangeSet, EntityType, Operation, ResourceChange
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject
 from dbt_meshify.exceptions import ModelFileNotFoundError
 from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
@@ -112,6 +112,23 @@ class ResourceGrouper:
 
         return group, resources
 
+    def generate_access(
+        self, model: ModelNode, access: AccessType, group: Optional[Group] = None
+    ) -> ResourceChange:
+        """Generate a Change to set the access level for a model."""
+
+        data: Dict[str, Any] = {"access": access.value}
+        if group:
+            data["group"] = group
+
+        return ResourceChange(
+            operation=Operation.Update,
+            entity_type=EntityType.Model,
+            identifier=model.name,
+            path=self.project.resolve_patch_path(model),
+            data=data,
+        )
+
     def add_group(
         self,
         name: str,
@@ -136,7 +153,6 @@ class ResourceGrouper:
                 entity_type=EntityType.Group,
                 identifier=group.name,
                 path=path,
-                # TODO: Consider updating entity serialization.
                 data={"name": group.name, "owner": group.owner.to_dict()},
             )
         )
@@ -147,22 +163,6 @@ class ResourceGrouper:
                 continue
 
             model: ModelNode = self.project.models[resource]
-            if model.patch_path:
-                resource_path = Path(model.patch_path.split("://")[1])
-            else:
-                if not model.original_file_path:
-                    raise ModelFileNotFoundError("Unable to locate model file. Failing.")
-
-                resource_path = Path(model.original_file_path).parent / "_models.yml"
-
-            changes.add(
-                ResourceChange(
-                    operation=Operation.Update,
-                    entity_type=EntityType.Model,
-                    identifier=model.name,
-                    path=project_path / resource_path,
-                    data={"group": group.name, "access": access_type.value},
-                )
-            )
+            changes.add(self.generate_access(model, access_type, group))
 
         return changes

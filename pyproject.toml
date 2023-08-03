@@ -2,6 +2,10 @@
 # TODO: widen range of files as we fix issues
 namespace_packages = true
 
+[[tool.mypy.overrides]]
+module = ['ruamel', 'networkx']
+ignore_missing_imports = true
+
 [tool.isort]
 profile = "black"
 
@@ -19,11 +23,11 @@ version = "0.2.0"
 description = "a package to upgrade dbt packages to the dbt mesh framework"
 authors = [
     "Dave Connors <dave.connors@fishtownanalytics.com>",
-    "Grace Goheen <grace.goheen@dbtlabs.com>"
+    "Grace Goheen <grace.goheen@dbtlabs.com>",
 ]
 license = "Apache 2.0"
 readme = "README.md"
-packages = [{include = "dbt_meshify"}]
+packages = [{ include = "dbt_meshify" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"

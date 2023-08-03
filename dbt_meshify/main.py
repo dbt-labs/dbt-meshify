@@ -10,9 +10,10 @@ from dbt.contracts.graph.nodes import ModelNode
 from dbt.contracts.graph.unparsed import Owner
 from loguru import logger
 
-from dbt_meshify.change import ChangeSet, EntityType, Operation, ResourceChange
+from dbt_meshify.change import ChangeSet, EntityType, ResourceChange
 from dbt_meshify.change_set_processor import ChangeSetProcessor
 from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
+from dbt_meshify.utilities.contractor import Contractor
 from dbt_meshify.utilities.versioner import ModelVersioner
 
 from .cli import (
@@ -31,7 +32,6 @@ from .cli import (
 )
 from .dbt_projects import DbtProject, DbtProjectHolder
 from .exceptions import FatalMeshifyException
-from .storage.file_content_editors import DbtMeshConstructor, NamedList
 
 log_format = "<white>{time:HH:mm:ss}</white> | <level>{level}</level> | <level>{message}</level>"
 logger.remove()  # Remove the default sink added by Loguru
@@ -103,7 +103,9 @@ def connect(projects_dir):
 @select
 @selector
 @click.pass_context
-def split(ctx, project_name, select, exclude, project_path, selector, create_path, read_catalog):
+def split(
+    ctx, project_name, select, exclude, project_path, selector, create_path, read_catalog
+) -> List[ChangeSet]:
     """
     Splits out a new subproject from a dbt project by adding all necessary dbt Mesh constructs to the
     resources based on the selected resources.
@@ -122,8 +124,10 @@ def split(ctx, project_name, select, exclude, project_path, selector, create_pat
     subproject_creator = DbtSubprojectCreator(subproject=subproject, target_directory=create_path)
     logger.info(f"Creating subproject {subproject.name}...")
     try:
-        subproject_creator.initialize()
-        logger.success(f"Successfully created subproject {subproject.name}")
+        change_set = subproject_creator.initialize()
+
+        logger.success(f"Successfully created change set for subproject {subproject.name}")
+        return [change_set]
     except Exception:
         raise FatalMeshifyException(f"Error creating subproject {subproject.name}")
 
@@ -140,8 +144,6 @@ def add_contract(
     """
     Adds a contract to all selected models.
     """
-
-    from dbt.contracts.graph.nodes import ModelNode
 
     path = Path(project_path).expanduser().resolve()
     logger.info(f"Reading dbt project at {path}")
@@ -162,44 +164,17 @@ def add_contract(
     logger.info("Adding contracts to models in selected resources...")
 
     change_set = ChangeSet()
+    contractor = Contractor(project=project)
 
     try:
         for model_unique_id in models:
             model_node = project.get_manifest_node(model_unique_id)
-            model_catalog = project.get_catalog_entry(model_unique_id)
 
-            if model_node is None or not isinstance(model_node, ModelNode):
+            if not isinstance(model_node, ModelNode):
                 continue
 
-            # TODO: Replace with something more lightweight. Maybe put logic in Project.
-            meshify_constructor = DbtMeshConstructor(
-                project_path=project_path, node=model_node, catalog=model_catalog
-            )
-
-            # For each model, create a Change that describes the new Model properties.
-            if not model_catalog or not model_catalog.columns:
-                columns = None
-            else:
-                columns = [
-                    {"name": name.lower(), "data_type": value.type.lower()}
-                    for name, value in model_catalog.columns.items()
-                ]
-
-            model_data = {
-                "name": model_node.name,
-                "config": {"contract": {"enforced": True}},
-                "columns": NamedList(columns),
-            }
-
-            change_set.add(
-                ResourceChange(
-                    operation=Operation.Update,
-                    entity_type=EntityType.Model,
-                    identifier=model_node.name,
-                    path=project.path / meshify_constructor.get_patch_path(),
-                    data=model_data,
-                )
-            )
+            change = contractor.generate_contract(model_node)
+            change_set.add(change)
 
     except Exception:
         raise FatalMeshifyException(f"Error generating contract for model: {model_unique_id}")
