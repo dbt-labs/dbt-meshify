@@ -6,7 +6,6 @@ import yaml
 from dbt.contracts.files import FileHash
 from dbt.contracts.graph.nodes import ModelNode, NodeType
 
-from dbt_meshify.change import ChangeSet, ResourceChange
 from dbt_meshify.storage.file_content_editors import (
     DbtMeshFileEditor,
     ResourceFileEditor,
