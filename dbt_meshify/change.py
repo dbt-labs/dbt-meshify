@@ -63,6 +63,7 @@ class ResourceChange(BaseChange):
     """A ResourceChange represents a unit of work that should be performed on a Resource in a dbt project."""
 
     data: Dict
+    source_name: Optional[str] = None
 
 
 @dataclasses.dataclass

@@ -3,8 +3,6 @@ from unittest.mock import MagicMock
 
 import pytest
 import yaml
-from dbt.contracts.files import FileHash
-from dbt.contracts.graph.nodes import ModelNode, NodeType
 
 from dbt_meshify.storage.file_content_editors import (
     DbtMeshFileEditor,
@@ -12,6 +10,7 @@ from dbt_meshify.storage.file_content_editors import (
 )
 from dbt_meshify.utilities.versioner import ModelVersioner
 
+from ..dbt_project_fixtures import model, project
 from ..sql_and_yml_fixtures import (
     expected_versioned_model_yml_increment_version_defined_in,
     expected_versioned_model_yml_increment_version_no_prerelease,
@@ -27,31 +26,7 @@ model_name = "shared_model"
 
 
 @pytest.fixture
-def project():
-    project = MagicMock()
-    project.resolve_patch_path.return_value = Path(".")
-    return project
-
-
-@pytest.fixture
-def model() -> ModelNode:
-    return ModelNode(
-        database=None,
-        resource_type=NodeType.Model,
-        checksum=FileHash("foo", "foo"),
-        schema="foo",
-        name=model_name,
-        package_name="foo",
-        path="models/_models.yml",
-        original_file_path=f"models/{model_name}.sql",
-        unique_id="model.foo.foo",
-        fqn=["foo", "foo"],
-        alias="foo",
-    )
-
-
-@pytest.fixture
-def file_manager() -> ModelNode:
+def file_manager():
     input = read_yml(model_yml_increment_version)
     file_manager = MagicMock()
     file_manager.read_file.return_value = input

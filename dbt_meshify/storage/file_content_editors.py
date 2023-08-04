@@ -1,4 +1,3 @@
-import os
 import shutil
 from collections import OrderedDict
 from pathlib import Path
@@ -171,25 +170,39 @@ class ResourceFileEditor(FileEditor):
         super().__init__(self.file_manager)
 
     @staticmethod
-    def add_resource(properties: Dict, change: ResourceChange) -> Dict:
-        properties[change.entity_type.pluralize()] = properties.get(
-            change.entity_type.pluralize(), []
-        ).append(format_resource(change.entity_type, change.data))
-        return properties
-
-    @staticmethod
     def update_resource(properties: Dict[Any, Any], change: ResourceChange) -> Dict:
         entities = NamedList(properties.get(change.entity_type.pluralize(), []))
-        updated_entities = safe_update(entities.get(change.identifier, {}), change.data)
-        entities[change.identifier] = format_resource(change.entity_type, updated_entities)
+
+        if change.source_name:
+            updated_entities = safe_update(
+                entities.get(change.source_name, {}).get(change.identifier, {}), change.data
+            )
+            entities[change.source_name][change.identifier] = format_resource(
+                change.entity_type, updated_entities
+            )
+        else:
+            updated_entities = safe_update(entities.get(change.identifier, {}), change.data)
+            entities[change.identifier] = format_resource(change.entity_type, updated_entities)
+
         properties[change.entity_type.pluralize()] = entities.to_list()
         return properties
 
     @staticmethod
     def remove_resource(properties: Dict, change: ResourceChange) -> Dict:
         entities = NamedList(properties.get(change.entity_type.pluralize(), []))
-        del entities[change.identifier]
+        print(entities)
+        if change.source_name:
+            source_tables = entities[change.source_name].get("tables", {})
+            del source_tables[change.identifier]
+            entities[change.source_name]["tables"] = source_tables
+        else:
+            del entities[change.identifier]
+        print(entities)
         properties[change.entity_type.pluralize()] = entities.to_list()
+
+        if len(properties[change.entity_type.pluralize()]) == 0:
+            del properties[change.entity_type.pluralize()]
+
         return properties
 
     def __read_file(self, path: Path) -> Dict:
