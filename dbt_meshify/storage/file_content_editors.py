@@ -365,52 +365,6 @@ class DbtMeshFileEditor:
                 f"Version not an integer, can't increment version for {model_yml.get('name')}"
             )
 
-    def add_model_version_to_yml(
-        self,
-        model_name,
-        models_yml,
-        prerelease: Optional[bool] = False,
-        defined_in: Optional[os.PathLike] = None,
-    ) -> Dict[str, Any]:
-        """Adds a model version to the model's yaml"""
-        # set up yml order
-
-        models = resources_yml_to_dict(models_yml)
-        model_yml = models.get(model_name) or {
-            "name": model_name,
-            "latest_version": 0,
-            "versions": [],
-        }
-        # add the version to the model yml entry
-        versions_list = model_yml.get("versions") or []
-        latest_version = model_yml.get("latest_version") or 0
-        latest_yml_version = self.get_latest_yml_defined_version(model_yml)
-        version_dict: Dict[str, Union[int, str, os.PathLike]] = {}
-        if not versions_list:
-            version_dict["v"] = 1
-            latest_version += 1
-        # if the model has versions, add the next version
-        # if prerelease flag is true, do not increment the latest_version
-        elif prerelease:
-            version_dict = {"v": latest_yml_version + 1}
-        else:
-            version_dict = {"v": latest_yml_version + 1}
-            latest_version += 1
-        # add the defined_in key if it exists
-        if defined_in:
-            version_dict["defined_in"] = defined_in
-        # add the version to the model yml entry
-        versions_list.append(version_dict)
-        # update the latest version in the model yml entry
-        model_yml["versions"] = versions_list
-        model_yml["latest_version"] = latest_version
-
-        processed = process_model_yml(model_yml)
-        models[model_name] = processed
-
-        models_yml["models"] = list(models.values())
-        return models_yml
-
     def update_sql_refs(self, model_code: str, model_name: str, project_name: str):
         import re
 
@@ -509,72 +463,6 @@ class DbtMeshConstructor(DbtMeshFileEditor):
         )
         # write the updated yml to the file
         self.file_manager.write_file(yml_path, updated_yml)
-
-    def add_model_version(
-        self, prerelease: Optional[bool] = False, defined_in: Optional[os.PathLike] = None
-    ) -> None:
-        """Adds a model version to the model's yaml"""
-
-        yml_path = self.get_patch_path()
-
-        # read the yml file
-        # pass empty dict if no file contents returned
-        models_yml = self.file_manager.read_file(yml_path) or {}
-        latest_yml_version = self.get_latest_yml_defined_version(
-            resources_yml_to_dict(models_yml).get(self.node.name, {})  # type: ignore
-        )
-        try:
-            updated_yml = self.add_model_version_to_yml(
-                model_name=self.node.name,
-                models_yml=models_yml,
-                prerelease=prerelease,
-                defined_in=defined_in,
-            )
-            # write the updated yml to the file
-            self.file_manager.write_file(yml_path, updated_yml)
-            logger.info("Model version added to model yml")
-        except Exception as e:
-            logger.error(f"Error adding model version to model yml: {e}")
-            logger.exception(e)
-        # create the new version file
-
-        # if we're incrementing the version, write the new version file with a copy of the code
-        latest_version = int(self.node.latest_version) if self.node.latest_version else 0
-        last_version_file_name = f"{self.node.name}_v{latest_version}.{self.node.language}"
-        next_version_file_name = (
-            f"{defined_in}.{self.node.language}"
-            if defined_in
-            else f"{self.node.name}_v{latest_yml_version + 1}.{self.node.language}"
-        )
-        model_path = self.get_resource_path()
-
-        if model_path is None:
-            raise ModelFileNotFoundError(
-                f"Unable to find path to model {self.node.name}. Aborting."
-            )
-
-        model_folder = model_path.parent
-        next_version_path = model_folder / next_version_file_name
-        last_version_path = model_folder / last_version_file_name
-
-        # if this is the first version, rename the original file to the next version
-        if not self.node.latest_version:
-            logger.info(f"Creating first version of {self.node.name} at {next_version_path}")
-            Path(self.project_path).joinpath(model_path).rename(
-                Path(self.project_path).joinpath(next_version_path)
-            )
-        else:
-            # if existing versions, create the new one
-            logger.info(f"Creating new version of {self.node.name} at {next_version_path}")
-            self.file_manager.write_file(next_version_path, self.node.raw_code)
-            # if the existing version doesn't use the _v{version} naming convention, rename it to the previous version
-            if not model_path.stem.endswith(f"_v{latest_version}"):
-                logger.info(
-                    f"Renaming existing version of {self.node.name} from {model_path.name} to {last_version_path.name}"
-                )
-                Path(self.project_path).joinpath(model_path).rename(
-                    Path(self.project_path).joinpath(last_version_path)
-                )
 
     def update_model_refs(self, model_name: str, project_name: str) -> None:
         """Updates the model refs in the model's sql file"""

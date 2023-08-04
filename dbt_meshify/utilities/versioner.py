@@ -18,9 +18,15 @@ from dbt_meshify.storage.file_manager import DbtFileManager
 class ModelVersioner:
     """Class for creating and incrementing version Changes on Models."""
 
-    def __init__(self, project: Union[DbtProject, DbtSubProject]) -> None:
+    def __init__(
+        self,
+        project: Union[DbtProject, DbtSubProject],
+        file_manager: Optional[DbtFileManager] = None,
+    ) -> None:
         self.project = project
-        self.file_manager = DbtFileManager(read_project_path=project.path)
+        self.file_manager = (
+            DbtFileManager(read_project_path=project.path) if not file_manager else file_manager
+        )
 
     def load_model_yml(self, path: Path, name: str) -> Dict:
         """Load the Model patch YAML for a given ModelNode."""
