@@ -1,4 +1,3 @@
-from pathlib import Path
 from unittest.mock import MagicMock
 
 import pytest
@@ -10,7 +9,7 @@ from dbt_meshify.storage.file_content_editors import (
 )
 from dbt_meshify.utilities.versioner import ModelVersioner
 
-from ..dbt_project_fixtures import model, project
+from ..dbt_project_fixtures import model, project  # noqa: F401
 from ..sql_and_yml_fixtures import (
     expected_versioned_model_yml_increment_version_defined_in,
     expected_versioned_model_yml_increment_version_no_prerelease,

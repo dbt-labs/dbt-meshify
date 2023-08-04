@@ -1,14 +1,14 @@
 import shutil
 from collections import OrderedDict
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Union
 
-from dbt.contracts.graph.nodes import Group, ManifestNode
+from dbt.contracts.graph.nodes import ManifestNode
 from dbt.contracts.results import CatalogTable
-from dbt.node_types import AccessType, NodeType
+from dbt.node_types import NodeType
 from loguru import logger
 
-from dbt_meshify.change import Change, EntityType, FileChange, ResourceChange
+from dbt_meshify.change import EntityType, FileChange, ResourceChange
 from dbt_meshify.exceptions import FileEditorException, ModelFileNotFoundError
 from dbt_meshify.storage.file_manager import DbtFileManager
 
