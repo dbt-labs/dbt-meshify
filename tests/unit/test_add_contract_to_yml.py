@@ -6,10 +6,7 @@ from dbt.contracts.files import FileHash
 from dbt.contracts.graph.nodes import ModelNode, NodeType
 
 from dbt_meshify.change import ResourceChange
-from dbt_meshify.storage.file_content_editors import (
-    DbtMeshFileEditor,
-    ResourceFileEditor,
-)
+from dbt_meshify.storage.file_content_editors import ResourceFileEditor
 from dbt_meshify.utilities.contractor import Contractor
 
 from ..dbt_project_fixtures import shared_model_catalog_entry
@@ -28,7 +25,6 @@ from ..sql_and_yml_fixtures import (
 )
 from . import read_yml
 
-meshify = DbtMeshFileEditor()
 catalog_entry = shared_model_catalog_entry
 model_name = "shared_model"
 

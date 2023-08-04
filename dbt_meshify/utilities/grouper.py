@@ -10,7 +10,6 @@ from loguru import logger
 
 from dbt_meshify.change import ChangeSet, EntityType, Operation, ResourceChange
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject
-from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
 from dbt_meshify.storage.file_manager import DbtFileManager
 
 
@@ -27,7 +26,6 @@ class ResourceGrouper:
 
     def __init__(self, project: Union[DbtProject, DbtSubProject]):
         self.project = project
-        self.meshify = DbtMeshFileEditor()
         self.file_manager = DbtFileManager(read_project_path=project.path)
 
     @classmethod

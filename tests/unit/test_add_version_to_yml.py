@@ -3,10 +3,7 @@ from unittest.mock import MagicMock
 import pytest
 import yaml
 
-from dbt_meshify.storage.file_content_editors import (
-    DbtMeshFileEditor,
-    ResourceFileEditor,
-)
+from dbt_meshify.storage.file_content_editors import ResourceFileEditor
 from dbt_meshify.utilities.versioner import ModelVersioner
 
 from ..dbt_project_fixtures import model, project  # noqa: F401
@@ -20,7 +17,6 @@ from ..sql_and_yml_fixtures import (
     model_yml_no_col_no_version,
 )
 
-meshify = DbtMeshFileEditor()
 model_name = "shared_model"
 
 

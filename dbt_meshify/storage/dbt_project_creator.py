@@ -124,7 +124,7 @@ class DbtSubprojectCreator:
         except FileNotFoundError:
             contents = {"projects": []}
 
-        contents["projects"].append({"name": self.subproject.name})  # type: ignore
+        contents["projects"].append({"name": self.subproject.parent_project.name})  # type: ignore
 
         return FileChange(
             operation=Operation.Add,
@@ -302,7 +302,7 @@ class DbtSubprojectCreator:
         new_yml_path = self.subproject.resolve_patch_path(resource)
 
         source_name = resource.source_name if hasattr(resource, "source_name") else None
-
+        print(current_yml_path)
         resource_entry = self.load_resource_yml(
             current_yml_path, resource.name, resource.resource_type, source_name
         )

@@ -77,8 +77,8 @@ class FileChange(BaseChange):
 class ChangeSet:
     """A collection of Changes that will be performed"""
 
-    def __init__(self) -> None:
-        self.changes: List[Change] = []
+    def __init__(self, changes: Optional[List[Change]] = None) -> None:
+        self.changes: List[Change] = changes if changes else []
         self.step = -1
 
     def add(self, change: Change) -> None:

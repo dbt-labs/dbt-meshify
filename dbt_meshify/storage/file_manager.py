@@ -56,7 +56,10 @@ class DbtFileManager(BaseFileManager):
 
     def read_file(self, path: Path) -> Union[Dict[str, Any], str]:
         """Returns the yaml for a model in the dbt project's manifest"""
-        full_path = self.read_project_path / path
+        full_path = path
+        if not path.is_relative_to(self.read_project_path):
+            full_path = self.read_project_path / path
+
         if full_path.suffix == ".yml":
             return yaml.load(full_path.read_text())
         else:

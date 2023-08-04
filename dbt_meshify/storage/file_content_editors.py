@@ -3,13 +3,10 @@ from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from dbt.contracts.graph.nodes import ManifestNode
-from dbt.contracts.results import CatalogTable
 from dbt.node_types import NodeType
-from loguru import logger
 
 from dbt_meshify.change import EntityType, FileChange, ResourceChange
-from dbt_meshify.exceptions import FileEditorException, ModelFileNotFoundError
+from dbt_meshify.exceptions import FileEditorException
 from dbt_meshify.storage.file_manager import DbtFileManager
 
 
@@ -139,6 +136,16 @@ class RawFileEditor(FileEditor):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
+    def add(self, change: FileChange):
+        """Add data to a new file."""
+
+        if not change.path.parent.exists():
+            change.path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(change.path, "w") as file:
+            if change.data:
+                file.write(change.data)
+
     def update(self, change: FileChange):
         """Update data to a new file."""
 
@@ -154,12 +161,18 @@ class RawFileEditor(FileEditor):
         if change.source is None:
             raise FileEditorException("None source value provided in Copy operation.")
 
+        if not change.path.parent.exists():
+            change.path.parent.mkdir(parents=True, exist_ok=True)
+
         shutil.copy(change.source, change.path)
 
     def move(self, change: FileChange):
         """Move a file from one location to another."""
         if change.source is None:
             raise FileEditorException("None source value provided in Copy operation.")
+
+        if not change.path.parent.exists():
+            change.path.parent.mkdir(parents=True, exist_ok=True)
 
         shutil.move(change.source, change.path)
 
@@ -219,6 +232,9 @@ class ResourceFileEditor(FileEditor):
         """Add a Resource to a YAML file at a given path."""
 
         # Make the file if it does not exist.
+        if not change.path.parent.exists():
+            change.path.parent.mkdir(parents=True, exist_ok=True)
+
         if not change.path.exists():
             open(change.path, "w").close()
 
@@ -238,111 +254,3 @@ class ResourceFileEditor(FileEditor):
         properties = self.__read_file(change.path)
         properties = self.remove_resource(properties, change)
         self.file_manager.write_file(change.path, properties)
-
-
-class DbtMeshFileEditor:
-    """
-    Class to operate on the contents of a dbt project's files
-    to add the dbt mesh functionality
-    includes editing yml entries and sql file contents
-    """
-
-    def update_sql_refs(self, model_code: str, model_name: str, project_name: str):
-        import re
-
-        # pattern to search for ref() with optional spaces and either single or double quotes
-        pattern = re.compile(r"{{\s*ref\s*\(\s*['\"]" + re.escape(model_name) + r"['\"]\s*\)\s*}}")
-
-        # replacement string with the new format
-        replacement = f"{{{{ ref('{project_name}', '{model_name}') }}}}"
-
-        # perform replacement
-        new_code = re.sub(pattern, replacement, model_code)
-
-        return new_code
-
-    def update_python_refs(self, model_code: str, model_name: str, project_name: str):
-        import re
-
-        # pattern to search for ref() with optional spaces and either single or double quotes
-        pattern = re.compile(r"dbt\.ref\s*\(\s*['\"]" + re.escape(model_name) + r"['\"]\s*\)")
-
-        # replacement string with the new format
-        replacement = f"dbt.ref('{project_name}', '{model_name}')"
-
-        # perform replacement
-        new_code = re.sub(pattern, replacement, model_code)
-
-        return new_code
-
-
-class DbtMeshConstructor(DbtMeshFileEditor):
-    def __init__(
-        self, project_path: Path, node: ManifestNode, catalog: Optional[CatalogTable] = None
-    ):
-        self.project_path = project_path
-        self.node = node
-        self.model_catalog = catalog
-        self.name = node.name
-        self.file_manager = DbtFileManager(read_project_path=project_path)
-
-    def get_patch_path(self) -> Path:
-        """Returns the path to the yml file where the resource is defined or described"""
-        if self.node.resource_type in [
-            NodeType.Model,
-            NodeType.Seed,
-            NodeType.Snapshot,
-            NodeType.Macro,
-            NodeType.Test,
-        ]:
-            # find yml path for resources that are not defined
-            yml_path = Path(self.node.patch_path.split("://")[1]) if self.node.patch_path else None
-        else:
-            yml_path = self.get_resource_path()
-
-        # if the model doesn't have a patch path, create a new yml file in the models directory
-        if not yml_path:
-            resource_path = self.get_resource_path()
-
-            if resource_path is None:
-                # If this happens, then the model doesn't have a model file, either, which is cause for alarm.
-                raise ModelFileNotFoundError(
-                    f"Unable to locate the file defining {self.node.name}. Aborting"
-                )
-
-            filename = f"_{self.node.resource_type.pluralize()}.yml"
-            yml_path = resource_path.parent / filename
-            self.file_manager.write_file(yml_path, {})
-        logger.info(f"Schema entry for {self.node.unique_id} written to {yml_path}")
-        return yml_path
-
-    def get_resource_path(self) -> Path:
-        """
-        Returns the path to the file where the resource is defined
-        for yml-only nodes (generic tests, metrics, exposures, sources)
-        this will be the path to the yml file where the definitions
-        for all others this will be the .sql or .py file for the resource
-        """
-        return Path(self.node.original_file_path)
-
-    def update_model_refs(self, model_name: str, project_name: str) -> None:
-        """Updates the model refs in the model's sql file"""
-        model_path = self.get_resource_path()
-
-        if model_path is None:
-            raise ModelFileNotFoundError(
-                f"Unable to find path to model {self.node.name}. Aborting."
-            )
-
-        # read the model file
-        model_code = str(self.file_manager.read_file(model_path))
-        # This can be defined in the init for this class.
-        ref_update_methods = {"sql": self.update_sql_refs, "python": self.update_python_refs}
-        # Here, we're trusting the dbt-core code to check the languages for us. 🐉
-        updated_code = ref_update_methods[self.node.language](
-            model_name=model_name,
-            project_name=project_name,
-            model_code=model_code,
-        )
-        # write the updated model code to the file
-        self.file_manager.write_file(model_path, updated_code)

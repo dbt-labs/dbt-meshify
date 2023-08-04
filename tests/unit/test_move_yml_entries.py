@@ -3,11 +3,7 @@ from pathlib import Path
 import yaml
 
 from dbt_meshify.change import EntityType, Operation, ResourceChange
-from dbt_meshify.storage.file_content_editors import (
-    DbtMeshFileEditor,
-    NamedList,
-    ResourceFileEditor,
-)
+from dbt_meshify.storage.file_content_editors import NamedList, ResourceFileEditor
 
 from ..sql_and_yml_fixtures import (
     expeceted_remainder_yml__source_yml_multiple_tables,
@@ -31,7 +27,6 @@ from ..sql_and_yml_fixtures import (
     source_yml_one_table,
 )
 
-meshify = DbtMeshFileEditor()
 model_name = "shared_model"
 source_name = "test_source"
 source_table_name = "table"

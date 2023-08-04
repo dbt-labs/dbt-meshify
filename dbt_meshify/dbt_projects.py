@@ -40,7 +40,7 @@ class BaseDbtProject:
         self.manifest = manifest
         self.project = project
         self.catalog = catalog
-        self.name = name if name else project.name
+        self.name = name if name else str(project.name)
         self.relationships: Dict[str, Set[str]] = {}
         self._models: Optional[Dict[str, ModelNode]] = None
 
@@ -186,7 +186,7 @@ class PathedProject:
         this will be the path to the yml file where the definitions
         for all others this will be the .sql or .py file for the resource
         """
-        return Path(node.original_file_path)
+        return self.path / Path(node.original_file_path)
 
     def resolve_patch_path(self, node: Union[Resource, CompiledNode]) -> Path:
         """Get a YML patch path for a node"""
