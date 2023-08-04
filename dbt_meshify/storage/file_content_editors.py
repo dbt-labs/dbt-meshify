@@ -240,143 +240,12 @@ class ResourceFileEditor(FileEditor):
         self.file_manager.write_file(change.path, properties)
 
 
-class ProjectFileEditor(FileEditor):
-    def add(self, change: Change) -> None:
-        raise NotImplementedError
-
-    def update(self, change: Change) -> None:
-        raise NotImplementedError
-
-    def remove(self, change: Change) -> None:
-        raise NotImplementedError
-
-
-class CodeFileEditor(FileEditor):
-    def add(self, change: Change) -> None:
-        raise NotImplementedError
-
-    def update(self, change: Change) -> None:
-        raise NotImplementedError
-
-    def remove(self, change: Change) -> None:
-        raise NotImplementedError
-
-
 class DbtMeshFileEditor:
     """
     Class to operate on the contents of a dbt project's files
     to add the dbt mesh functionality
     includes editing yml entries and sql file contents
     """
-
-    @staticmethod
-    def add_access_to_model_yml(
-        model_name: str, access_type: AccessType, models_yml: Dict[str, Any]
-    ):
-        """Add group and access configuration to a model's YAMl properties."""
-        # parse the yml file into a dictionary with model names as keys
-        models = resources_yml_to_dict(models_yml)
-        model_yml = models.get(model_name) or {"name": model_name, "columns": [], "config": {}}
-
-        model_yml.update({"access": access_type.value})
-        models[model_name] = process_model_yml(model_yml)
-
-        models_yml["models"] = list(models.values())
-        return models_yml
-
-    @staticmethod
-    def add_group_to_model_yml(model_name: str, group: Group, models_yml: Dict[str, Any]):
-        """Add group and access configuration to a model's YAMl properties."""
-        # parse the yml file into a dictionary with model names as keys
-        models = resources_yml_to_dict(models_yml)
-        model_yml = models.get(model_name) or {"name": model_name, "columns": [], "config": {}}
-
-        model_yml.update({"group": group.name})
-        models[model_name] = process_model_yml(model_yml)
-
-        models_yml["models"] = list(models.values())
-        return models_yml
-
-    def get_source_yml_entry(
-        self, resource_name: str, full_yml: Dict[str, Any], source_name: str
-    ) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
-        """
-        Remove a single source entry from a source definition block, return source definition with
-        single source entry and the remainder of the original
-        """
-        sources = resources_yml_to_dict(full_yml, NodeType.Source)
-        source_definition = sources.get(source_name)
-        tables = source_definition.get("tables", [])
-        table = list(filter(lambda x: x["name"] == resource_name, tables))
-        remaining_tables = list(filter(lambda x: x["name"] != resource_name, tables))
-        resource_yml = source_definition.copy()
-        resource_yml["tables"] = table
-        source_definition["tables"] = remaining_tables
-        sources[source_name] = source_definition
-        if len(remaining_tables) == 0:
-            return resource_yml, None
-
-        full_yml["sources"] = list(sources.values())
-        return resource_yml, full_yml
-
-    def get_yml_entry(
-        self,
-        resource_name: str,
-        full_yml: Dict[str, Any],
-        resource_type: NodeType = NodeType.Model,
-        source_name: Optional[str] = None,
-    ) -> Tuple[Dict[str, Any], Optional[Dict[str, Any]]]:
-        """Remove a single resource entry from a yml file, return the single entry and the remainder of the yml file"""
-        # parse the yml file into a dictionary with model names as keys
-        if resource_type == NodeType.Source:
-            if not source_name:
-                raise ValueError("Missing source name")
-            return self.get_source_yml_entry(resource_name, full_yml, source_name)
-        else:
-            resources = resources_yml_to_dict(full_yml, resource_type)
-            resource_yml = resources.pop(resource_name, None)
-            if len(resources.keys()) == 0:
-                return resource_yml, None
-            else:
-                full_yml[resource_type.pluralize()] = (
-                    list(resources.values()) if len(resources) > 0 else None
-                )
-                return resource_yml, full_yml
-
-    def add_entry_to_yml(
-        self, resource_entry: Dict[str, Any], full_yml: Dict[str, Any], resource_type: NodeType
-    ):
-        """
-        Adds a single resource yml entry to yml file
-        """
-        if not full_yml:
-            full_yml = {resource_type.pluralize(): []}
-
-        if resource_type != NodeType.Source or resource_entry["name"] not in [
-            source["name"] for source in full_yml[resource_type.pluralize()]
-        ]:
-            full_yml[resource_type.pluralize()].append(resource_entry)
-            return full_yml
-
-        new_table = resource_entry["tables"][0]
-        sources = {source["name"]: source for source in full_yml["sources"]}
-        sources[resource_entry["name"]]["tables"].append(new_table)
-        full_yml["sources"] = list(sources.values())
-        return full_yml
-
-    def get_latest_yml_defined_version(self, model_yml: Dict[str, Any]):
-        """
-        Returns the latest version defined in the yml file for a given model name
-        the format of `model_yml` should be a single model yml entry
-        if no versions, returns 0
-        """
-        model_yml_versions = model_yml.get("versions", [])
-        try:
-            return max([int(v.get("v")) for v in model_yml_versions]) if model_yml_versions else 0
-        except ValueError:
-            raise ValueError(
-                f"Version not an integer, can't increment version for {model_yml.get('name')}"
-            )
 
     def update_sql_refs(self, model_code: str, model_name: str, project_name: str):
         import re
@@ -455,27 +324,6 @@ class DbtMeshConstructor(DbtMeshFileEditor):
         for all others this will be the .sql or .py file for the resource
         """
         return Path(self.node.original_file_path)
-
-    def add_model_access(self, access_type: AccessType) -> None:
-        """Adds a model contract to the model's yaml"""
-        yml_path = self.get_patch_path()
-        logger.info(f"Adding model contract for {self.node.name} at {yml_path}")
-        # read the yml file
-        # pass empty dict if no file contents returned
-        models_yml = self.file_manager.read_file(yml_path)
-
-        if isinstance(models_yml, str):
-            raise FileEditorException(
-                f"Unexpected string values in dumped model data in {yml_path}."
-            )
-
-        updated_yml = self.add_access_to_model_yml(
-            model_name=self.node.name,
-            access_type=access_type,
-            models_yml=models_yml,
-        )
-        # write the updated yml to the file
-        self.file_manager.write_file(yml_path, updated_yml)
 
     def update_model_refs(self, model_name: str, project_name: str) -> None:
         """Updates the model refs in the model's sql file"""
