@@ -37,7 +37,7 @@ def read_yml(yml_str):
 
 
 class TestAddContractToYML:
-    def test_add_version_to_model_yml_no_yml(self, model, project):
+    def test_add_version_to_model_yml_no_yml(self, model, project):  # noqa: F811
         input = {}
         file_manager = MagicMock()
         file_manager.read_file.return_value = input
@@ -48,7 +48,7 @@ class TestAddContractToYML:
 
         assert yml_dict == read_yml(expected_versioned_model_yml_no_yml)
 
-    def test_add_version_to_model_yml_no_version(self, model, project):
+    def test_add_version_to_model_yml_no_version(self, model, project):  # noqa: F811
         input = read_yml(model_yml_no_col_no_version)
         file_manager = MagicMock()
         file_manager.read_file.return_value = input
@@ -60,7 +60,7 @@ class TestAddContractToYML:
         assert yml_dict == read_yml(expected_versioned_model_yml_no_version)
 
     def test_add_version_to_model_yml_increment_version_no_prerelease(
-        self, model, project, file_manager
+        self, model, project, file_manager  # noqa: F811
     ):
         versioner = ModelVersioner(project=project, file_manager=file_manager)
         changes = list(versioner.generate_version(model))
@@ -71,7 +71,7 @@ class TestAddContractToYML:
         assert yml_dict == read_yml(expected_versioned_model_yml_increment_version_no_prerelease)
 
     def test_add_version_to_model_yml_increment_version_with_prerelease(
-        self, model, project, file_manager
+        self, model, project, file_manager  # noqa: F811
     ):
         versioner = ModelVersioner(project=project, file_manager=file_manager)
         changes = list(versioner.generate_version(model, prerelease=True))
@@ -82,7 +82,7 @@ class TestAddContractToYML:
         assert yml_dict == read_yml(expected_versioned_model_yml_increment_version_with_prerelease)
 
     def test_add_version_to_model_yml_increment_version_defined_in(
-        self, model, project, file_manager
+        self, model, project, file_manager  # noqa: F811
     ):
         versioner = ModelVersioner(project=project, file_manager=file_manager)
         changes = list(versioner.generate_version(model, defined_in="daves_model"))
