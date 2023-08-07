@@ -103,15 +103,17 @@ def connect(
                 f"No dependencies found between {dbt_project_combo[0].name} and {dbt_project_combo[1].name}"
             )
         else:
+            noun = "dependency" if len(dependencies) == 1 else "dependencies"
             logger.info(
-                f"Found {len(dependencies)} dependencies between {dbt_project_combo[0].name} and {dbt_project_combo[1].name}"
+                f"Found {len(dependencies)} {noun} between {dbt_project_combo[0].name} and {dbt_project_combo[1].name}"
             )
             all_dependencies.update(dependencies)
     if len(all_dependencies) == 0:
         logger.info("No dependencies found between any of the projects")
         return
     else:
-        logger.info(f"Found {len(all_dependencies)} unique dependencies between all projects.")
+        noun = "dependency" if len(all_dependencies) == 1 else "dependencies"
+        logger.info(f"Found {len(all_dependencies)} unique {noun} between all projects.")
     for dependency in all_dependencies:
         logger.info(
             f"Resolving dependency between {dependency.upstream_resource} and {dependency.downstream_resource}"
