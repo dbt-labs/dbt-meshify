@@ -93,26 +93,37 @@ def connect(
             project for project in all_dbt_projects if project.name not in exclude_projects
         ]
 
+    project_map = {project.name: project for project in dbt_projects}
     dbt_project_combinations = [combo for combo in combinations(dbt_projects, 2)]
+    all_dependencies = set()
     for dbt_project_combo in dbt_project_combinations:
-        project_map = {project.name: project for project in dbt_project_combo}
         dependencies = linker.dependencies(dbt_project_combo[0], dbt_project_combo[1])
         if len(dependencies) == 0:
             logger.info(
                 f"No dependencies found between {dbt_project_combo[0].name} and {dbt_project_combo[1].name}"
             )
-        for dependency in dependencies:
+        else:
             logger.info(
-                f"Found dependency between {dbt_project_combo[0].name} and {dbt_project_combo[1].name}: {dependency}"
+                f"Found {len(dependencies)} dependencies between {dbt_project_combo[0].name} and {dbt_project_combo[1].name}"
             )
-            try:
-                linker.resolve_dependency(
-                    dependency,
-                    project_map[dependency.upstream_project_name],
-                    project_map[dependency.downstream_project_name],
-                )
-            except Exception as e:
-                raise FatalMeshifyException(f"Error resolving dependency : {dependency} {e}")
+            all_dependencies.update(dependencies)
+    if len(all_dependencies) == 0:
+        logger.info("No dependencies found between any of the projects")
+        return
+    else:
+        logger.info(f"Found {len(all_dependencies)} unique dependencies between all projects.")
+    for dependency in all_dependencies:
+        logger.info(
+            f"Resolving dependency between {dependency.upstream_resource} and {dependency.downstream_resource}"
+        )
+        try:
+            linker.resolve_dependency(
+                dependency,
+                project_map[dependency.upstream_project_name],
+                project_map[dependency.downstream_project_name],
+            )
+        except Exception as e:
+            raise FatalMeshifyException(f"Error resolving dependency : {dependency} {e}")
 
 
 @cli.command(
