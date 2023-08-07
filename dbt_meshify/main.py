@@ -61,9 +61,7 @@ def connect(
     project_paths: tuple, projects_dir: Path, exclude_projects: List[str], read_catalog: bool
 ):
     """
-
     Connects multiple dbt projects together by adding all necessary dbt Mesh constructs
-
     """
     if project_paths and projects_dir:
         raise click.BadOptionUsage(
