@@ -167,7 +167,8 @@ class DbtSubprojectCreator:
 
                         except Exception as e:
                             logger.error(
-                                f"Failed to calculate operation add contract to and publicize boundary node {resource.unique_id}"
+                                f"Failed to calculate operation add contract to and publicize boundary node "
+                                f"{resource.unique_id}"
                             )
                             logger.exception(e)
                     # apply access method too
@@ -209,7 +210,8 @@ class DbtSubprojectCreator:
 
                 except Exception as e:
                     logger.error(
-                        f"Failed to calculate the operation to copy {resource.unique_id} to subproject {subproject.name}"
+                        f"Failed to calculate the operation to copy {resource.unique_id} to subproject "
+                        f"{subproject.name}"
                     )
                     logger.exception(e)
             else:

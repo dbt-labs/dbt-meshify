@@ -1,11 +1,10 @@
 import re
-from typing import Union
 
 from dbt.contracts.graph.nodes import CompiledNode
 from loguru import logger
 
 from dbt_meshify.change import ChangeSet, EntityType, FileChange, Operation
-from dbt_meshify.dbt_projects import DbtProject, DbtSubProject
+from dbt_meshify.dbt_projects import DbtSubProject
 from dbt_meshify.storage.file_manager import DbtFileManager
 
 
