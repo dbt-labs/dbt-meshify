@@ -6,7 +6,7 @@ import yaml
 
 from dbt_meshify.dbt import Dbt
 from dbt_meshify.dbt_projects import DbtProject
-from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
+from dbt_meshify.storage.dbt_project_editors import DbtSubprojectCreator
 from dbt_meshify.storage.file_content_editors import DbtMeshConstructor
 
 test_project_profile = yaml.safe_load(
@@ -106,7 +106,7 @@ class TestDbtSubprojectCreator:
         subproject = split_project()
         meshify_constructor = get_meshify_constructor(subproject, model_unique_id)
         creator = DbtSubprojectCreator(subproject)
-        creator.move_resource_yml_entry(meshify_constructor)
+        creator.update_resource_yml_entry(meshify_constructor)
         # the original path should still exist, since we take only the single model entry
         assert Path("test/models/example/schema.yml").exists()
         assert Path("test/subdir/models/example/schema.yml").exists()
