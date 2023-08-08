@@ -205,7 +205,7 @@ def test_group_owner_properties(name, email, end_group_yml):
 
     group_yml_file.unlink()
     model_yml_file.unlink()
-    print(result.output)
+
     assert result.exit_code == 0
 
     end_group_content = yaml.safe_load(end_group_yml)

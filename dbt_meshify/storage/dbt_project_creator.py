@@ -165,13 +165,9 @@ class DbtSubprojectCreator:
                                 grouper.generate_access(model=resource, access=AccessType.Public)
                             )
 
-                            # TODO: Remove unnecessary logging!
-                            logger.success(
-                                f"Successfully added contract to and publicized boundary node {resource.unique_id}"
-                            )
                         except Exception as e:
                             logger.error(
-                                f"Failed to add contract to and publicize boundary node {resource.unique_id}"
+                                f"Failed to calculate operation add contract to and publicize boundary node {resource.unique_id}"
                             )
                             logger.exception(e)
                     # apply access method too
@@ -183,12 +179,10 @@ class DbtSubprojectCreator:
                             changes = reference_updater.update_child_refs(resource)
                             logger.warning(changes)
                             change_set.extend(changes)
-                            logger.success(
-                                f"Successfully updated ref functions for children of {resource.unique_id}"
-                            )
+
                         except Exception as e:
                             logger.error(
-                                f"Failed to update ref functions for children of {resource.unique_id}"
+                                f"Failed to calculate update to ref functions for children of {resource.unique_id}"
                             )
                             logger.exception(e)
 
@@ -198,12 +192,11 @@ class DbtSubprojectCreator:
                 try:
                     change_set.add(self.move_resource(resource))
                     change_set.extend(self.move_resource_yml_entry(resource))
-                    logger.success(
-                        f"Successfully moved {resource.unique_id} and associated YML to subproject {subproject.name}"
-                    )
+
                 except Exception as e:
                     logger.error(
-                        f"Failed to move {resource.unique_id} and associated YML to subproject {subproject.name}"
+                        f"Failed to calculate move operation for {resource.unique_id} and associated YML to "
+                        f"subproject {subproject.name}"
                     )
                     logger.exception(e)
 
@@ -214,12 +207,9 @@ class DbtSubprojectCreator:
                         change_set.add(self.copy_resource_yml(resource))
                     change_set.add(self.copy_resource(resource))
 
-                    logger.success(
-                        f"Successfully copied {resource.unique_id} to subproject {subproject.name}"
-                    )
                 except Exception as e:
                     logger.error(
-                        f"Failed to copy {resource.unique_id} to subproject {subproject.name}"
+                        f"Failed to calculate the operation to copy {resource.unique_id} to subproject {subproject.name}"
                     )
                     logger.exception(e)
             else:
@@ -229,12 +219,10 @@ class DbtSubprojectCreator:
                 try:
                     change_set.extend(self.move_resource_yml_entry(resource))
 
-                    logger.success(
-                        f"Successfully moved resource {resource.unique_id} to subproject {subproject.name}"
-                    )
                 except Exception as e:
                     logger.error(
-                        f"Failed to move resource {resource.unique_id} to subproject {subproject.name}"
+                        f"Failed to calculate the operation to move resource {resource.unique_id} to subproject "
+                        f"{subproject.name}"
                     )
                     logger.exception(e)
 

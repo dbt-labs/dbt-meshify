@@ -155,7 +155,6 @@ class ResourceGrouper:
         )
 
         for resource, access_type in resources.items():
-            # TODO: revisit this logic other resource types
             if not resource.startswith("model"):
                 continue
 

@@ -49,15 +49,13 @@ def cli(dry_run: bool):
 def handle_change_sets(change_sets=List[ChangeSet], dry_run=False):
     """Handle any resulting ChangeSets."""
 
-    # TODO: REMOVE EXCEPTION HANDLING
     try:
         change_set_processor = ChangeSetProcessor(dry_run=dry_run)
         change_set_processor.process(change_sets)
     except Exception as e:
-        print(e)
-
-        print(traceback.format_exc())
-        raise e
+        raise FatalMeshifyException(
+            f"Error evaluating the calculated change set for this operation. Change Sets: {change_sets}"
+        ) from e
 
 
 @cli.group()

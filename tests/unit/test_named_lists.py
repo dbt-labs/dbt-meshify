@@ -8,7 +8,6 @@ class TestNamedLists:
         data = [{"name": "example"}]
 
         named_list = NamedList(data)
-        print(named_list)
         assert named_list["example"] == {"name": "example"}
 
     def test_create_nested_named_list(self):
@@ -17,7 +16,6 @@ class TestNamedLists:
         data = [{"name": "example", "columns": [{"name": "column_one"}]}]
 
         named_list = NamedList(data)
-        print(named_list)
         assert named_list["example"]["name"] == "example"
         assert named_list["example"]["columns"]["column_one"] == {"name": "column_one"}
 

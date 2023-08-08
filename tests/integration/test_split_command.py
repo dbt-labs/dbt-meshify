@@ -55,11 +55,6 @@ class TestSplitCommand:
             ],
         )
 
-        # TODO: REmove
-        # if result.exit_code != 0:
-        #     print(result.stdout)
-        #     print(result.exception)
-
         assert result.exit_code == 0
         assert (
             Path(dest_project_path) / "my_new_project" / "models" / "staging" / "stg_orders.sql"

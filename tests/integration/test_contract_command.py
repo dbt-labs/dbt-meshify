@@ -101,7 +101,7 @@ def test_add_contract_read_catalog(start_yml, end_yml, read_catalog, caplog):
     if read_catalog:
         args.append("--read-catalog")
     result = runner.invoke(cli, args)
-    print(result.output)
+
     assert result.exit_code == 0
     # reset the read path to the default in the logic
     with open(yml_file, "r") as f:

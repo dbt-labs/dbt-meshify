@@ -121,7 +121,7 @@ class TestDbtSubprojectCreator:
     def test_write_dependencies_yml(self, subproject) -> None:
         creator = DbtSubprojectCreator(subproject)
         change = creator.update_dependencies_yml()
-        print(change)
+
         ChangeSetProcessor().process([ChangeSet([change])])
         # the original path should still exist, since we take only the single model entry
         assert Path("test/subdir/dependencies.yml").exists()

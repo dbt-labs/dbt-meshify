@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 import yaml
 from click.testing import CliRunner
+from loguru import logger
 
 from dbt_meshify.main import cli
 
@@ -122,7 +123,7 @@ def test_add_version_to_yml(start_yml, end_yml, start_files, expected_files, com
         try:
             assert path.is_file()
         except Exception:
-            print(f"File {file} not found")
+            logger.exception(f"File {file} not found")
         path.unlink()
     yml_file.unlink()
     reset_model_files(["shared_model.sql"])

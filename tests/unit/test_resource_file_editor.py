@@ -73,8 +73,6 @@ class TestResourceFileEditor:
         )
         output = ResourceFileEditor.update_resource(properties, change)
 
-        print(output)
-
         assert output["sources"][0]["description"] == "foobar"
         assert output["sources"][0]["tables"][0]["name"] == "new_table"
 
@@ -100,8 +98,6 @@ class TestResourceFileEditor:
             data={"tables": NamedList([{"name": "new_table", "description": "new_description"}])},
         )
         output = ResourceFileEditor.update_resource(properties, change)
-
-        print(output)
 
         assert output["sources"][0]["description"] == "foobar"
         assert output["sources"][0]["tables"][0]["description"] == "new_description"

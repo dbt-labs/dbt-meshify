@@ -199,14 +199,14 @@ class ResourceFileEditor(FileEditor):
     @staticmethod
     def remove_resource(properties: Dict, change: ResourceChange) -> Dict:
         entities = NamedList(properties.get(change.entity_type.pluralize(), []))
-        print(entities)
+
         if change.source_name:
             source_tables = entities[change.source_name].get("tables", {})
             del source_tables[change.identifier]
             entities[change.source_name]["tables"] = source_tables
         else:
             del entities[change.identifier]
-        print(entities)
+
         properties[change.entity_type.pluralize()] = entities.to_list()
 
         if len(properties[change.entity_type.pluralize()]) == 0:
