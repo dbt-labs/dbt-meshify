@@ -70,6 +70,26 @@ models:
         data_type: varchar
 """
 
+expected_contract_yml_sequential = """
+models:
+  - name: shared_model
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: id
+        data_type: integer
+      - name: colleague
+        data_type: varchar
+  - name: new_model
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: id
+        data_type: integer
+"""
+
 expected_contract_yml_one_col_one_test = """
 models:
   - name: shared_model

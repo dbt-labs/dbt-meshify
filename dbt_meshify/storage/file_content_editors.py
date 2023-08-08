@@ -75,7 +75,7 @@ class DbtMeshFileEditor:
 
     @staticmethod
     def add_access_to_model_yml(
-        model_name: str, access_type: AccessType, models_yml: Dict[str, Any]
+        model_name: str, access_type: AccessType, models_yml: Optional[Dict[str, Any]]
     ):
         """Add group and access configuration to a model's YAMl properties."""
         # parse the yml file into a dictionary with model names as keys
@@ -178,7 +178,10 @@ class DbtMeshFileEditor:
         return full_yml
 
     def add_model_contract_to_yml(
-        self, model_name: str, model_catalog: Optional[CatalogTable], models_yml: Dict[str, Any]
+        self,
+        model_name: str,
+        model_catalog: Optional[CatalogTable],
+        models_yml: Optional[Dict[str, Any]],
     ) -> Dict[str, Any]:
         """Adds a model contract to the model's yaml"""
         # set up yml order
@@ -396,7 +399,6 @@ class DbtMeshConstructor(DbtMeshFileEditor):
 
             filename = f"_{self.node.resource_type.pluralize()}.yml"
             yml_path = resource_path.parent / filename
-            self.file_manager.write_file(yml_path, {})
         return yml_path
 
     def get_resource_path(self) -> Path:
