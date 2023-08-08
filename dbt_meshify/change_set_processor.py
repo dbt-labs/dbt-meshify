@@ -19,7 +19,6 @@ class ChangeSetProcessor:
         """Commit a Change to the file system."""
         file_editor = FILE_EDITORS.get(change.entity_type, ResourceFileEditor)(Path("."))
 
-        # TODO: Implement exception handling
         logger.info(
             f"{change.operation.value.capitalize()} {change.entity_type.value} {change.identifier} in {change.path}"
         )

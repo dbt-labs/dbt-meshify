@@ -1,7 +1,6 @@
 import re
 
 from dbt.contracts.graph.nodes import CompiledNode
-from loguru import logger
 
 from dbt_meshify.change import ChangeSet, EntityType, FileChange, Operation
 from dbt_meshify.dbt_projects import DbtSubProject
@@ -25,9 +24,6 @@ class ReferenceUpdater:
 
         # perform replacement
         new_code = re.sub(pattern, replacement, model_code)
-
-        logger.warning("NEW CODE")
-        logger.warning(new_code)
 
         return new_code
 
@@ -71,9 +67,6 @@ class ReferenceUpdater:
             for node in self.project.parent_project.manifest.nodes.values()
             if node.resource_type == "model" and resource.unique_id in node.depends_on.nodes  # type: ignore
         ]
-
-        logger.warning("DOWNSTREAM MODELS")
-        logger.warning(downstream_models)
 
         change_set = ChangeSet()
 
