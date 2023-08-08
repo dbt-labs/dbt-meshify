@@ -177,9 +177,7 @@ class DbtSubprojectCreator:
                             f"Updating ref functions for children of {resource.unique_id}..."
                         )
                         try:
-                            changes = reference_updater.update_child_refs(resource)
-                            logger.warning(changes)
-                            change_set.extend(changes)
+                            change_set.extend(reference_updater.update_child_refs(resource))
 
                         except Exception as e:
                             logger.error(

@@ -33,19 +33,19 @@ from .dbt_projects import DbtProject, DbtProjectHolder
 from .exceptions import FatalMeshifyException
 
 log_format = "<white>{time:HH:mm:ss}</white> | <level>{level}</level> | <level>{message}</level>"
-logger.remove()  # Remove the default sink added by Loguru
-logger.add(sys.stdout, format=log_format)
 
 
 # define cli group
 @click.group()
 @click.option("--dry-run", is_flag=True)
-def cli(dry_run: bool):
-    pass
+@click.option("--debug", is_flag=True)
+def cli(dry_run: bool, debug: bool):
+    logger.remove()  # Remove the default sink added by Loguru
+    logger.add(sys.stdout, format=log_format, level="DEBUG" if debug else "INFO")
 
 
 @cli.result_callback()
-def handle_change_sets(change_sets=List[ChangeSet], dry_run=False):
+def handle_change_sets(change_sets=List[ChangeSet], dry_run=False, **kwargs):
     """Handle any resulting ChangeSets."""
 
     try:
