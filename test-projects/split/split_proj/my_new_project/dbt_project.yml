@@ -1,0 +1,28 @@
+name: my_new_project
+config-version: 2
+model-paths:
+  - models
+macro-paths:
+  - macros
+seed-paths:
+  - seeds
+  - jaffle_data
+test-paths:
+  - tests
+analysis-paths:
+  - analyses
+snapshot-paths:
+  - snapshots
+clean-targets:
+  - target
+  - dbt_packages
+profile: split_proj
+models:
+  my_new_project:
+    +on_schema_change: append_new_columns
+    example:
+      +materialized: view
+seeds:
+  +schema: jaffle_raw
+vars:
+  truncate_timespan_to: '{{ current_timestamp() }}'

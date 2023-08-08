@@ -1,0 +1,25 @@
+models:
+  - name: stg_orders
+    description: Order data with basic cleaning and transformation applied, one row per order.
+    access: public
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: order_id
+        description: The unique key for each order.
+        tests:
+          - not_null
+          - unique
+
+        data_type: varchar
+      - name: location_id
+        data_type: varchar
+      - name: customer_id
+        data_type: varchar
+      - name: order_total
+        data_type: float
+      - name: tax_paid
+        data_type: float
+      - name: ordered_at
+        data_type: timestamp

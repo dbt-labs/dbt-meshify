@@ -284,7 +284,7 @@ class DbtMeshFileEditor:
         models_yml["models"] = list(models.values())
         return models_yml
 
-    def update_sql_refs(self, model_code: str, model_name: str, project_name: str):
+    def update_refs__sql(self, model_code: str, model_name: str, project_name: str):
         import re
 
         # pattern to search for ref() with optional spaces and either single or double quotes
@@ -298,7 +298,32 @@ class DbtMeshFileEditor:
 
         return new_code
 
-    def update_python_refs(self, model_code: str, model_name: str, project_name: str):
+    def replace_source_with_ref__sql(
+        self, model_code: str, source_unique_id: str, model_unique_id: str
+    ):
+        import re
+
+        source_parsed = source_unique_id.split(".")
+        model_parsed = model_unique_id.split(".")
+
+        # pattern to search for source() with optional spaces and either single or double quotes
+        pattern = re.compile(
+            r"{{\s*source\s*\(\s*['\"]"
+            + re.escape(source_parsed[2])
+            + r"['\"]\s*,\s*['\"]"
+            + re.escape(source_parsed[3])
+            + r"['\"]\s*\)\s*}}"
+        )
+
+        # replacement string with the new format
+        replacement = f"{{{{ ref('{model_parsed[1]}', '{model_parsed[2]}') }}}}"
+
+        # perform replacement
+        new_code = re.sub(pattern, replacement, model_code)
+
+        return new_code
+
+    def update_refs__python(self, model_code: str, model_name: str, project_name: str):
         import re
 
         # pattern to search for ref() with optional spaces and either single or double quotes
@@ -306,6 +331,31 @@ class DbtMeshFileEditor:
 
         # replacement string with the new format
         replacement = f"dbt.ref('{project_name}', '{model_name}')"
+
+        # perform replacement
+        new_code = re.sub(pattern, replacement, model_code)
+
+        return new_code
+
+    def replace_source_with_ref__python(
+        self, model_code: str, source_unique_id: str, model_unique_id: str
+    ):
+        import re
+
+        source_parsed = source_unique_id.split(".")
+        model_parsed = model_unique_id.split(".")
+
+        # pattern to search for source() with optional spaces and either single or double quotes
+        pattern = re.compile(
+            r"dbt\.source\s*\(\s*['\"]"
+            + re.escape(source_parsed[2])
+            + r"['\"]\s*,\s*['\"]"
+            + re.escape(source_parsed[3])
+            + r"['\"]\s*\)"
+        )
+
+        # replacement string with the new format
+        replacement = f'dbt.ref("{model_parsed[1]}", "{model_parsed[2]}")'
 
         # perform replacement
         new_code = re.sub(pattern, replacement, model_code)
@@ -363,6 +413,7 @@ class DbtMeshConstructor(DbtMeshFileEditor):
     def add_model_contract(self) -> None:
         """Adds a model contract to the model's yaml"""
         yml_path = self.get_patch_path()
+        logger.info(f"Adding contract to {self.node.name} at {yml_path}")
         # read the yml file
         # pass empty dict if no file contents returned
         models_yml = self.file_manager.read_file(yml_path)
@@ -383,7 +434,7 @@ class DbtMeshConstructor(DbtMeshFileEditor):
     def add_model_access(self, access_type: AccessType) -> None:
         """Adds a model contract to the model's yaml"""
         yml_path = self.get_patch_path()
-        logger.info(f"Adding model contract for {self.node.name} at {yml_path}")
+        logger.info(f"Adding {access_type} access to {self.node.name} at {yml_path}")
         # read the yml file
         # pass empty dict if no file contents returned
         models_yml = self.file_manager.read_file(yml_path)
@@ -479,12 +530,37 @@ class DbtMeshConstructor(DbtMeshFileEditor):
         # read the model file
         model_code = str(self.file_manager.read_file(model_path))
         # This can be defined in the init for this clas.
-        ref_update_methods = {'sql': self.update_sql_refs, 'python': self.update_python_refs}
+        ref_update_methods = {'sql': self.update_refs__sql, 'python': self.update_refs__python}
         # Here, we're trusting the dbt-core code to check the languages for us. 🐉
         updated_code = ref_update_methods[self.node.language](
             model_name=model_name,
             project_name=project_name,
             model_code=model_code,
+        )
+        # write the updated model code to the file
+        self.file_manager.write_file(model_path, updated_code)
+
+    def replace_source_with_refs(self, source_unique_id: str, model_unique_id: str) -> None:
+        """Updates the model refs in the model's sql file"""
+        model_path = self.get_resource_path()
+
+        if model_path is None:
+            raise ModelFileNotFoundError(
+                f"Unable to find path to model {self.node.name}. Aborting."
+            )
+
+        # read the model file
+        model_code = str(self.file_manager.read_file(model_path))
+        # This can be defined in the init for this clas.
+        ref_update_methods = {
+            'sql': self.replace_source_with_ref__sql,
+            'python': self.replace_source_with_ref__python,
+        }
+        # Here, we're trusting the dbt-core code to check the languages for us. 🐉
+        updated_code = ref_update_methods[self.node.language](
+            model_code=model_code,
+            source_unique_id=source_unique_id,
+            model_unique_id=model_unique_id,
         )
         # write the updated model code to the file
         self.file_manager.write_file(model_path, updated_code)
