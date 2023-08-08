@@ -53,3 +53,55 @@ class TestResourceFileEditor:
 
         assert output["models"][0]["columns"][0]["data_type"] == "bogus"
         assert output["models"][0]["columns"][0]["tests"] == ["unique"]
+
+    def test_create_source_nested_resource(self):
+        """ResourceEditor does not overwrite fields nested in lists."""
+        properties = {
+            "sources": [
+                {
+                    "name": "example",
+                    "description": "foobar",
+                }
+            ]
+        }
+        change = ResourceChange(
+            operation=Operation.Add,
+            entity_type=EntityType.Source,
+            identifier="example",
+            path=Path("."),
+            data={"tables": NamedList([{"name": "new_table", "description": "new_description"}])},
+        )
+        output = ResourceFileEditor.update_resource(properties, change)
+
+        print(output)
+
+        assert output["sources"][0]["description"] == "foobar"
+        assert output["sources"][0]["tables"][0]["name"] == "new_table"
+
+    def test_update_source_nested_resource(self):
+        """ResourceEditor does not overwrite fields nested in lists."""
+        properties = {
+            "sources": [
+                {
+                    "name": "example",
+                    "description": "foobar",
+                    "tables": [
+                        {"name": "new_table", "description": "old_description"},
+                        {"name": "other", "description": "bogus"},
+                    ],
+                }
+            ]
+        }
+        change = ResourceChange(
+            operation=Operation.Add,
+            entity_type=EntityType.Source,
+            identifier="example",
+            path=Path("."),
+            data={"tables": NamedList([{"name": "new_table", "description": "new_description"}])},
+        )
+        output = ResourceFileEditor.update_resource(properties, change)
+
+        print(output)
+
+        assert output["sources"][0]["description"] == "foobar"
+        assert output["sources"][0]["tables"][0]["description"] == "new_description"

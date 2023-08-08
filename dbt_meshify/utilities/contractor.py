@@ -28,8 +28,9 @@ class Contractor:
         model_data = {
             "name": model.name,
             "config": {"contract": {"enforced": True}},
-            "columns": NamedList(columns),
         }
+        if columns:
+            model_data["columns"] = NamedList(columns)
 
         patch_path = self.project.resolve_patch_path(model)
 

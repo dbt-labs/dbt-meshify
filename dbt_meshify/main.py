@@ -111,15 +111,23 @@ def split(
     resources based on the selected resources.
     """
     path = Path(project_path).expanduser().resolve()
-    project = DbtProject.from_directory(path, read_catalog)
-
-    subproject = project.split(
-        project_name=project_name, select=select, exclude=exclude, selector=selector
+    project = DbtProject.from_directory(
+        path,
+        read_catalog,
     )
-    logger.info(f"Selected {len(subproject.resources)} resources: {subproject.resources}")
+
     if create_path:
         create_path = Path(create_path).expanduser().resolve()
         create_path.parent.mkdir(parents=True, exist_ok=True)
+
+    subproject = project.split(
+        project_name=project_name,
+        select=select,
+        exclude=exclude,
+        selector=selector,
+        target_directory=create_path,
+    )
+    logger.info(f"Selected {len(subproject.resources)} resources: {subproject.resources}")
 
     subproject_creator = DbtSubprojectCreator(subproject=subproject, target_directory=create_path)
     logger.info(f"Creating subproject {subproject.name}...")

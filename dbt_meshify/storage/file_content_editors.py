@@ -1,3 +1,4 @@
+import pdb
 import shutil
 from collections import OrderedDict
 from pathlib import Path
@@ -25,6 +26,7 @@ class NamedList(dict):
             for key, value in item.items():
                 if (
                     isinstance(value, list)
+                    and len(value) > 0
                     and isinstance(value[0], dict)
                     and self.index_field in value[0]
                 ):
@@ -111,6 +113,9 @@ def resources_yml_to_dict(
 def safe_update(original: Dict[Any, Any], update: Dict[Any, Any]) -> Dict[Any, Any]:
     """Safely update a dictionary without squashing nesting dictionary values."""
 
+    if not isinstance(original, Dict):
+        pdb.set_trace()
+
     for key, value in update.items():
         if isinstance(value, dict) or isinstance(value, NamedList):
             original[key] = safe_update(
@@ -185,17 +190,8 @@ class ResourceFileEditor(FileEditor):
     @staticmethod
     def update_resource(properties: Dict[Any, Any], change: ResourceChange) -> Dict:
         entities = NamedList(properties.get(change.entity_type.pluralize(), []))
-
-        if change.source_name:
-            updated_entities = safe_update(
-                entities.get(change.source_name, {}).get(change.identifier, {}), change.data
-            )
-            entities[change.source_name][change.identifier] = format_resource(
-                change.entity_type, updated_entities
-            )
-        else:
-            updated_entities = safe_update(entities.get(change.identifier, {}), change.data)
-            entities[change.identifier] = format_resource(change.entity_type, updated_entities)
+        updated_entities = safe_update(entities.get(change.identifier, {}), change.data)
+        entities[change.identifier] = format_resource(change.entity_type, updated_entities)
 
         properties[change.entity_type.pluralize()] = entities.to_list()
         return properties

@@ -33,6 +33,7 @@ class ChangeSetProcessor:
 
         for change_set in change_sets:
             for change in change_set:
+                logger.debug(change)
                 if self.__dry_run:
                     logger.info(
                         f"{change.operation.value.capitalize()} {change.entity_type.value} {change.path}"

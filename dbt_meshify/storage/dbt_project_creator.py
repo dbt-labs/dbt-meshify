@@ -49,12 +49,11 @@ class DbtSubprojectCreator:
             if nested_name is None:
                 raise ValueError("Missing source name")
 
-            return (
-                NamedList(raw_yml.get(resource_type.pluralize(), []))
-                .get(nested_name, {})
-                .get("tables", {})
-                .get(name, {})
-            )
+            source = NamedList(raw_yml.get(resource_type.pluralize(), [])).get(nested_name, {})
+            table = source.get("tables", {}).get(name, {})
+            source["tables"] = NamedList([table])
+
+            return source
 
         return NamedList(raw_yml.get(resource_type.pluralize(), [])).get(name, {})
 
@@ -181,7 +180,9 @@ class DbtSubprojectCreator:
                             f"Updating ref functions for children of {resource.unique_id}..."
                         )
                         try:
-                            change_set.add(reference_updater.generate_reference_update(resource))
+                            changes = reference_updater.update_child_refs(resource)
+                            logger.warning(changes)
+                            change_set.extend(changes)
                             logger.success(
                                 f"Successfully updated ref functions for children of {resource.unique_id}"
                             )
@@ -302,7 +303,7 @@ class DbtSubprojectCreator:
         new_yml_path = self.subproject.resolve_patch_path(resource)
 
         source_name = resource.source_name if hasattr(resource, "source_name") else None
-        print(current_yml_path)
+
         resource_entry = self.load_resource_yml(
             current_yml_path, resource.name, resource.resource_type, source_name
         )
@@ -312,7 +313,7 @@ class DbtSubprojectCreator:
                 ResourceChange(
                     operation=Operation.Add,
                     entity_type=EntityType(resource.resource_type.value),
-                    identifier=resource.name,
+                    identifier=resource.name if not source_name else source_name,
                     path=new_yml_path,
                     data=resource_entry,
                 ),
@@ -322,6 +323,7 @@ class DbtSubprojectCreator:
                     identifier=resource.name,
                     path=current_yml_path,
                     data={},
+                    source_name=source_name,
                 ),
             ]
         )

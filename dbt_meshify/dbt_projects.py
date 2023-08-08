@@ -280,6 +280,7 @@ class DbtProject(BaseDbtProject, PathedProject):
         select: str,
         exclude: Optional[str] = None,
         selector: Optional[str] = None,
+        target_directory: Optional[Path] = None,
     ) -> "DbtSubProject":
         """Create a new DbtSubProject using NodeSelection syntax."""
 
@@ -289,7 +290,10 @@ class DbtProject(BaseDbtProject, PathedProject):
 
         # Construct a new project and inject the new manifest
         subproject = DbtSubProject(
-            name=project_name, parent_project=copy.deepcopy(self), resources=subproject_resources
+            name=project_name,
+            parent_project=copy.deepcopy(self),
+            resources=subproject_resources,
+            target_directory=target_directory,
         )
 
         # Record the subproject to create a cross-project dependency edge list
@@ -305,11 +309,17 @@ class DbtSubProject(BaseDbtProject, PathedProject):
     is created on disk.
     """
 
-    def __init__(self, name: str, parent_project: DbtProject, resources: Set[str]):
+    def __init__(
+        self,
+        name: str,
+        parent_project: DbtProject,
+        resources: Set[str],
+        target_directory: Optional[Path] = None,
+    ):
         self.name = name
         self.resources = resources
         self.parent_project = parent_project
-        self.path = parent_project.path / Path(name)
+        self.path = parent_project.path / (target_directory if target_directory else Path(name))
 
         # self.manifest = parent_project.manifest.deepcopy()
         # i am running into a bug with the core deepcopy -- checking with michelle
