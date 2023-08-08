@@ -34,14 +34,24 @@ from .exceptions import FatalMeshifyException
 
 log_format = "<white>{time:HH:mm:ss}</white> | <level>{level}</level> | <level>{message}</level>"
 
+LOG_LEVEL = "INFO"
+
+
+def logger_log_level_filter(record):
+    return record["level"].no >= logger.level(LOG_LEVEL).no
+
+
+logger.remove()  # Remove the default sink added by Loguru
+logger.add(sys.stdout, format=log_format, filter=logger_log_level_filter)
+
 
 # define cli group
 @click.group()
 @click.option("--dry-run", is_flag=True)
 @click.option("--debug", is_flag=True)
 def cli(dry_run: bool, debug: bool):
-    logger.remove()  # Remove the default sink added by Loguru
-    logger.add(sys.stdout, format=log_format, level="DEBUG" if debug else "INFO")
+    if debug:
+        LOG_LEVEL = "DEBUG"  # noqa: F841
 
 
 @cli.result_callback()

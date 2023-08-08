@@ -49,8 +49,8 @@ class ChangeSetProcessor:
 
                 if self.__dry_run:
                     print(
-                        f"{step_number}: {change.operation.value.capitalize()} {change.entity_type.value} `{change.identifier}` "
-                        f"{prepositions[change.operation]} {change.path.relative_to(os.getcwd())}"
+                        f"{step_number}: {change.operation.value.capitalize()} {change.entity_type.value} "
+                        f"`{change.identifier}` {prepositions[change.operation]} {change.path.relative_to(os.getcwd())}"
                     )
                     step_number += 1
                     continue
