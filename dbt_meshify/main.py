@@ -153,6 +153,10 @@ def split(ctx, project_name, select, exclude, project_path, selector, create_pat
         project_name=project_name, select=select, exclude=exclude, selector=selector
     )
     logger.info(f"Selected {len(subproject.resources)} resources: {subproject.resources}")
+    if subproject.is_project_cycle:
+        raise FatalMeshifyException(
+            f"Cannot create subproject {project_name} from {project.name} because it would create a project dependency cycle. Try adding a `+` to your selection syntax to ensure all upstream resources are properly selected"
+        )
     if create_path:
         create_path = Path(create_path).expanduser().resolve()
         create_path.parent.mkdir(parents=True, exist_ok=True)

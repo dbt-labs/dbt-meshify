@@ -83,13 +83,17 @@ class DbtProjectEditor:
         else:
             self.file_manager.delete_file(current_yml_path)
 
-    def update_dependencies_yml(self, name: Union[str, None] = None) -> None:
+    def update_dependencies_yml(
+        self, subproject_is_parent: bool = True, parent_project: Union[str, None] = None
+    ) -> None:
         contents = self.file_manager.read_file(Path("dependencies.yml"))
         if not contents:
             contents = {"projects": []}
 
-        contents["projects"].append({"name": str(Identifier(name)) if name else self.project.name})  # type: ignore
-        self.file_manager.write_file(Path("dependencies.yml"), contents, writeback=True)
+        contents["projects"].append({"name": str(Identifier(parent_project)) if parent_project else self.project.name})  # type: ignore
+        self.file_manager.write_file(
+            Path("dependencies.yml"), contents, writeback=subproject_is_parent
+        )
 
 
 class DbtSubprojectCreator(DbtProjectEditor):
@@ -152,12 +156,7 @@ class DbtSubprojectCreator(DbtProjectEditor):
         raise NotImplementedError("copy_packages_dir not implemented yet")
 
     def update_child_refs(self, resource: ManifestNode) -> None:
-        downstream_models = [
-            node.unique_id
-            for node in self.project.manifest.nodes.values()
-            if node.resource_type == "model" and resource.unique_id in node.depends_on.nodes  # type: ignore
-        ]
-        for model in downstream_models:
+        for model in self.project.xproj_children_of_resources:
             model_node = self.project.get_manifest_node(model)
             if not model_node:
                 raise KeyError(f"Resource {model} not found in manifest")
@@ -166,6 +165,22 @@ class DbtSubprojectCreator(DbtProjectEditor):
             )
             meshify_constructor.update_model_refs(
                 model_name=resource.name, project_name=self.project.name
+            )
+
+    def update_parent_refs(self, resource: ManifestNode) -> None:
+        for model in [
+            parent
+            for parent in resource.depends_on.nodes
+            if parent in self.project.xproj_parents_of_resources
+        ]:
+            model_node = self.project.get_manifest_node(model)
+            if not model_node:
+                raise KeyError(f"Resource {model} not found in manifest")
+            meshify_constructor = DbtMeshConstructor(
+                project_path=self.project.parent_project.path, node=resource, catalog=None  # type: ignore
+            )
+            meshify_constructor.update_model_refs(
+                model_name=model_node.name, project_name=self.project.parent_project.name
             )
 
     def initialize(self) -> None:
@@ -198,7 +213,6 @@ class DbtSubprojectCreator(DbtProjectEditor):
                             f"Failed to add contract to and publicize boundary node {resource.unique_id}"
                         )
                         logger.exception(e)
-                    # apply access method too
                     logger.info(f"Updating ref functions for children of {resource.unique_id}...")
                     try:
                         self.update_child_refs(resource)  # type: ignore
@@ -209,6 +223,20 @@ class DbtSubprojectCreator(DbtProjectEditor):
                         logger.error(
                             f"Failed to update ref functions for children of {resource.unique_id}"
                         )
+                        logger.exception(e)
+                if any(
+                    node
+                    for node in resource.depends_on.nodes
+                    if node in self.project.xproj_parents_of_resources
+                ):
+                    logger.info(f"Updating ref functions in {resource.unique_id} for ...")
+                    try:
+                        self.update_parent_refs(resource)  # type: ignore
+                        logger.success(
+                            f"Successfully updated ref functions in {resource.unique_id}"
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to update ref functions in {resource.unique_id}")
                         logger.exception(e)
 
                 logger.info(
@@ -253,7 +281,36 @@ class DbtSubprojectCreator(DbtProjectEditor):
                     )
                     logger.exception(e)
 
+        # add contracts and access to parents of split models
+        for unique_id in subproject.xproj_parents_of_resources:
+            resource = subproject.get_manifest_node(unique_id)
+            catalog = subproject.get_catalog_entry(unique_id)
+            if not resource:
+                raise KeyError(f"Resource {unique_id} not found in manifest")
+            meshify_constructor = DbtMeshConstructor(
+                project_path=subproject.parent_project.path, node=resource, catalog=catalog  # type: ignore
+            )
+            try:
+                meshify_constructor.add_model_contract()
+                meshify_constructor.add_model_access(access_type=AccessType.Public)
+                logger.success(
+                    f"Successfully added contract to and publicized boundary node {resource.unique_id}"
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to add contract to and publicize boundary node {resource.unique_id}"
+                )
+                logger.exception(e)
+
         self.write_project_file()
         self.copy_packages_yml_file()
-        self.update_dependencies_yml()
+        parent_project = (
+            self.project.parent_project.name
+            if self.project.is_child_of_parent_project
+            else self.project.name
+        )
+        self.update_dependencies_yml(
+            subproject_is_parent=self.project.is_parent_of_parent_project,
+            parent_project=parent_project,
+        )
         # self.copy_packages_dir()
