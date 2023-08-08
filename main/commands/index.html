@@ -353,16 +353,22 @@
 <li><em><a href="#dbt-meshify-split">split</a></em>: </li>
 </ul>
 <h2 id="dbt-meshify-connect">dbt-meshify connect<a class="headerlink" href="#dbt-meshify-connect" title="Permanent link">#</a></h2>
-<div class="admonition info">
-<p class="admonition-title">Info</p>
-<p>This command is not yet implemented</p>
-</div>
 <p>Connects multiple dbt projects together by adding all necessary dbt Mesh constructs</p>
 <p><strong>Usage:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dbt-meshify connect [OPTIONS] [PROJECTS_DIR]
+<div class="language-text highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>dbt-meshify connect [OPTIONS]
 </span></code></pre></div>
 <p><strong>Options:</strong></p>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>  --help  Show this message and exit.
+<div class="language-text highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>  --project-paths TUPLE         The paths to the set of dbt projects to
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>                                connect. Must supply 2+ paths.
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>  --projects-dir PATH           The path to a directory containing multiple
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>                                dbt projects. Directory must contain 2+
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>                                projects.
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>  -e, --exclude-projects TUPLE  The set of dbt projects to exclude from the
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>                                operation when using the --projects-dir
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>                                option.
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>  -r, --read-catalog            Skips the dbt docs generate step and reads the
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>                                local catalog.json file.
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>  --help                        Show this message and exit.
 </span></code></pre></div>
 <h2 id="dbt-meshify-group">dbt-meshify group<a class="headerlink" href="#dbt-meshify-group" title="Permanent link">#</a></h2>
 <p>Creates a new dbt group based on the selection syntax
