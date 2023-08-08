@@ -144,6 +144,10 @@ class DbtSubprojectCreator:
         grouper = ResourceGrouper(project=subproject)
         reference_updater = ReferenceUpdater(project=subproject)
 
+        logger.info(
+            f"Identifying operations required to split {subproject.name} from {subproject.parent_project.name}."
+        )
+
         for unique_id in subproject.resources | subproject.custom_macros | subproject.groups:
             resource = subproject.get_manifest_node(unique_id)
 

@@ -1,13 +1,22 @@
+import os
 from pathlib import Path
 from typing import Iterable
 
 from loguru import logger
 
-from dbt_meshify.change import Change, ChangeSet, EntityType
+from dbt_meshify.change import Change, ChangeSet, EntityType, Operation
 from dbt_meshify.storage.file_content_editors import RawFileEditor, ResourceFileEditor
 
 FILE_EDITORS = {
     EntityType.Code: RawFileEditor,
+}
+
+prepositions = {
+    Operation.Add: "to",
+    Operation.Move: "to",
+    Operation.Copy: "to",
+    Operation.Update: "in",
+    Operation.Remove: "from",
 }
 
 
@@ -30,13 +39,20 @@ class ChangeSetProcessor:
         are orchestrated.
         """
 
+        if self.__dry_run:
+            print("\nProposed steps:\n")
+            step_number = 1
+
         for change_set in change_sets:
             for change in change_set:
                 logger.debug(change)
+
                 if self.__dry_run:
-                    logger.info(
-                        f"{change.operation.value.capitalize()} {change.entity_type.value} {change.path}"
+                    print(
+                        f"{step_number}: {change.operation.value.capitalize()} {change.entity_type.value} `{change.identifier}` "
+                        f"{prepositions[change.operation]} {change.path.relative_to(os.getcwd())}"
                     )
+                    step_number += 1
                     continue
 
                 self.write(change)
