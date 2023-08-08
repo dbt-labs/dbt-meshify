@@ -112,9 +112,9 @@ def connect(
     if len(all_dependencies) == 0:
         logger.info("No dependencies found between any of the projects")
         return
-    else:
-        noun = "dependency" if len(all_dependencies) == 1 else "dependencies"
-        logger.info(f"Found {len(all_dependencies)} unique {noun} between all projects.")
+
+    noun = "dependency" if len(all_dependencies) == 1 else "dependencies"
+    logger.info(f"Found {len(all_dependencies)} unique {noun} between all projects.")
     for dependency in all_dependencies:
         logger.info(
             f"Resolving dependency between {dependency.upstream_resource} and {dependency.downstream_resource}"
