@@ -84,9 +84,8 @@ class DbtProjectEditor:
             self.file_manager.delete_file(current_yml_path)
 
     def update_dependencies_yml(self, name: Union[str, None] = None) -> None:
-        try:
-            contents = self.file_manager.read_file(Path("dependencies.yml"))
-        except FileNotFoundError:
+        contents = self.file_manager.read_file(Path("dependencies.yml"))
+        if not contents:
             contents = {"projects": []}
 
         contents["projects"].append({"name": str(Identifier(name)) if name else self.project.name})  # type: ignore
