@@ -292,12 +292,55 @@ class DbtSubProject(BaseDbtProject):
         self.manifest = copy.deepcopy(parent_project.manifest)
         self.project = copy.deepcopy(parent_project.project)
         self.catalog = parent_project.catalog
-        self.custom_macros = self._get_custom_macros()
-        self.groups = self._get_indirect_groups()
-
-        self._rename_project()
 
         super().__init__(self.manifest, self.project, self.catalog, self.name)
+
+        self.custom_macros = self._get_custom_macros()
+        self.groups = self._get_indirect_groups()
+        self._rename_project()
+        self.xproj_children_of_resources = self._get_xproj_children_of_selected_nodes()
+        self.xproj_parents_of_resources = self._get_xproj_parents_of_selected_nodes()
+        self.is_parent_of_parent_project = self._check_is_parent_of_parent_project()
+        self.is_child_of_parent_project = self._check_is_child_of_parent_project()
+        self.is_project_cycle = (
+            self.is_child_of_parent_project and self.is_parent_of_parent_project
+        )
+
+    def _get_xproj_children_of_selected_nodes(self) -> Set[str]:
+        return {
+            model.unique_id
+            for model in self.models.values()
+            if any(
+                parent
+                for parent in self.get_manifest_node(model.unique_id).depends_on.nodes
+                if parent in self.resources
+            )
+            and model.unique_id not in self.resources
+        }
+
+    def _get_xproj_parents_of_selected_nodes(self) -> Set[str]:
+        return {
+            node
+            for resource in self.resources
+            if self.get_manifest_node(resource).resource_type
+            in [NodeType.Model, NodeType.Snapshot, NodeType.Seed]
+            # ignore tests and other non buildable resources
+            for node in self.get_manifest_node(resource).depends_on.nodes
+            if node not in self.resources
+        }
+
+    def _check_is_parent_of_parent_project(self) -> bool:
+        """
+        checks if the subproject is a child of the parent project
+        """
+        return len(self.xproj_children_of_resources) > 0
+
+    def _check_is_child_of_parent_project(self) -> bool:
+        """
+        checks if the subproject is a child of the parent project
+        """
+
+        return len(self.xproj_parents_of_resources) > 0
 
     def _rename_project(self) -> None:
         """

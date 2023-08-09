@@ -303,7 +303,7 @@ class Linker:
 
         # for both types, add upstream project to downstream project's dependencies.yml
         try:
-            downstream_editor.update_dependencies_yml(name=upstream_project.name)
+            downstream_editor.update_dependencies_yml(parent_project=upstream_project.name)
             logger.success(
                 f"Successfully added {dependency.upstream_project_name} to {dependency.downstream_project_name}'s dependencies.yml"
             )
