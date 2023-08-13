@@ -2,7 +2,6 @@ import copy
 import hashlib
 import json
 import os
-from itertools import chain
 from pathlib import Path
 from typing import Any, Dict, MutableMapping, Optional, Set, Union
 

@@ -273,3 +273,28 @@ class ResourceFileEditor(FileEditor):
         )
         # write the updated model code to the file
         self.file_manager.write_file(model_path, updated_code)
+
+    def replace_source_with_refs(self, source_unique_id: str, model_unique_id: str) -> None:
+        """Updates the model refs in the model's sql file"""
+        model_path = self.get_resource_path()
+
+        if model_path is None:
+            raise ModelFileNotFoundError(
+                f"Unable to find path to model {self.node.name}. Aborting."
+            )
+
+        # read the model file
+        model_code = str(self.file_manager.read_file(model_path))
+        # This can be defined in the init for this clas.
+        ref_update_methods = {
+            "sql": self.replace_source_with_ref__sql,
+            "python": self.replace_source_with_ref__python,
+        }
+        # Here, we're trusting the dbt-core code to check the languages for us. 🐉
+        updated_code = ref_update_methods[self.node.language](
+            model_code=model_code,
+            source_unique_id=source_unique_id,
+            model_unique_id=model_unique_id,
+        )
+        # write the updated model code to the file
+        self.file_manager.write_file(model_path, updated_code)

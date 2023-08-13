@@ -142,7 +142,6 @@ def connect(
             f"Found {len(dependencies)} {noun} between {dbt_project_combo[0].name} and {dbt_project_combo[1].name}"
         )
         all_dependencies.update(dependencies)
-
     if len(all_dependencies) == 0:
         logger.info("No dependencies found between any of the projects")
         return
@@ -192,7 +191,6 @@ def split(
         path,
         read_catalog,
     )
-
     if create_path:
         create_path = Path(create_path).expanduser().resolve()
         create_path.parent.mkdir(parents=True, exist_ok=True)
