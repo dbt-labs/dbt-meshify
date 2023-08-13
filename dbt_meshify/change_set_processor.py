@@ -41,15 +41,15 @@ class ChangeSetProcessor:
 
         changes = list(chain.from_iterable(change_sets))
         for step, change in enumerate(changes):
-            level = "STARTING"
-            if self.__dry_run:
-                level = "INFO"
-            logger.log(level, f"{str(change)}", step=step, steps=len(changes))
-
-            if self.__dry_run:
-                continue
-
             try:
+                level = "STARTING"
+                if self.__dry_run:
+                    level = "INFO"
+                logger.log(level, f"{str(change)}", step=step, steps=len(changes))
+
+                if self.__dry_run:
+                    continue
+
                 self.write(change)
                 logger.success(f"{str(change)}", step=step, steps=len(changes))
             except Exception as e:

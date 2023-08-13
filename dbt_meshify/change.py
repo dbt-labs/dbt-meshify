@@ -70,7 +70,7 @@ class BaseChange:
     def __str__(self):
         return (
             f"{self.operation.value.capitalize()} {self.entity_type.value} "
-            f"`{self.identifier}` {prepositions[self.operation]} {self.path.relative_to(os.getcwd())}"
+            f"`{self.identifier}` {prepositions[self.operation]} {self.path}"
         )
 
 

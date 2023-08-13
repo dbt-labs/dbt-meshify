@@ -44,7 +44,9 @@ class TestConnectCommand:
                 copy_source_consumer_project_path,
             ],
         )
-
+        print(result.stdout)
+        if result.exception:
+            raise result.exception
         assert result.exit_code == 0
 
         # assert that the source is replaced with a ref
