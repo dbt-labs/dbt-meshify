@@ -119,13 +119,16 @@ class RawFileEditor(FileEditor):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    def add(self, change: FileChange):
+    @staticmethod
+    def add(change: FileChange):
         """Add data to a new file."""
 
         if not change.path.parent.exists():
             change.path.parent.mkdir(parents=True, exist_ok=True)
 
-        self.update(change)
+        with open(change.path, "w") as file:
+            if change.data:
+                file.write(change.data)
 
     @staticmethod
     def update(change: FileChange):

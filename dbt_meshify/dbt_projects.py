@@ -36,7 +36,7 @@ class BaseDbtProject:
         project: Project,
         catalog: CatalogArtifact,
         name: Optional[str] = None,
-        resources: set[str] = None,
+        resources: Optional[set[str]] = None,
     ) -> None:
         self.manifest = manifest
         self.project = project
