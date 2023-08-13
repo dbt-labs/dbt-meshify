@@ -39,7 +39,7 @@ def read_yml(yml_str):
 class TestRemoveResourceYml:
     def test_update_sql_ref_function__basic(self):
         reference_updater = ReferenceUpdater(project=MagicMock())
-        updated_sql = reference_updater.update_sql_refs(
+        updated_sql = reference_updater.update_refs__sql(
             model_code=simple_model_sql,
             model_name=upstream_model_name,
             project_name=upstream_project_name,
@@ -48,7 +48,7 @@ class TestRemoveResourceYml:
 
     def test_update_python_ref_function__basic(self):
         reference_updater = ReferenceUpdater(project=MagicMock())
-        updated_python = reference_updater.update_python_refs(
+        updated_python = reference_updater.update_refs__python(
             model_code=simple_model_python,
             model_name=upstream_model_name,
             project_name=upstream_project_name,

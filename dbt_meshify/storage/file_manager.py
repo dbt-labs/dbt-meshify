@@ -5,6 +5,7 @@ from abc import ABC
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
+from dbt.contracts.util import Identifier
 from ruamel.yaml import YAML
 from ruamel.yaml.compat import StringIO
 
@@ -29,13 +30,13 @@ class DbtYAML(YAML):
 
 
 yaml = DbtYAML()
-
+yaml.register_class(Identifier)
 FileContent = Union[Dict[str, str], str]
 
 
 class BaseFileManager(ABC):
     @abc.abstractmethod
-    def read_file(self, path: Path) -> Union[Dict[str, Any], str]:
+    def read_file(self, path: Path) -> Union[Dict[str, Any], str, None]:
         """Returns the content from a file."""
         pass
 
@@ -100,4 +101,5 @@ class DbtFileManager(BaseFileManager):
 
     def delete_file(self, path: Path) -> None:
         """deletes the specified file"""
-        path.unlink()
+        delete_path = self.read_project_path / path
+        delete_path.unlink()

@@ -114,15 +114,17 @@ class ResourceGrouper:
     ) -> ResourceChange:
         """Generate a Change to set the access level for a model."""
 
-        data: Dict[str, str] = {"access": access.value}
+        data: Dict[str, str] = {"name": model.name, "access": access.value}
         if group:
             data["group"] = group.name
 
+        patch_path = self.project.resolve_patch_path(model)
+
         return ResourceChange(
-            operation=Operation.Update,
+            operation=Operation.Update if patch_path.exists() else Operation.Add,
             entity_type=EntityType.Model,
             identifier=model.name,
-            path=self.project.resolve_patch_path(model),
+            path=patch_path,
             data=data,
         )
 

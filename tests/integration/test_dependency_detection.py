@@ -50,8 +50,10 @@ class TestLinkerSourceDependencies:
 
         assert dependencies == {
             ProjectDependency(
-                upstream="model.src_proj_a.shared_model",
-                downstream="source.src_proj_b.src_proj_a.shared_model",
+                upstream_resource="model.src_proj_a.shared_model",
+                upstream_project_name="src_proj_a",
+                downstream_resource="source.src_proj_b.src_proj_a.shared_model",
+                downstream_project_name="src_proj_b",
                 type=ProjectDependencyType.Source,
             )
         }
@@ -64,8 +66,10 @@ class TestLinkerSourceDependencies:
 
         assert dependencies == {
             ProjectDependency(
-                upstream="model.src_proj_a.shared_model",
-                downstream="source.src_proj_b.src_proj_a.shared_model",
+                upstream_resource="model.src_proj_a.shared_model",
+                upstream_project_name="src_proj_a",
+                downstream_resource="source.src_proj_b.src_proj_a.shared_model",
+                downstream_project_name="src_proj_b",
                 type=ProjectDependencyType.Source,
             )
         }
@@ -78,8 +82,10 @@ class TestLinkerSourceDependencies:
 
         assert dependencies == {
             ProjectDependency(
-                upstream="model.src_proj_a.shared_model",
-                downstream="model.src_proj_a.shared_model",
+                upstream_resource="model.src_proj_a.shared_model",
+                upstream_project_name="src_proj_a",
+                downstream_resource="model.dest_proj_a.downstream_model",
+                downstream_project_name="dest_proj_a",
                 type=ProjectDependencyType.Package,
             )
         }

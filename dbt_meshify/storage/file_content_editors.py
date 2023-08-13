@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Union
 from dbt.node_types import NodeType
 
 from dbt_meshify.change import EntityType, FileChange, ResourceChange
-from dbt_meshify.exceptions import FileEditorException
+from dbt_meshify.exceptions import FileEditorException, ModelFileNotFoundError
 from dbt_meshify.storage.file_manager import DbtFileManager
 
 
@@ -250,3 +250,26 @@ class ResourceFileEditor(FileEditor):
         properties = self.__read_file(change.path)
         properties = self.remove_resource(properties, change)
         self.file_manager.write_file(change.path, properties)
+
+    # TODO: Remove these and convert to operations in Operator classes.
+    def update_model_refs(self, model_name: str, project_name: str) -> None:
+        """Updates the model refs in the model's sql file"""
+        model_path = self.get_resource_path()
+
+        if model_path is None:
+            raise ModelFileNotFoundError(
+                f"Unable to find path to model {self.node.name}. Aborting."
+            )
+
+        # read the model file
+        model_code = str(self.file_manager.read_file(model_path))
+        # This can be defined in the init for this clas.
+        ref_update_methods = {"sql": self.update_refs__sql, "python": self.update_refs__python}
+        # Here, we're trusting the dbt-core code to check the languages for us. 🐉
+        updated_code = ref_update_methods[self.node.language](
+            model_name=model_name,
+            project_name=project_name,
+            model_code=model_code,
+        )
+        # write the updated model code to the file
+        self.file_manager.write_file(model_path, updated_code)

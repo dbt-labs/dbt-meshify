@@ -9,7 +9,8 @@ from dbt_meshify.change import ChangeSet
 from dbt_meshify.change_set_processor import ChangeSetProcessor
 from dbt_meshify.dbt import Dbt
 from dbt_meshify.dbt_projects import DbtProject
-from dbt_meshify.storage.dbt_project_creator import DbtSubprojectCreator
+from dbt_meshify.storage.dbt_project_editors import DbtSubprojectCreator
+from dbt_meshify.utilities.dependencies import DependenciesUpdater
 
 test_project_profile = yaml.safe_load(
     """
@@ -119,8 +120,11 @@ class TestDbtSubprojectCreator:
         assert Path("test/subdir/packages.yml").exists()
 
     def test_write_dependencies_yml(self, subproject) -> None:
-        creator = DbtSubprojectCreator(subproject)
-        change = creator.update_dependencies_yml()
+        change = DependenciesUpdater.update_dependencies_yml(
+            upstream_project=subproject.parent_project,
+            downstream_project=subproject,
+            reversed=subproject.is_parent_of_parent_project,
+        )
         ChangeSetProcessor().process([ChangeSet([change])])
         # the original path should still exist, since we take only the single model entry
-        assert Path("test/subdir/dependencies.yml").exists()
+        assert Path("test/dependencies.yml").exists()

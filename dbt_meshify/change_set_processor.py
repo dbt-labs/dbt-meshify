@@ -20,6 +20,13 @@ prepositions = {
 }
 
 
+class ChangeSetProcessorException(BaseException):
+    def __init__(self, change: ChangeSet, exception: BaseException) -> None:
+        self.change = change
+        self.exception = exception
+        super().__init__(f"Error processing change {self.change}")
+
+
 class ChangeSetProcessor:
     def __init__(self, dry_run: bool = False) -> None:
         self.__dry_run = dry_run
@@ -46,6 +53,7 @@ class ChangeSetProcessor:
         for change_set in change_sets:
             for change in change_set:
                 logger.debug(change)
+                logger.info(change)
 
                 if self.__dry_run:
                     print(
@@ -54,5 +62,7 @@ class ChangeSetProcessor:
                     )
                     step_number += 1
                     continue
-
-                self.write(change)
+                try:
+                    self.write(change)
+                except Exception as e:
+                    raise ChangeSetProcessorException(change=change, exception=e)

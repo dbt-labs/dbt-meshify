@@ -16,6 +16,7 @@ from dbt_meshify.dbt_projects import DbtSubProject
 from dbt_meshify.storage.file_content_editors import NamedList, filter_empty_dict_items
 from dbt_meshify.storage.file_manager import DbtFileManager
 from dbt_meshify.utilities.contractor import Contractor
+from dbt_meshify.utilities.dependencies import DependenciesUpdater
 from dbt_meshify.utilities.grouper import ResourceGrouper
 from dbt_meshify.utilities.references import ReferenceUpdater
 
@@ -25,14 +26,18 @@ class DbtSubprojectCreator:
     Takes a `DbtSubProject` and creates the directory structure and files for it.
     """
 
-    def __init__(self, subproject: DbtSubProject, target_directory: Optional[Path] = None):
-        self.subproject = subproject
-        self.target_directory = target_directory if target_directory else subproject.path
+    def __init__(self, project: DbtSubProject, target_directory: Optional[Path] = None):
+        if not isinstance(project, DbtSubProject):
+            raise TypeError(f"DbtSubprojectCreator requires a DbtSubProject, got {type(project)}")
+
+        self.subproject = project
+
+        self.target_directory = target_directory if target_directory else project.path
         self.file_manager = DbtFileManager(
-            read_project_path=subproject.parent_project.path,
+            read_project_path=project.parent_project.path,
             write_project_path=self.target_directory,
         )
-        self.subproject_boundary_models = self._get_subproject_boundary_models()
+        self.project_boundary_models = self._get_subproject_boundary_models()
 
     def load_resource_yml(
         self, path: Path, name: str, resource_type: NodeType, nested_name: Optional[str] = None
@@ -61,8 +66,8 @@ class DbtSubprojectCreator:
         """
         get a set of boundary model unique_ids for all the selected resources
         """
-        nodes = set(filter(lambda x: not x.startswith("source"), self.subproject.resources))
-        parent_project_name = self.subproject.parent_project.name
+        nodes = set(filter(lambda x: not x.startswith("source"), self.subproject.resources))  # type: ignore
+        parent_project_name = self.subproject.parent_project.name  # type: ignore
         interface = ResourceGrouper.identify_interface(
             graph=self.subproject.graph.graph, selected_bunch=nodes
         )
@@ -115,24 +120,6 @@ class DbtSubprojectCreator:
         """
         raise NotImplementedError("copy_packages_dir not implemented yet")
 
-    def update_dependencies_yml(self) -> FileChange:
-        from dbt_meshify.storage.file_manager import yaml
-
-        try:
-            contents = self.file_manager.read_file(Path("dependencies.yml"))
-        except FileNotFoundError:
-            contents = {"projects": []}
-
-        contents["projects"].append({"name": self.subproject.parent_project.name})  # type: ignore
-
-        return FileChange(
-            operation=Operation.Add,
-            entity_type=EntityType.Code,
-            identifier="dependencies.yml",
-            path=self.subproject.path / Path("dependencies.yml"),
-            data=yaml.dump(contents),
-        )
-
     def initialize(self) -> ChangeSet:
         """Initialize this subproject as a full dbt project at the provided `target_directory`."""
 
@@ -149,16 +136,16 @@ class DbtSubprojectCreator:
         )
 
         for unique_id in subproject.resources | subproject.custom_macros | subproject.groups:
+            logger.info(unique_id)
             resource = subproject.get_manifest_node(unique_id)
 
             if not resource:
                 raise KeyError(f"Resource {unique_id} not found in manifest")
-
             if resource.resource_type in ["model", "test", "snapshot", "seed"]:
                 # ignore generic tests, as moving the yml entry will move the test too
                 if resource.resource_type == "test" and len(resource.unique_id.split(".")) == 4:
                     continue
-                if resource.unique_id in self.subproject_boundary_models:
+                if resource.unique_id in self.project_boundary_models:
                     logger.info(
                         f"Adding contract to and publicizing boundary node {resource.unique_id}"
                     )
@@ -203,6 +190,21 @@ class DbtSubprojectCreator:
                     )
                     logger.exception(e)
 
+                if hasattr(resource.depends_on, "nodes") and any(
+                    node
+                    for node in resource.depends_on.nodes
+                    if node in self.subproject.xproj_parents_of_resources
+                ):
+                    logger.info(f"Updating ref functions in {resource.unique_id} for ...")
+                    try:
+                        change_set.extend(reference_updater.update_parent_refs(resource))
+                        logger.success(
+                            f"Successfully updated ref functions in {resource.unique_id}"
+                        )
+                    except Exception as e:
+                        logger.error(f"Failed to update ref functions in {resource.unique_id}")
+                        logger.exception(e)
+
             elif resource.resource_type in ["macro", "group"]:
                 logger.info(f"Copying {resource.unique_id} to subproject {subproject.name}...")
                 try:
@@ -230,9 +232,45 @@ class DbtSubprojectCreator:
                     )
                     logger.exception(e)
 
+        # add contracts and access to parents of split models
+        for unique_id in subproject.xproj_parents_of_resources:
+            resource = subproject.get_manifest_node(unique_id)
+
+            if not resource:
+                raise KeyError(f"Resource {unique_id} not found in manifest")
+
+            if not isinstance(resource, ModelNode):
+                continue
+
+            try:
+                parent_contractor = Contractor(project=subproject.parent_project)
+                parent_resource_grouper = ResourceGrouper(project=subproject.parent_project)
+
+                change_set.add(parent_contractor.generate_contract(resource))
+
+                change_set.add(
+                    parent_resource_grouper.generate_access(
+                        model=resource, access=AccessType.Public
+                    )
+                )
+                logger.success(
+                    f"Successfully added contract to and publicized boundary node {resource.unique_id}"
+                )
+            except Exception as e:
+                logger.error(
+                    f"Failed to add contract to and publicize boundary node {resource.unique_id}"
+                )
+                logger.exception(e)
+
         change_set.add(self.write_project_file())
         change_set.add(self.copy_packages_yml_file())
-        change_set.add(self.update_dependencies_yml())
+        change_set.add(
+            DependenciesUpdater.update_dependencies_yml(
+                upstream_project=self.subproject.parent_project,
+                downstream_project=self.subproject,
+                reversed=self.subproject.is_parent_of_parent_project,
+            )
+        )
 
         return change_set
 
