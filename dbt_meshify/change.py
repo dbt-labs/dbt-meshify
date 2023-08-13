@@ -84,7 +84,7 @@ class ResourceChange(BaseChange):
 
 @dataclasses.dataclass
 class FileChange(BaseChange):
-    """A ResourceChange represents a unit of work that should be performed on a File in a dbt project."""
+    """A FileChange represents a unit of work that should be performed on a File in a dbt project."""
 
     data: Optional[str] = None
     source: Optional[Path] = None
