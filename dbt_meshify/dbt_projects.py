@@ -16,6 +16,7 @@ from dbt.contracts.graph.nodes import (
     ModelNode,
     ParsedNode,
     Resource,
+    SnapshotNode,
     SourceDefinition,
 )
 from dbt.contracts.project import Project
@@ -74,22 +75,17 @@ class BaseDbtProject:
         return {
             model.unique_id
             for model in self.models.values()
-            if any(
-                parent
-                for parent in self.get_manifest_node(model.unique_id).depends_on.nodes
-                if parent in self.resources
-            )
+            if any(parent for parent in model.depends_on.nodes if parent in self.resources)
             and model.unique_id not in self.resources
         }
 
     def _get_xproj_parents_of_selected_nodes(self) -> Set[str]:
+        resources = [self.get_manifest_node(resource) for resource in self.resources]
         return {
             node
-            for resource in self.resources
-            if self.get_manifest_node(resource).resource_type
-            in [NodeType.Model, NodeType.Snapshot]
-            # ignore tests and other non buildable resources
-            for node in self.get_manifest_node(resource).depends_on.nodes
+            for resource in resources
+            if resource is not None and isinstance(resource, (ModelNode, SnapshotNode))
+            for node in resource.depends_on.nodes
             if node not in self.resources
         }
 
