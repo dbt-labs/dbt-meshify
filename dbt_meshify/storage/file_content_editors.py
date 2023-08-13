@@ -1,6 +1,5 @@
 import pdb
 import shutil
-from collections import OrderedDict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -78,27 +77,6 @@ def format_resource(entity_type: EntityType, resource: Dict[str, Any]):
     return {key: resource[key] for key in sort_order if key in resource}
 
 
-def process_model_yml(model_yml: Dict[str, Any]):
-    """Processes the yml contents to be written back to a file"""
-    model_ordered_dict = OrderedDict.fromkeys(
-        [
-            "name",
-            "description",
-            "latest_version",
-            "access",
-            "group",
-            "config",
-            "meta",
-            "tests",
-            "columns",
-            "versions",
-        ]
-    )
-    model_ordered_dict.update(model_yml)
-    # remove any keys with None values
-    return filter_empty_dict_items(model_ordered_dict)
-
-
 def resources_yml_to_dict(
     resources_yml: Optional[Dict], resource_type: Union[NodeType, EntityType] = NodeType.Model
 ):
@@ -141,16 +119,13 @@ class RawFileEditor(FileEditor):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    @staticmethod
-    def add(change: FileChange):
+    def add(self, change: FileChange):
         """Add data to a new file."""
 
         if not change.path.parent.exists():
             change.path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(change.path, "w") as file:
-            if change.data:
-                file.write(change.data)
+        self.update(change)
 
     @staticmethod
     def update(change: FileChange):

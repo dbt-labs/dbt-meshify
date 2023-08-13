@@ -17,6 +17,7 @@ from dbt_meshify.change_set_processor import (
 )
 from dbt_meshify.storage.dbt_project_editors import DbtSubprojectCreator
 from dbt_meshify.utilities.contractor import Contractor
+from dbt_meshify.utilities.linker import Linker
 from dbt_meshify.utilities.versioner import ModelVersioner
 
 from .cli import (
@@ -38,7 +39,6 @@ from .cli import (
 )
 from .dbt_projects import DbtProject
 from .exceptions import FatalMeshifyException
-from .linker import Linker
 
 log_format = "<white>{time:HH:mm:ss}</white> | <level>{level}</level> | <level>{message}</level>"
 

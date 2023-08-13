@@ -113,13 +113,6 @@ class DbtSubprojectCreator:
             source=self.subproject.parent_project.path / Path("packages.yml"),
         )
 
-    def copy_packages_dir(self) -> None:
-        """
-        Writes the dbt_packages directory to the subproject's subdirectory to avoid the need for an immediate
-        `dbt deps` command
-        """
-        raise NotImplementedError("copy_packages_dir not implemented yet")
-
     def initialize(self) -> ChangeSet:
         """Initialize this subproject as a full dbt project at the provided `target_directory`."""
 
@@ -130,6 +123,9 @@ class DbtSubprojectCreator:
         contractor = Contractor(project=subproject)
         grouper = ResourceGrouper(project=subproject)
         reference_updater = ReferenceUpdater(project=subproject)
+
+        parent_contractor = Contractor(project=subproject.parent_project)
+        parent_resource_grouper = ResourceGrouper(project=subproject.parent_project)
 
         logger.info(
             f"Identifying operations required to split {subproject.name} from {subproject.parent_project.name}."
@@ -243,9 +239,6 @@ class DbtSubprojectCreator:
                 continue
 
             try:
-                parent_contractor = Contractor(project=subproject.parent_project)
-                parent_resource_grouper = ResourceGrouper(project=subproject.parent_project)
-
                 change_set.add(parent_contractor.generate_contract(resource))
 
                 change_set.add(
