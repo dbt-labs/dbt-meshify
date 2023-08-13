@@ -135,7 +135,6 @@ class DbtSubprojectCreator:
         )
 
         for unique_id in subproject.resources | subproject.custom_macros | subproject.groups:
-            logger.info(unique_id)
             resource = subproject.get_manifest_node(unique_id)
 
             if not resource:
@@ -145,49 +144,28 @@ class DbtSubprojectCreator:
                 if resource.resource_type == "test" and len(resource.unique_id.split(".")) == 4:
                     continue
                 if resource.unique_id in self.project_boundary_models:
-                    logger.info(
-                        f"Adding contract to and publicizing boundary node {resource.unique_id}"
-                    )
                     if isinstance(resource, ModelNode):
-                        try:
-                            change_set.add(contractor.generate_contract(resource))
-                            change_set.add(
-                                grouper.generate_access(model=resource, access=AccessType.Public)
-                            )
+                        logger.debug(
+                            f"Generate contract to and access for boundary node {resource.unique_id}"
+                        )
+                        change_set.add(contractor.generate_contract(resource))
+                        change_set.add(
+                            grouper.generate_access(model=resource, access=AccessType.Public)
+                        )
 
-                        except Exception as e:
-                            logger.error(
-                                f"Failed to calculate operation add contract to and publicize boundary node "
-                                f"{resource.unique_id}"
-                            )
-                            logger.exception(e)
                     # apply access method too
                     if isinstance(resource, CompiledNode):
-                        logger.info(
+                        logger.debug(
                             f"Updating ref functions for children of {resource.unique_id}..."
                         )
-                        try:
-                            change_set.extend(reference_updater.update_child_refs(resource))
+                        change_set.extend(reference_updater.update_child_refs(resource))
 
-                        except Exception as e:
-                            logger.error(
-                                f"Failed to calculate update to ref functions for children of {resource.unique_id}"
-                            )
-                            logger.exception(e)
-
-                logger.info(
+                logger.debug(
                     f"Moving {resource.unique_id} and associated YML to subproject {subproject.name}..."
                 )
-                try:
-                    change_set.add(self.move_resource(resource))
-                    change_set.extend(self.move_resource_yml_entry(resource))
 
-                except Exception as e:
-                    logger.error(
-                        f"Failed to calculate move operation for {resource.unique_id} and associated YML to "
-                        f"subproject {subproject.name}"
-                    )
-                    logger.exception(e)
+                change_set.add(self.move_resource(resource))
+                change_set.extend(self.move_resource_yml_entry(resource))
 
                 # TODO: Update to support types!
 
@@ -196,42 +174,19 @@ class DbtSubprojectCreator:
                     for node in resource.depends_on.nodes
                     if node in self.subproject.xproj_parents_of_resources
                 ):
-                    logger.info(f"Updating ref functions in {resource.unique_id} for ...")
-                    try:
-                        change_set.extend(reference_updater.update_parent_refs(resource))
-                        logger.success(
-                            f"Successfully updated ref functions in {resource.unique_id}"
-                        )
-                    except Exception as e:
-                        logger.error(f"Failed to update ref functions in {resource.unique_id}")
-                        logger.exception(e)
+                    change_set.extend(reference_updater.update_parent_refs(resource))
 
             elif resource.resource_type in ["macro", "group"]:
-                logger.info(f"Copying {resource.unique_id} to subproject {subproject.name}...")
-                try:
-                    if hasattr(resource, "patch_path") and resource.patch_path:
-                        change_set.add(self.copy_resource_yml(resource))
-                    change_set.add(self.copy_resource(resource))
+                if hasattr(resource, "patch_path") and resource.patch_path:
+                    change_set.add(self.copy_resource_yml(resource))
+                change_set.add(self.copy_resource(resource))
 
-                except Exception as e:
-                    logger.error(
-                        f"Failed to calculate the operation to copy {resource.unique_id} to subproject "
-                        f"{subproject.name}"
-                    )
-                    logger.exception(e)
             else:
-                logger.info(
+                logger.debug(
                     f"Moving resource {resource.unique_id} to subproject {subproject.name}..."
                 )
-                try:
-                    change_set.extend(self.move_resource_yml_entry(resource))
 
-                except Exception as e:
-                    logger.error(
-                        f"Failed to calculate the operation to move resource {resource.unique_id} to subproject "
-                        f"{subproject.name}"
-                    )
-                    logger.exception(e)
+                change_set.extend(self.move_resource_yml_entry(resource))
 
         # add contracts and access to parents of split models
         for unique_id in subproject.xproj_parents_of_resources:
@@ -243,22 +198,11 @@ class DbtSubprojectCreator:
             if not isinstance(resource, ModelNode):
                 continue
 
-            try:
-                change_set.add(parent_contractor.generate_contract(resource))
+            change_set.add(parent_contractor.generate_contract(resource))
 
-                change_set.add(
-                    parent_resource_grouper.generate_access(
-                        model=resource, access=AccessType.Public
-                    )
-                )
-                logger.success(
-                    f"Successfully added contract to and publicized boundary node {resource.unique_id}"
-                )
-            except Exception as e:
-                logger.error(
-                    f"Failed to add contract to and publicize boundary node {resource.unique_id}"
-                )
-                logger.exception(e)
+            change_set.add(
+                parent_resource_grouper.generate_access(model=resource, access=AccessType.Public)
+            )
 
         change_set.add(self.write_project_file())
         change_set.add(self.copy_packages_yml_file())

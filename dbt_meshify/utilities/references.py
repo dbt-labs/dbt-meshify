@@ -173,7 +173,7 @@ class ReferenceUpdater:
         code = resource.raw_code
 
         for model in upstream_models:
-            logger.info(f"Updating reference to {model} in {resource.name}.")
+            logger.debug(f"Updating reference to {model} in {resource.name}.")
             model_node = self.project.get_manifest_node(model)
             if not model_node:
                 raise KeyError(f"Resource {model} not found in manifest")

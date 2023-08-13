@@ -39,14 +39,18 @@ class ChangeSetProcessor:
         if self.__dry_run:
             logger.warning("Dry-run mode active. dbt-meshify will not modify any files.")
 
-        for step, change in enumerate(chain.from_iterable(change_sets)):
-            logger.info(f"{step + 1}: {str(change)}")
+        changes = list(chain.from_iterable(change_sets))
+        for step, change in enumerate(changes):
+            level = "STARTING"
+            if self.__dry_run:
+                level = "INFO"
+            logger.log(level, f"{str(change)}", step=step, steps=len(changes))
 
-            if not self.__dry_run:
+            if self.__dry_run:
                 continue
 
             try:
                 self.write(change)
-                logger.success(f"{step + 1}: {str(change)}")
+                logger.success(f"{str(change)}", step=step, steps=len(changes))
             except Exception as e:
                 raise ChangeSetProcessorException(change=change, exception=e)

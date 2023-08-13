@@ -41,16 +41,26 @@ from .dbt_projects import DbtProject
 from .exceptions import FatalMeshifyException
 
 log_format = "<white>{time:HH:mm:ss}</white> | <level>{level}</level> | <level>{message}</level>"
+operation_format = (
+    "<white>{time:HH:mm:ss}</white> | [{extra[step]: >3}/{extra[steps]}] <level>{level: <8}</level> | "
+    "<level>{message}</level>"
+)
 
+logger.level("STARTING", no=24, color="<yellow>")
 LOG_LEVEL = "INFO"
 
 
 def logger_log_level_filter(record):
-    return record["level"].no >= logger.level(LOG_LEVEL).no
+    return record["level"].no >= logger.level(LOG_LEVEL).no and record["level"].no not in (24, 25)
+
+
+def logger_operation_level_filter(record):
+    return record["level"].no in (24, 25)
 
 
 logger.remove()  # Remove the default sink added by Loguru
 logger.add(sys.stdout, format=log_format, filter=logger_log_level_filter)
+logger.add(sys.stdout, format=operation_format, filter=logger_operation_level_filter)
 
 
 # define cli group

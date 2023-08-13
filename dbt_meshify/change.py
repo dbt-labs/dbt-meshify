@@ -1,4 +1,5 @@
 import dataclasses
+import os
 from enum import Enum
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Protocol
@@ -58,12 +59,6 @@ class Change(Protocol):
     identifier: str
     path: Path
 
-    def __str__(self):
-        return (
-            f"{self.operation.value} {self.entity_type.value} "
-            f"`{self.identifier}` {prepositions[self.operation]} {self.path}"
-        )
-
 
 @dataclasses.dataclass
 class BaseChange:
@@ -71,6 +66,12 @@ class BaseChange:
     entity_type: EntityType
     identifier: str
     path: Path
+
+    def __str__(self):
+        return (
+            f"{self.operation.value.capitalize()} {self.entity_type.value} "
+            f"`{self.identifier}` {prepositions[self.operation]} {self.path.relative_to(os.getcwd())}"
+        )
 
 
 @dataclasses.dataclass
