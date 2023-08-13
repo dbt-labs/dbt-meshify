@@ -6,16 +6,15 @@ from loguru import logger
 
 from dbt_meshify.change import ChangeSet, EntityType, FileChange, Operation
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject, PathedProject
-from dbt_meshify.storage.file_manager import DbtFileManager
 
 
 class ReferenceUpdater:
     def __init__(self, project: Union[DbtSubProject, DbtProject]):
         self.project = project
-        self.file_manager = DbtFileManager(read_project_path=project.path)
+
         self.ref_update_methods = {
             "sql": self.update_refs__sql,
-            "python": self.replace_source_with_ref__python,
+            "python": self.update_refs__python,
         }
         self.source_update_methods = {
             "sql": self.replace_source_with_ref__sql,
@@ -127,6 +126,11 @@ class ReferenceUpdater:
     def update_child_refs(self, resource: CompiledNode) -> ChangeSet:
         """Generate a set of FileChanges to update child references"""
 
+        if not isinstance(self.project, DbtSubProject):
+            raise Exception(
+                "The `update_parent_refs` method requires the calling project to have a parent project to update."
+            )
+
         change_set = ChangeSet()
 
         for model in self.project.xproj_children_of_resources:
@@ -152,6 +156,12 @@ class ReferenceUpdater:
 
     def update_parent_refs(self, resource: CompiledNode) -> ChangeSet:
         """Generate a ChangeSet of FileChanges to update parent references"""
+
+        if not isinstance(self.project, DbtSubProject):
+            raise Exception(
+                "The `update_parent_refs` method requires the calling project to have a parent project to update."
+            )
+
         upstream_models = [
             parent
             for parent in resource.depends_on.nodes
@@ -179,6 +189,9 @@ class ReferenceUpdater:
                 code=code,
                 downstream_project=self.project,
             )
+
+            if change.data is None:
+                raise Exception(f"Change has null data despite being provided code. {change}")
 
             code = change.data
 
