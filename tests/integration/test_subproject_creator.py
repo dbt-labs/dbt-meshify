@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
@@ -53,7 +54,7 @@ def split_project(select: str = "my_first_dbt_model"):
 
 
 def teardown_new_project():
-    os.system("rm -rf test-projects/test")
+    shutil.rmtree("test-projects/test")
 
 
 @pytest.fixture

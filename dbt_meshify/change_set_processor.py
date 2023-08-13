@@ -28,6 +28,10 @@ class ChangeSetProcessorException(BaseException):
 
 
 class ChangeSetProcessor:
+    """
+    A ChangeSetProcessor iterates through ChangeSets and executes each Change
+    """
+
     def __init__(self, dry_run: bool = False) -> None:
         self.__dry_run = dry_run
 
