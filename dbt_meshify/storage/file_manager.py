@@ -3,7 +3,7 @@
 
 import shutil
 from pathlib import Path
-from typing import Any, Dict, Protocol, Union
+from typing import Any, Dict, Protocol
 
 from dbt.contracts.util import Identifier
 from ruamel.yaml import YAML
@@ -31,7 +31,6 @@ class DbtYAML(YAML):
 
 yaml = DbtYAML()
 yaml.register_class(Identifier)
-FileContent = Union[Dict[str, str], str]
 
 
 class FileManager(Protocol):
@@ -75,7 +74,6 @@ class RawFileManager:
         """
         move a file from the read project to the write project
         """
-
         if not target_path.parent.exists():
             target_path.parent.mkdir(parents=True, exist_ok=True)
 

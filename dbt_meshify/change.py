@@ -14,6 +14,15 @@ class Operation(str, Enum):
     Move = "move"
 
 
+prepositions = {
+    Operation.Add: "to",
+    Operation.Move: "to",
+    Operation.Copy: "to",
+    Operation.Update: "in",
+    Operation.Remove: "from",
+}
+
+
 class EntityType(str, Enum):
     """An EntityType represents the type of entity being operated on in a Change"""
 
@@ -48,6 +57,12 @@ class Change(Protocol):
     entity_type: EntityType
     identifier: str
     path: Path
+
+    def __str__(self):
+        return (
+            f"{self.operation.value} {self.entity_type.value} "
+            f"`{self.identifier}` {prepositions[self.operation]} {self.path}"
+        )
 
 
 @dataclasses.dataclass

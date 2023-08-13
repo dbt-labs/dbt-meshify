@@ -1,6 +1,4 @@
-from typing import Any, Dict, List, Optional, Union
-
-from dbt.node_types import NodeType
+from typing import Any, Dict, List, Optional
 
 from dbt_meshify.change import EntityType, FileChange, ResourceChange
 from dbt_meshify.exceptions import FileEditorException
@@ -72,17 +70,6 @@ def format_resource(entity_type: EntityType, resource: Dict[str, Any]):
         return resource
 
     return {key: resource[key] for key in sort_order if key in resource}
-
-
-def resources_yml_to_dict(
-    resources_yml: Optional[Dict], resource_type: Union[NodeType, EntityType] = NodeType.Model
-):
-    """Converts a yml dict to a named dictionary for easier operation"""
-    return (
-        {resource["name"]: resource for resource in resources_yml[resource_type.pluralize()]}
-        if resources_yml
-        else {}
-    )
 
 
 def safe_update(original: Dict[Any, Any], update: Dict[Any, Any]) -> Dict[Any, Any]:

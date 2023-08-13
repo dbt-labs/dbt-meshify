@@ -1,18 +1,10 @@
-import os
+from itertools import chain
 from typing import Iterable
 
 from loguru import logger
 
-from dbt_meshify.change import Change, ChangeSet, EntityType, Operation
+from dbt_meshify.change import Change, ChangeSet, EntityType
 from dbt_meshify.storage.file_content_editors import RawFileEditor, ResourceFileEditor
-
-prepositions = {
-    Operation.Add: "to",
-    Operation.Move: "to",
-    Operation.Copy: "to",
-    Operation.Update: "in",
-    Operation.Remove: "from",
-}
 
 
 class ChangeSetProcessorException(BaseException):
@@ -36,9 +28,6 @@ class ChangeSetProcessor:
             RawFileEditor() if change.entity_type == EntityType.Code else ResourceFileEditor()
         )
 
-        logger.info(
-            f"{change.operation.value.capitalize()} {change.entity_type.value} {change.identifier} in {change.path}"
-        )
         file_editor.__getattribute__(change.operation)(change)
 
     def process(self, change_sets: Iterable[ChangeSet]) -> None:
@@ -46,23 +35,18 @@ class ChangeSetProcessor:
         Process an iterable of ChangeSets. This is the mechanism by which file modifications
         are orchestrated.
         """
-        step_number = 1
+
         if self.__dry_run:
-            print("\nProposed steps:\n")
+            logger.warning("Dry-run mode active. dbt-meshify will not modify any files.")
 
-        for change_set in change_sets:
-            for change in change_set:
-                logger.debug(change)
-                logger.info(change)
+        for step, change in enumerate(chain.from_iterable(change_sets)):
+            logger.info(f"{step + 1}: {str(change)}")
 
-                if self.__dry_run:
-                    print(
-                        f"{step_number}: {change.operation.value.capitalize()} {change.entity_type.value} "
-                        f"`{change.identifier}` {prepositions[change.operation]} {change.path.relative_to(os.getcwd())}"
-                    )
-                    step_number += 1
-                    continue
-                try:
-                    self.write(change)
-                except Exception as e:
-                    raise ChangeSetProcessorException(change=change, exception=e)
+            if not self.__dry_run:
+                continue
+
+            try:
+                self.write(change)
+                logger.success(f"{step + 1}: {str(change)}")
+            except Exception as e:
+                raise ChangeSetProcessorException(change=change, exception=e)
