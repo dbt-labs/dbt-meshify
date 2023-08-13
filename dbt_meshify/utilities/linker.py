@@ -4,11 +4,9 @@ from typing import Set, Union
 
 from dbt.contracts.graph.nodes import CompiledNode, ModelNode, SourceDefinition
 from dbt.node_types import AccessType
-from loguru import logger
 
 from dbt_meshify.change import ChangeSet, EntityType, Operation, ResourceChange
 from dbt_meshify.dbt_projects import BaseDbtProject, DbtProject, PathedProject
-from dbt_meshify.exceptions import FatalMeshifyException, FileEditorException
 from dbt_meshify.utilities.contractor import Contractor
 from dbt_meshify.utilities.dependencies import DependenciesUpdater
 from dbt_meshify.utilities.grouper import ResourceGrouper
@@ -328,10 +326,10 @@ class Linker:
 
             # for both types, add upstream project to downstream project's dependencies.yml
 
-            change_set.add(
-                DependenciesUpdater.update_dependencies_yml(
-                    upstream_project=upstream_project, downstream_project=downstream_project
-                )
+        change_set.add(
+            DependenciesUpdater.update_dependencies_yml(
+                upstream_project=upstream_project, downstream_project=downstream_project
             )
+        )
 
         return change_set

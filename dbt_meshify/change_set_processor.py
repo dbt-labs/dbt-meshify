@@ -1,15 +1,10 @@
 import os
-from pathlib import Path
 from typing import Iterable
 
 from loguru import logger
 
 from dbt_meshify.change import Change, ChangeSet, EntityType, Operation
 from dbt_meshify.storage.file_content_editors import RawFileEditor, ResourceFileEditor
-
-FILE_EDITORS = {
-    EntityType.Code: RawFileEditor,
-}
 
 prepositions = {
     Operation.Add: "to",
@@ -37,7 +32,9 @@ class ChangeSetProcessor:
 
     def write(self, change: Change) -> None:
         """Commit a Change to the file system."""
-        file_editor = FILE_EDITORS.get(change.entity_type, ResourceFileEditor)(Path("."))
+        file_editor = (
+            RawFileEditor() if change.entity_type == EntityType.Code else ResourceFileEditor()
+        )
 
         logger.info(
             f"{change.operation.value.capitalize()} {change.entity_type.value} {change.identifier} in {change.path}"

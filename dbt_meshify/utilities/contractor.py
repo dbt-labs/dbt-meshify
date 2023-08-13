@@ -5,13 +5,11 @@ from dbt.contracts.graph.nodes import ModelNode
 from dbt_meshify.change import EntityType, Operation, ResourceChange
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject
 from dbt_meshify.storage.file_content_editors import NamedList
-from dbt_meshify.storage.file_manager import DbtFileManager
 
 
 class Contractor:
     def __init__(self, project: Union[DbtProject, DbtSubProject]):
         self.project = project
-        self.file_manager = DbtFileManager(read_project_path=project.path)
 
     def generate_contract(self, model: ModelNode) -> ResourceChange:
         """Generate a ChangeSet that adds a contract to a Model."""

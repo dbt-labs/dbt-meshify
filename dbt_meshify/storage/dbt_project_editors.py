@@ -1,7 +1,14 @@
 from pathlib import Path
 from typing import Dict, Optional, Set
 
-from dbt.contracts.graph.nodes import CompiledNode, ModelNode, NodeType, Resource
+from dbt.contracts.graph.nodes import (
+    CompiledNode,
+    GenericTestNode,
+    ModelNode,
+    NodeType,
+    Resource,
+    SnapshotNode,
+)
 from dbt.node_types import AccessType
 from loguru import logger
 
@@ -14,7 +21,7 @@ from dbt_meshify.change import (
 )
 from dbt_meshify.dbt_projects import DbtSubProject
 from dbt_meshify.storage.file_content_editors import NamedList, filter_empty_dict_items
-from dbt_meshify.storage.file_manager import DbtFileManager
+from dbt_meshify.storage.file_manager import YAMLFileManager, yaml
 from dbt_meshify.utilities.contractor import Contractor
 from dbt_meshify.utilities.dependencies import DependenciesUpdater
 from dbt_meshify.utilities.grouper import ResourceGrouper
@@ -26,24 +33,22 @@ class DbtSubprojectCreator:
     Takes a `DbtSubProject` and creates the directory structure and files for it.
     """
 
-    def __init__(self, project: DbtSubProject, target_directory: Optional[Path] = None):
+    def __init__(
+        self,
+        project: DbtSubProject,
+    ):
         if not isinstance(project, DbtSubProject):
             raise TypeError(f"DbtSubprojectCreator requires a DbtSubProject, got {type(project)}")
 
         self.subproject = project
 
-        self.target_directory = target_directory if target_directory else project.path
-        self.file_manager = DbtFileManager(
-            read_project_path=project.parent_project.path,
-            write_project_path=self.target_directory,
-        )
         self.project_boundary_models = self._get_subproject_boundary_models()
 
     def load_resource_yml(
         self, path: Path, name: str, resource_type: NodeType, nested_name: Optional[str] = None
     ) -> Dict:
         """Load the Model patch YAML for a given ModelNode."""
-        raw_yml = self.file_manager.read_file(path)
+        raw_yml = YAMLFileManager.read_file(path)
 
         if not isinstance(raw_yml, dict):
             raise Exception(
@@ -80,8 +85,6 @@ class DbtSubprojectCreator:
         return boundary_models
 
     def write_project_file(self) -> FileChange:
-        from dbt_meshify.storage.file_manager import yaml
-
         """
         Writes the dbt_project.yml file for the subproject in the specified subdirectory
         """
@@ -186,7 +189,9 @@ class DbtSubprojectCreator:
                     )
                     logger.exception(e)
 
-                if hasattr(resource.depends_on, "nodes") and any(
+                # TODO: Update to support types!
+
+                if isinstance(resource, (ModelNode, GenericTestNode, SnapshotNode)) and any(
                     node
                     for node in resource.depends_on.nodes
                     if node in self.subproject.xproj_parents_of_resources

@@ -12,7 +12,7 @@ from dbt_meshify.change import (
 )
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject
 from dbt_meshify.storage.file_content_editors import NamedList
-from dbt_meshify.storage.file_manager import DbtFileManager
+from dbt_meshify.storage.file_manager import FileManager, YAMLFileManager
 
 
 class ModelVersioner:
@@ -21,12 +21,10 @@ class ModelVersioner:
     def __init__(
         self,
         project: Union[DbtProject, DbtSubProject],
-        file_manager: Optional[DbtFileManager] = None,
+        file_manager: Optional[FileManager] = None,
     ) -> None:
         self.project = project
-        self.file_manager = (
-            DbtFileManager(read_project_path=project.path) if not file_manager else file_manager
-        )
+        self.file_manager = YAMLFileManager() if not file_manager else file_manager
 
     def load_model_yml(self, path: Path, name: str) -> Dict:
         """Load the Model patch YAML for a given ModelNode."""

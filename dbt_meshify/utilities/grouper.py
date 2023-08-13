@@ -10,7 +10,6 @@ from loguru import logger
 
 from dbt_meshify.change import ChangeSet, EntityType, Operation, ResourceChange
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject
-from dbt_meshify.storage.file_manager import DbtFileManager
 
 
 class ResourceGroupingException(BaseException):
@@ -26,7 +25,6 @@ class ResourceGrouper:
 
     def __init__(self, project: Union[DbtProject, DbtSubProject]):
         self.project = project
-        self.file_manager = DbtFileManager(read_project_path=project.path)
 
     @classmethod
     def identify_interface(cls, graph: networkx.Graph, selected_bunch: Set[str]) -> Set[str]:

@@ -211,7 +211,7 @@ def split(
             "properly selected"
         )
 
-    subproject_creator = DbtSubprojectCreator(project=subproject, target_directory=create_path)
+    subproject_creator = DbtSubprojectCreator(project=subproject)
     logger.info(f"Creating subproject {subproject.name}...")
     try:
         change_set = subproject_creator.initialize()
