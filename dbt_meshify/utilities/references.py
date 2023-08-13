@@ -1,15 +1,16 @@
 import re
+from typing import Union
 
 from dbt.contracts.graph.nodes import CompiledNode
 from loguru import logger
 
 from dbt_meshify.change import ChangeSet, EntityType, FileChange, Operation
-from dbt_meshify.dbt_projects import DbtSubProject, PathedProject
+from dbt_meshify.dbt_projects import DbtProject, DbtSubProject, PathedProject
 from dbt_meshify.storage.file_manager import DbtFileManager
 
 
 class ReferenceUpdater:
-    def __init__(self, project: DbtSubProject):
+    def __init__(self, project: Union[DbtSubProject, DbtProject]):
         self.project = project
         self.file_manager = DbtFileManager(read_project_path=project.path)
         self.ref_update_methods = {
@@ -21,7 +22,8 @@ class ReferenceUpdater:
             "python": self.replace_source_with_ref__python,
         }
 
-    def update_refs__sql(self, model_name, project_name, model_code):
+    @staticmethod
+    def update_refs__sql(model_name, project_name, model_code):
         """Update refs in a SQL file."""
 
         # pattern to search for ref() with optional spaces and either single or double quotes
@@ -35,9 +37,8 @@ class ReferenceUpdater:
 
         return new_code
 
-    def replace_source_with_ref__sql(
-        self, model_code: str, source_unique_id: str, model_unique_id: str
-    ):
+    @staticmethod
+    def replace_source_with_ref__sql(model_code: str, source_unique_id: str, model_unique_id: str):
         source_parsed = source_unique_id.split(".")
         model_parsed = model_unique_id.split(".")
 
@@ -58,7 +59,8 @@ class ReferenceUpdater:
 
         return new_code
 
-    def update_refs__python(self, model_name, project_name, model_code):
+    @staticmethod
+    def update_refs__python(model_name, project_name, model_code):
         """Update refs in a python file."""
 
         # pattern to search for ref() with optional spaces and either single or double quotes
@@ -72,8 +74,9 @@ class ReferenceUpdater:
 
         return new_code
 
+    @staticmethod
     def replace_source_with_ref__python(
-        self, model_code: str, source_unique_id: str, model_unique_id: str
+        model_code: str, source_unique_id: str, model_unique_id: str
     ):
         import re
 
@@ -103,7 +106,7 @@ class ReferenceUpdater:
         upstream_node: CompiledNode,
         downstream_node: CompiledNode,
         downstream_project: PathedProject,
-        code=str,
+        code: str,
     ) -> FileChange:
         """Generate FileChanges that update the references in the downstream_node's code."""
 

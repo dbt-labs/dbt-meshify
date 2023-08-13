@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional, Union
 from dbt.node_types import NodeType
 
 from dbt_meshify.change import EntityType, FileChange, ResourceChange
-from dbt_meshify.exceptions import FileEditorException, ModelFileNotFoundError
+from dbt_meshify.exceptions import FileEditorException
 from dbt_meshify.storage.file_manager import DbtFileManager
 
 
@@ -141,7 +141,8 @@ class RawFileEditor(FileEditor):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
 
-    def add(self, change: FileChange):
+    @staticmethod
+    def add(change: FileChange):
         """Add data to a new file."""
 
         if not change.path.parent.exists():
@@ -151,7 +152,8 @@ class RawFileEditor(FileEditor):
             if change.data:
                 file.write(change.data)
 
-    def update(self, change: FileChange):
+    @staticmethod
+    def update(change: FileChange):
         """Update data to a new file."""
 
         if not change.path.exists():
@@ -161,7 +163,8 @@ class RawFileEditor(FileEditor):
             if change.data:
                 file.write(change.data)
 
-    def copy(self, change: FileChange):
+    @staticmethod
+    def copy(change: FileChange):
         """Copy a file from one location to another."""
         if change.source is None:
             raise FileEditorException("None source value provided in Copy operation.")
@@ -171,7 +174,8 @@ class RawFileEditor(FileEditor):
 
         shutil.copy(change.source, change.path)
 
-    def move(self, change: FileChange):
+    @staticmethod
+    def move(change: FileChange):
         """Move a file from one location to another."""
         if change.source is None:
             raise FileEditorException("None source value provided in Copy operation.")
@@ -250,51 +254,3 @@ class ResourceFileEditor(FileEditor):
         properties = self.__read_file(change.path)
         properties = self.remove_resource(properties, change)
         self.file_manager.write_file(change.path, properties)
-
-    # TODO: Remove these and convert to operations in Operator classes.
-    def update_model_refs(self, model_name: str, project_name: str) -> None:
-        """Updates the model refs in the model's sql file"""
-        model_path = self.get_resource_path()
-
-        if model_path is None:
-            raise ModelFileNotFoundError(
-                f"Unable to find path to model {self.node.name}. Aborting."
-            )
-
-        # read the model file
-        model_code = str(self.file_manager.read_file(model_path))
-        # This can be defined in the init for this clas.
-        ref_update_methods = {"sql": self.update_refs__sql, "python": self.update_refs__python}
-        # Here, we're trusting the dbt-core code to check the languages for us. 🐉
-        updated_code = ref_update_methods[self.node.language](
-            model_name=model_name,
-            project_name=project_name,
-            model_code=model_code,
-        )
-        # write the updated model code to the file
-        self.file_manager.write_file(model_path, updated_code)
-
-    def replace_source_with_refs(self, source_unique_id: str, model_unique_id: str) -> None:
-        """Updates the model refs in the model's sql file"""
-        model_path = self.get_resource_path()
-
-        if model_path is None:
-            raise ModelFileNotFoundError(
-                f"Unable to find path to model {self.node.name}. Aborting."
-            )
-
-        # read the model file
-        model_code = str(self.file_manager.read_file(model_path))
-        # This can be defined in the init for this clas.
-        ref_update_methods = {
-            "sql": self.replace_source_with_ref__sql,
-            "python": self.replace_source_with_ref__python,
-        }
-        # Here, we're trusting the dbt-core code to check the languages for us. 🐉
-        updated_code = ref_update_methods[self.node.language](
-            model_code=model_code,
-            source_unique_id=source_unique_id,
-            model_unique_id=model_unique_id,
-        )
-        # write the updated model code to the file
-        self.file_manager.write_file(model_path, updated_code)

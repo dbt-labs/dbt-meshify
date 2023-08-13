@@ -134,7 +134,6 @@ class ResourceGrouper:
         owner: Owner,
         path: Path,
         select: str,
-        project_path: Path,
         exclude: Optional[str] = None,
         selector: Optional[str] = None,
     ) -> ChangeSet:

@@ -304,10 +304,11 @@ def add_version(
     models = filter(lambda x: x.startswith("model"), resources)
     logger.info(f"Selected {len(resources)} resources: {resources}")
     logger.info("Adding version to models in selected resources...")
-    try:
-        versioner = ModelVersioner(project=project)
-        change_set = ChangeSet()
-        for model_unique_id in models:
+
+    versioner = ModelVersioner(project=project)
+    change_set = ChangeSet()
+    for model_unique_id in models:
+        try:
             model_node = project.get_manifest_node(model_unique_id)
 
             if not isinstance(model_node, ModelNode):
@@ -320,10 +321,11 @@ def add_version(
                 model=model_node, prerelease=prerelease, defined_in=defined_in
             )
             change_set.extend(changes)
-        return [change_set]
 
-    except Exception as e:
-        raise FatalMeshifyException(f"Error adding version to model: {model_unique_id}") from e
+        except Exception as e:
+            raise FatalMeshifyException(f"Error adding version to model: {model_unique_id}") from e
+
+    return [change_set]
 
 
 @operation.command(
@@ -386,7 +388,6 @@ def create_group(
             exclude=exclude,
             selector=selector,
             path=group_yml_path,
-            project_path=path,
         )
         return [changes]
 

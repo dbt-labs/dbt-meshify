@@ -8,7 +8,6 @@ from typing import Any, Dict, Optional, Union
 from dbt.contracts.util import Identifier
 from ruamel.yaml import YAML
 from ruamel.yaml.compat import StringIO
-from ruamel.yaml.representer import Representer
 
 
 class DbtYAML(YAML):

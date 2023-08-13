@@ -21,7 +21,7 @@ prepositions = {
 
 
 class ChangeSetProcessorException(BaseException):
-    def __init__(self, change: ChangeSet, exception: BaseException) -> None:
+    def __init__(self, change: Change, exception: BaseException) -> None:
         self.change = change
         self.exception = exception
         super().__init__(f"Error processing change {self.change}")
@@ -45,10 +45,9 @@ class ChangeSetProcessor:
         Process an iterable of ChangeSets. This is the mechanism by which file modifications
         are orchestrated.
         """
-
+        step_number = 1
         if self.__dry_run:
             print("\nProposed steps:\n")
-            step_number = 1
 
         for change_set in change_sets:
             for change in change_set:
