@@ -94,7 +94,6 @@ def operation():
     pass
 
 
-# TODO: Update this command to use ChangeSets
 @cli.command(name="connect")
 @project_paths
 @projects_dir

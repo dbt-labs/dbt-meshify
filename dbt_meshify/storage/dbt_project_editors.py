@@ -167,7 +167,6 @@ class DbtSubprojectCreator:
                 change_set.add(self.move_resource(resource))
                 change_set.extend(self.move_resource_yml_entry(resource))
 
-                # TODO: Update to support types!
 
                 if isinstance(resource, (ModelNode, GenericTestNode, SnapshotNode)) and any(
                     node

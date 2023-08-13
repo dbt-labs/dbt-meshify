@@ -21,7 +21,6 @@ from ..sql_and_yml_fixtures import (
     model_yml_other_model,
 )
 
-# TODO: Make a copy before executing!!!1!
 proj_path = Path("test-projects/source-hack/src_proj_a")
 dest_project = Path("test-projects/source-hack/testing/src_proj_a")
 dbt = Dbt()
