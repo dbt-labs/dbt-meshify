@@ -5,6 +5,7 @@ import yaml
 from click.testing import CliRunner
 
 from dbt_meshify.main import cli
+from tests.dbt_project_utils import setup_test_project, teardown_test_project
 from tests.unit.test_add_group_and_access_to_model_yml import (
     expected_model_yml_multiple_models_multi_select,
     model_yml_multiple_models,
@@ -18,8 +19,15 @@ from tests.unit.test_add_group_to_yml import (
     group_yml_group_predefined,
 )
 
-proj_path_string = "test-projects/source-hack/src_proj_a"
-proj_path = Path(proj_path_string)
+source_path = Path("test-projects/source-hack/src_proj_a")
+proj_path = Path("test-projects/source-hack/testing/src_proj_a")
+
+
+@pytest.fixture
+def project():
+    setup_test_project(source_path, proj_path)
+    yield
+    teardown_test_project(proj_path.parent)
 
 
 @pytest.mark.parametrize(
@@ -47,7 +55,7 @@ proj_path = Path(proj_path_string)
     ],
     ids=["1", "2", "3", "4"],
 )
-def test_create_group_command(model_yml, select, start_group_yml, end_group_yml):
+def test_create_group_command(model_yml, select, start_group_yml, end_group_yml, project):
     group_yml_file = proj_path / "models" / "_groups.yml"
     model_yml_file = proj_path / "models" / "_models.yml"
 
@@ -72,7 +80,7 @@ def test_create_group_command(model_yml, select, start_group_yml, end_group_yml)
             "--select",
             select,
             "--project-path",
-            proj_path_string,
+            str(proj_path),
             "--owner-name",
             "Shaina Fake",
             "--owner-email",
@@ -82,9 +90,6 @@ def test_create_group_command(model_yml, select, start_group_yml, end_group_yml)
 
     with open(group_yml_file, "r") as f:
         actual = yaml.safe_load(f)
-
-    group_yml_file.unlink()
-    model_yml_file.unlink()
 
     assert result.exit_code == 0
     assert actual == yaml.safe_load(end_group_yml)
@@ -103,7 +108,7 @@ def test_create_group_command(model_yml, select, start_group_yml, end_group_yml)
     ids=["1"],
 )
 def test_create_group_command_multi_select(
-    start_model_yml, end_model_yml, start_group_yml, end_group_yml
+    start_model_yml, end_model_yml, start_group_yml, end_group_yml, project
 ):
     group_yml_file = proj_path / "models" / "_groups.yml"
     model_yml_file = proj_path / "models" / "_models.yml"
@@ -135,7 +140,7 @@ def test_create_group_command_multi_select(
             "shared_model",
             "other_model",
             "--project-path",
-            proj_path_string,
+            str(proj_path),
             "--owner-name",
             "Shaina Fake",
             "--owner-email",
@@ -147,10 +152,6 @@ def test_create_group_command_multi_select(
         actual_group_yml = yaml.safe_load(f)
     with open(model_yml_file, "r") as f:
         actual_model_yml = yaml.safe_load(f)
-
-    group_yml_file.unlink()
-    model_yml_file.unlink()
-    other_model_file.unlink()
 
     assert result.exit_code == 0
     assert actual_group_yml == yaml.safe_load(end_group_yml)
@@ -166,7 +167,7 @@ def test_create_group_command_multi_select(
     ],
     ids=["1", "2", "3"],
 )
-def test_group_owner_properties(name, email, end_group_yml):
+def test_group_owner_properties(name, email, end_group_yml, project):
     group_yml_file = proj_path / "models" / "_groups.yml"
     model_yml_file = proj_path / "models" / "_models.yml"
 
@@ -188,7 +189,7 @@ def test_group_owner_properties(name, email, end_group_yml):
         "--select",
         "shared_model",
         "--project-path",
-        proj_path_string,
+        str(proj_path),
     ]
 
     if name:
@@ -202,9 +203,6 @@ def test_group_owner_properties(name, email, end_group_yml):
 
     with open(group_yml_file, "r") as f:
         actual = yaml.safe_load(f)
-
-    group_yml_file.unlink()
-    model_yml_file.unlink()
 
     assert result.exit_code == 0
 

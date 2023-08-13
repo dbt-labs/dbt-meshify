@@ -17,6 +17,7 @@ def setup_test_project(src_project_path, dest_project_path):
     dbt.invoke(directory=dest_project_path, runner_args=["deps"])
     dbt.invoke(directory=dest_project_path, runner_args=["seed"])
     dbt.invoke(directory=dest_project_path, runner_args=["run"])
+    dbt.invoke(directory=dest_project_path, runner_args=["docs", "generate"])
 
 
 def teardown_test_project(dest_project_path):

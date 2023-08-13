@@ -6,6 +6,7 @@ from click.testing import CliRunner
 from loguru import logger
 
 from dbt_meshify.main import cli
+from tests.dbt_project_utils import setup_test_project, teardown_test_project
 
 from ..sql_and_yml_fixtures import (
     expected_versioned_model_yml_increment_prerelease_version,
@@ -18,23 +19,17 @@ from ..sql_and_yml_fixtures import (
     model_yml_increment_version,
     model_yml_no_col_no_version,
     model_yml_string_version,
-    shared_model_sql,
 )
 
-proj_path_string = "test-projects/source-hack/src_proj_a"
-proj_path = Path(proj_path_string)
+source_path = Path("test-projects/source-hack/src_proj_a")
+proj_path = Path("test-projects/source-hack/testing/src_proj_a")
 
 
-def reset_model_files(files_list):
-    models_dir = proj_path / "models"
-    for file in models_dir.glob("*"):
-        if file.is_file():
-            file.unlink()
-    for file in files_list:
-        file_path = proj_path / "models" / file
-        if not file_path.is_file():
-            with file_path.open("w+") as f:
-                f.write(shared_model_sql)
+@pytest.fixture
+def project():
+    setup_test_project(source_path, proj_path)
+    yield
+    teardown_test_project(proj_path.parent)
 
 
 @pytest.mark.parametrize(
@@ -92,9 +87,10 @@ def reset_model_files(files_list):
     ],
     ids=["1", "2", "3", "4", "5", "6", "7"],
 )
-def test_add_version_to_yml(start_yml, end_yml, start_files, expected_files, command_options):
+def test_add_version_to_yml(
+    start_yml, end_yml, start_files, expected_files, command_options, project
+):
     yml_file = proj_path / "models" / "_models.yml"
-    reset_model_files(start_files)
     yml_file.parent.mkdir(parents=True, exist_ok=True)
     runner = CliRunner()
     # only create file if start_yml is not None
@@ -110,7 +106,7 @@ def test_add_version_to_yml(start_yml, end_yml, start_files, expected_files, com
         "--select",
         "shared_model",
         "--project-path",
-        proj_path_string,
+        str(proj_path),
     ]
     base_command.extend(command_options)
     result = runner.invoke(cli, base_command)
@@ -124,9 +120,7 @@ def test_add_version_to_yml(start_yml, end_yml, start_files, expected_files, com
             assert path.is_file()
         except Exception:
             logger.exception(f"File {file} not found")
-        path.unlink()
-    yml_file.unlink()
-    reset_model_files(["shared_model.sql"])
+
     assert actual == yaml.safe_load(end_yml)
 
 
@@ -140,9 +134,9 @@ def test_add_version_to_yml(start_yml, end_yml, start_files, expected_files, com
     ],
     ids=["1"],
 )
-def test_add_version_to_invalid_yml(start_yml, start_files):
+def test_add_version_to_invalid_yml(start_yml, start_files, project):
     yml_file = proj_path / "models" / "_models.yml"
-    reset_model_files(start_files)
+
     yml_file.parent.mkdir(parents=True, exist_ok=True)
     runner = CliRunner()
     # only create file if start_yml is not None
@@ -158,10 +152,8 @@ def test_add_version_to_invalid_yml(start_yml, start_files):
         "--select",
         "shared_model",
         "--project-path",
-        proj_path_string,
+        str(proj_path),
     ]
     result = runner.invoke(cli, base_command, catch_exceptions=True)
     assert result.exit_code == 1
     # reset the read path to the default in the logic
-    yml_file.unlink()
-    reset_model_files(["shared_model.sql"])
