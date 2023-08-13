@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Set, Union
 
-from dbt.contracts.graph.nodes import SourceDefinition
+from dbt.contracts.graph.nodes import CompiledNode, ModelNode, SourceDefinition
 from dbt.node_types import AccessType
 from loguru import logger
 
@@ -246,7 +246,11 @@ class Linker:
         downstream_manifest_entry = downstream_project.get_manifest_node(
             dependency.downstream_resource
         )
-        # upstream_catalog_entry = upstream_project.get_catalog_entry(dependency.upstream_resource)
+
+        if downstream_manifest_entry is None:
+            raise TypeError(
+                f"Unable to find the downstream entity {dependency.downstream_resource} in downstream project."
+            )
 
         resource_grouper = ResourceGrouper(project=upstream_project)
         contractor = Contractor(project=upstream_project)
@@ -254,102 +258,80 @@ class Linker:
 
         change_set = ChangeSet()
 
-        try:
+        if isinstance(upstream_manifest_entry, ModelNode):
             change_set.add(
                 resource_grouper.generate_access(
                     model=upstream_manifest_entry, access=AccessType.Public
                 )
             )
-            # logger.success(
-            #     f"Successfully update model access : {dependency.upstream_resource} is now {AccessType.Public}"
-            # )
-        except FatalMeshifyException as e:
-            logger.error(f"Failed to update model access: {dependency.upstream_resource}")
-            raise e
-        try:
+
             change_set.add(contractor.generate_contract(model=upstream_manifest_entry))
-            logger.success(f"Successfully added contract to model: {dependency.upstream_resource}")
-        except FatalMeshifyException as e:
-            logger.error(f"Failed to add contract to model: {dependency.upstream_resource}")
-            raise e
 
         if dependency.type == ProjectDependencyType.Source:
             for child in downstream_project.manifest.child_map[dependency.downstream_resource]:
                 child_resource = downstream_project.get_manifest_node(child)
 
-                try:
-                    change_set.add(
-                        reference_updater.replace_source_with_refs(
-                            resource=child_resource,
-                            upstream_resource=upstream_manifest_entry,
-                            source_unique_id=dependency.downstream_resource,
-                        )
+                if child_resource is None:
+                    raise Exception("Identified child resource not found in downstream project.")
+                elif not isinstance(child_resource, CompiledNode):
+                    raise TypeError(
+                        "The child resource identified in this Source dependency is not a CompiledNode. "
+                        f"{child_resource.unique_id}"
                     )
-                    logger.success(
-                        "Successfully replaced source function with ref to upstream resource: "
-                        f"{dependency.downstream_resource} now calls {dependency.upstream_resource} directly"
-                    )
-                except FileEditorException as e:
-                    logger.error("Failed to replace source function with ref to upstream resource")
-                    raise e
-                try:
-                    change_set.add(
-                        self.delete_source_properties(
-                            project=downstream_project, resource=downstream_manifest_entry
-                        )
+                elif not isinstance(upstream_manifest_entry, CompiledNode):
+                    raise TypeError(
+                        "The upstream resource identified in this Source dependency is not a CompiledNode. "
+                        f"{upstream_manifest_entry.unique_id}"
                     )
 
-                    logger.success(
-                        f"Successfully deleted unnecessary source: {dependency.downstream_resource}"
+                change_set.add(
+                    reference_updater.replace_source_with_refs(
+                        resource=child_resource,
+                        upstream_resource=upstream_manifest_entry,
+                        source_unique_id=dependency.downstream_resource,
                     )
-                except FatalMeshifyException as e:
-                    logger.error("Failed to delete unnecessary source")
-                    raise e
+                )
+
+                if not isinstance(downstream_manifest_entry, SourceDefinition):
+                    raise TypeError(
+                        "The downstream resource identified in this Source dependency is not a Source. "
+                        f"{downstream_manifest_entry.unique_id}"
+                    )
+
+                change_set.add(
+                    self.delete_source_properties(
+                        project=downstream_project, resource=downstream_manifest_entry
+                    )
+                )
 
         if dependency.type == ProjectDependencyType.Package:
-            try:
-                change_set.add(
-                    reference_updater.generate_reference_update(
-                        project_name=upstream_project.name,
-                        downstream_node=downstream_manifest_entry,
-                        upstream_node=upstream_manifest_entry,
-                        code=downstream_manifest_entry.raw_code,
-                        downstream_project=downstream_project,
-                    )
+            if not isinstance(downstream_manifest_entry, CompiledNode):
+                raise TypeError(
+                    f"The downstream resource identified in this Package dependency is not a CompiledNode. "
+                    f"{downstream_manifest_entry.unique_id}"
+                )
+            elif not isinstance(upstream_manifest_entry, CompiledNode):
+                raise TypeError(
+                    f"The upstream resource identified in this Package dependency is not a CompiledNode. "
+                    f"{upstream_manifest_entry.unique_id}"
                 )
 
-                logger.success(
-                    f"Successfully updated model refs: {dependency.downstream_resource} now references "
-                    f"{dependency.upstream_resource}"
+            change_set.add(
+                reference_updater.generate_reference_update(
+                    project_name=upstream_project.name,
+                    downstream_node=downstream_manifest_entry,
+                    upstream_node=upstream_manifest_entry,
+                    code=downstream_manifest_entry.raw_code,
+                    downstream_project=downstream_project,
                 )
-            except FileEditorException as e:
-                logger.error("Failed to update model refs")
-                raise e
+            )
 
-        # for both types, add upstream project to downstream project's dependencies.yml
-        try:
-            logger.info(
-                f"{upstream_project.name} -> {upstream_project.is_parent_of_parent_project}"
-            )
-            logger.info(
-                f"{downstream_project.name} -> {downstream_project.is_parent_of_parent_project}"
-            )
+            # for both types, add upstream project to downstream project's dependencies.yml
 
             change_set.add(
                 DependenciesUpdater.update_dependencies_yml(
                     upstream_project=upstream_project, downstream_project=downstream_project
                 )
             )
-
-            logger.success(
-                f"Successfully added {dependency.upstream_project_name} to {dependency.downstream_project_name}'s "
-                "dependencies.yml"
-            )
-        except FileEditorException as e:
-            logger.error(
-                f"Failed to add {dependency.upstream_project_name} to {dependency.downstream_project_name}'s "
-                "dependencies.yml"
-            )
-            raise e
 
         return change_set
