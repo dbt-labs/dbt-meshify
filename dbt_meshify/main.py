@@ -46,16 +46,26 @@ operation_format = (
     "<level>{message}</level>"
 )
 
-logger.level("STARTING", no=24, color="<yellow>")
+STARTING_LOG_LEVEL = logger.level("STARTING", no=24, color="<yellow>")
 LOG_LEVEL = "INFO"
 
 
 def logger_log_level_filter(record):
-    return record["level"].no >= logger.level(LOG_LEVEL).no and record["level"].no not in (24, 25)
+    """
+    Filter for log records that have a level greater than or equal to the level stored in LOG_LEVEL, while filtering
+    out all STARTED and SUCCESS levels.
+    """
+    return record["level"].no >= logger.level(LOG_LEVEL).no and record["level"].no not in (
+        STARTING_LOG_LEVEL.no,
+        25,
+    )
 
 
 def logger_operation_level_filter(record):
-    return record["level"].no in (24, 25)
+    """
+    Filter for log records that have a level of STARTED or SUCCESS.
+    """
+    return record["level"].no in (STARTING_LOG_LEVEL.no, 25)
 
 
 logger.remove()  # Remove the default sink added by Loguru
