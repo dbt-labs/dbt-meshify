@@ -1,6 +1,6 @@
 # dbt_meshify
 
-`dbt-meshify` is a dbt-core plugin that automates the management and creation of dbt-core model governance features introduced in dbt-core v1.5. Each command in the package will leverage your dbt project metadata to create and/or edit the files in your project to properly configure the models in your project with these governance features.
+`dbt-meshify` is a dbt-core plugin that automates the creation of dbt-core model governance features introduced in dbt-core v1.5. This package will leverage your dbt project metadata to create and/or edit the files in your project to properly configure the models in your project with these governance features.
 
 These dbt-core features include:
 
@@ -9,31 +9,37 @@ These dbt-core features include:
 3. __[Access](https://docs.getdbt.com/docs/collaborate/govern/model-access)__ - control the `access` level of models within groups
 4. __[Versions](https://docs.getdbt.com/docs/collaborate/govern/model-versions)__ - create and increment versions of particular models.
 
+Additionally, `dbt-meshify` automates the code development required to split a monolithic dbt project into component projects using cross-project `ref`.
+
 This package leverages the dbt-core Python API to allow users to use standard dbt selection syntax for each of the commands in this package (unless otherwise noted). See details on each of the specific commands available on the [commands page](commands.md)
 
-## Basic Usage
+## Getting Started
 
-Each of the available [commands page](commands.md) allows you to add one (or many) of the above features to a set of models specified by the selection syntax in the command.
+This package helps automate the code development required for adding the dbt-core model governance features mentioned above. 
 
-The goal of this package is to make it more straightforward to apply to your project so that splitting apart a monolithic project into component projects is a more automated, dbt-tonic experience.
+The first question to ask yourself is "which of these features do I want to add to my project"? Do you want to add contracts, create a new group, split your monolithic dbt project in two? Your answer to this question will establish which `dbt-meshify` command is right for you! 
 
-The process of splitting a dbt monolith apart roughly requires you to:
+This package consists of **component** and **global** commands - so you can decide how to best break apart your work. 
 
-1. Determine what parts of your project should be grouped together into subprojects
-2. Determine the access-level for the members of that group
-3. Add model contracts to the elements that are public and accessed my members outside the group specified in (1)
-4. (Optional) Add model versions to the public models to allow for development without impacting downstream stakeholders.
+The **component** commands allow you to do a single step at a time and begin with `dbt-meshify operation`. For example, if you wanted to add a new version to a model, you would run something like `dbt-meshify operation add-version --select fct_orders`. This command would:
+1. add a new version to `fct_orders`
 
-Here's how that might look for the process of creating a separate `finance` subproject in your dbt monolith.
+and that's it!
 
-```bash
-# create a group of all models tagged with "finance"
-# leaf nodes and nodes with cross-group dependencies will be `public`
-# public nodes will also have contracts added to them
-dbt-meshify group finance --owner-name "Monopoly Man" -s +tag:finance
+The **global** commands combine _multiple_ **component** commands to complete a larger set of work and begin with `dbt-meshify`. For example, if you wanted to define a group for a subset of your models, you would run something like `dbt-meshify group finance --owner-name "Monopoly Man" --select +tag:finance`. This command would:
+1. define a new group named "finance" in your dbt project, setting the owner name to "Monopoly Man"
+2. add all models tagged with "finance" to that new group
+3. set `access` to public for all leaf nodes and nodes with cross-group dependencies
+4. add contracts to all public nodes 
 
-# optionally use the add-version operation to add a new version to a model
-dbt-meshify operation add-version -s fct_orders
-```
+all at once!
 
-Future releases of this package may also include features that allow users to fully split off groups of models into entirely new dbt projects.
+The next question to ask yourself is "which of my models do I want to add these feature(s) to?". This informs the selection syntax you provide to the `dbt-meshify` command of choice. `dbt-meshify` uses the same selection syntax as `dbt`, so you can `--select` based on model names, tags, and so on!
+
+Once you've decided:
+1. which governance feature(s) you want to add to your dbt project
+2. which subset of models you want to add those feature(s) to
+
+you're ready to use `dbt-meshify`!
+
+For further information, check out the available [commands](commands.md) or read through some [examples](examples.md).
