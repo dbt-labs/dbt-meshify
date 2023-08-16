@@ -17,20 +17,10 @@ These dbt-core features include:
 3. __[Access](https://docs.getdbt.com/docs/collaborate/govern/model-access)__ - control the `access` level of models within groups
 4. __[Versions](https://docs.getdbt.com/docs/collaborate/govern/model-versions)__ - create and increment versions of particular models.
 
+Additionally, `dbt-meshify` automates the code development required to split a monolithic dbt project into component projects using cross-project `ref`.
+
 ## Installation
 
 ```bash
 pip install dbt-meshify
-```
-
-## Basic Usage
-
-```bash
-# create a group of all models tagged with "finance"
-# leaf nodes and nodes with cross-group dependencies will be `public`
-# public nodes will also have contracts added to them
-dbt-meshify group finance --owner-name "Monopoly Man" -s +tag:finance
-
-# optionally use the add-version operation to add a new version to a model
-dbt-meshify operation add-version -s fct_orders
 ```
