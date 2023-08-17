@@ -445,28 +445,6 @@ class DbtSubProject(BaseDbtProject, PathedProject):
 
         return set(results) - self.resources
 
-    def split(
-        self,
-        project_name: str,
-        select: str,
-        exclude: Optional[str] = None,
-    ) -> "DbtSubProject":
-        """Create a new DbtSubProject using NodeSelection syntax."""
-
-        subproject_resources = self.select_resources(select, exclude)
-
-        # Construct a new project and inject the new manifest
-        subproject = DbtSubProject(
-            name=project_name,
-            parent_project=copy.deepcopy(self.parent_project),
-            resources=subproject_resources,
-        )
-
-        # Record the subproject to create a cross-project dependency edge list
-        self.register_relationship(project_name, subproject_resources)
-
-        return subproject
-
 
 class DbtProjectHolder:
     def __init__(self) -> None:
