@@ -22,9 +22,14 @@ You can run the following command:
 dbt-meshify operation create-group sales_analytics --owner-name Ralphie --select +int_sales__unioned +int_returns__unioned transactions
 ```
 
-This will create a new group named "sales_analytics" with the owner "Ralphie" and add all selected models to that group.
-
-TO DO: once this command is working, add screenshots and descriptions of code changes
+This will create a new group named "sales_analytics" with the owner "Ralphie" and add all selected models to that group with the appropriate `access` configuration:
+- create a new group definition in a `_groups.yml` file
+![yml file with group defition](https://github.com/dave-connors-3/barnold-corp/assets/53586774/b3fa812a-157f-41b3-842d-c67e59f77298)
+- add all selected models to that group with the appropriate `access` config
+    - all models that are only referenced by other models in their _same group_ will have `access: private`
+    ![int_sales__unioned access set to private](https://github.com/dave-connors-3/barnold-corp/assets/53586774/481010bb-ceed-4feb-a46e-05c185fac4e4)
+    - all other models (those that are referenced by models _outside their group_ or are leaf nodes) will have `access: public`
+    ![transactions access set to public](https://github.com/dave-connors-3/barnold-corp/assets/53586774/4c8665ac-d14c-424d-81e3-51c0bf12c701)
 
 ### Add/increment model versions
 
