@@ -28,7 +28,7 @@ TO DO: once this command is working, add screenshots and descriptions of code ch
 
 ### Add/increment model versions
 
-Let's say you want to add a new version to the customers model, which is currently unversioned.
+Let's say you want to add a new version to the customers model, which is currently un-versioned.
 ![add a version to the customers model](https://github.com/dave-connors-3/barnold-corp/assets/53586774/e4097ca4-b6fa-4af4-b238-384a090573a7)
 
 You can run the following command:
@@ -43,7 +43,19 @@ This will add a version to the `customers` model:
 
 ### Add contract(s)
 
-TO DO: add example here 
+Let's say you want to add a new contract to the `stores` model, which is currently un-contracted.
+![add a contract to the stores model](https://github.com/dave-connors-3/barnold-corp/assets/53586774/9eb48ce4-d6c2-4c79-a09f-0ff85cfccdcc)
+
+You can run the following command:
+```bash
+dbt-meshify operation add-contract --select stores
+```
+
+This will add an enforced contract to the `stores` model:
+- add a `contract` config and set `enforced: true`
+![yml file updated with added contract config](https://github.com/dave-connors-3/barnold-corp/assets/53586774/bf1ba4e2-76a1-4a65-a0a9-7614487b7d6f)
+- add every column's `name` and `data_type` if not already defined
+![yml file updated with added column names and data_types](https://github.com/dave-connors-3/barnold-corp/assets/53586774/1d989396-2b07-48c5-bcf6-de7eaf02b928)
 
 ## Global commands
 
