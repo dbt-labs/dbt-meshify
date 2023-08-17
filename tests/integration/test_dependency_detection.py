@@ -4,7 +4,11 @@ import pytest as pytest
 
 from dbt_meshify.dbt import Dbt
 from dbt_meshify.dbt_projects import DbtProject
-from dbt_meshify.linker import Linker, ProjectDependency, ProjectDependencyType
+from dbt_meshify.utilities.linker import (
+    Linker,
+    ProjectDependency,
+    ProjectDependencyType,
+)
 
 
 class TestLinkerSourceDependencies:

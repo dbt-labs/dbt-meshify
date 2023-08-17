@@ -8,13 +8,15 @@ from typing import Any, Dict, MutableMapping, Optional, Set, Union
 import yaml
 from dbt.contracts.graph.manifest import Manifest
 from dbt.contracts.graph.nodes import (
+    CompiledNode,
     Documentation,
     Exposure,
     Group,
     Macro,
-    ManifestNode,
     ModelNode,
+    ParsedNode,
     Resource,
+    SnapshotNode,
     SourceDefinition,
 )
 from dbt.contracts.project import Project
@@ -24,11 +26,6 @@ from dbt.node_types import NodeType
 from loguru import logger
 
 from dbt_meshify.dbt import Dbt
-from dbt_meshify.storage.file_content_editors import (
-    DbtMeshConstructor,
-    filter_empty_dict_items,
-)
-from dbt_meshify.storage.file_manager import DbtFileManager
 
 
 class BaseDbtProject:
@@ -40,13 +37,16 @@ class BaseDbtProject:
         project: Project,
         catalog: CatalogArtifact,
         name: Optional[str] = None,
+        resources: Optional[set[str]] = None,
     ) -> None:
         self.manifest = manifest
         self.project = project
         self.catalog = catalog
-        self.name = name if name else project.name
+        self.name = name if name else str(project.name)
         self.relationships: Dict[str, Set[str]] = {}
         self._models: Optional[Dict[str, ModelNode]] = None
+
+        self.resources = resources if resources else set()
 
         self.model_relation_names: Dict[str, str] = {
             model.relation_name: unique_id
@@ -62,6 +62,45 @@ class BaseDbtProject:
         self._graph = None
 
         self._changes: Dict[str, str] = {}
+
+        self.xproj_children_of_resources = self._get_xproj_children_of_selected_nodes()
+        self.xproj_parents_of_resources = self._get_xproj_parents_of_selected_nodes()
+        self.is_parent_of_parent_project = self._check_is_parent_of_parent_project()
+        self.is_child_of_parent_project = self._check_is_child_of_parent_project()
+        self.is_project_cycle = (
+            self.is_child_of_parent_project and self.is_parent_of_parent_project
+        )
+
+    def _get_xproj_children_of_selected_nodes(self) -> Set[str]:
+        return {
+            model.unique_id
+            for model in self.models.values()
+            if any(parent for parent in model.depends_on.nodes if parent in self.resources)
+            and model.unique_id not in self.resources
+        }
+
+    def _get_xproj_parents_of_selected_nodes(self) -> Set[str]:
+        resources = [self.get_manifest_node(resource) for resource in self.resources]
+        return {
+            node
+            for resource in resources
+            if resource is not None and isinstance(resource, (ModelNode, SnapshotNode))
+            for node in resource.depends_on.nodes
+            if node not in self.resources
+        }
+
+    def _check_is_parent_of_parent_project(self) -> bool:
+        """
+        checks if the subproject is a child of the parent project
+        """
+        return len(self.xproj_children_of_resources) > 0
+
+    def _check_is_child_of_parent_project(self) -> bool:
+        """
+        checks if the subproject is a child of the parent project
+        """
+
+        return len(self.xproj_parents_of_resources) > 0
 
     @staticmethod
     def _load_graph(manifest: Manifest) -> Graph:
@@ -180,7 +219,35 @@ class BaseDbtProject:
         return resources.get(unique_id)
 
 
-class DbtProject(BaseDbtProject):
+class PathedProject:
+    path: Path
+
+    def resolve_file_path(self, node: Union[Resource, CompiledNode]) -> Path:
+        """
+        Returns the path to the file where the resource is defined
+        for yml-only nodes (generic tests, metrics, exposures, sources)
+        this will be the path to the yml file where the definitions
+        for all others this will be the .sql or .py file for the resource
+        """
+        return self.path / Path(node.original_file_path)
+
+    def resolve_patch_path(self, node: Union[Resource, CompiledNode]) -> Path:
+        """Get a YML patch path for a node"""
+        if isinstance(node, ParsedNode):
+            if not node.patch_path and not node.original_file_path:
+                raise FileNotFoundError(
+                    f"Unable to identify patch path for resource {node.unique_id}"
+                )
+
+            if not node.patch_path:
+                return self.path / Path(node.original_file_path).parent / "_models.yml"
+
+            return self.path / Path(node.patch_path.split(":")[-1][2:])
+
+        return self.path / Path(node.original_file_path)
+
+
+class DbtProject(BaseDbtProject, PathedProject):
     @staticmethod
     def _load_project(path) -> Project:
         """Load a dbt Project configuration"""
@@ -224,13 +291,15 @@ class DbtProject(BaseDbtProject):
         path: Path = Path(os.getcwd()),
         name: Optional[str] = None,
     ) -> None:
-        super().__init__(manifest, project, catalog, name)
         self.path = path
         self.dbt = dbt
+        resources = self.select_resources(output_key="unique_id")
+
+        super().__init__(manifest, project, catalog, name, resources)
 
     def select_resources(
         self,
-        select: str,
+        select: Optional[str] = None,
         exclude: Optional[str] = None,
         selector: Optional[str] = None,
         output_key: Optional[str] = None,
@@ -256,6 +325,7 @@ class DbtProject(BaseDbtProject):
         select: str,
         exclude: Optional[str] = None,
         selector: Optional[str] = None,
+        target_directory: Optional[Path] = None,
     ) -> "DbtSubProject":
         """Create a new DbtSubProject using NodeSelection syntax."""
 
@@ -265,7 +335,10 @@ class DbtProject(BaseDbtProject):
 
         # Construct a new project and inject the new manifest
         subproject = DbtSubProject(
-            name=project_name, parent_project=copy.deepcopy(self), resources=subproject_resources
+            name=project_name,
+            parent_project=copy.deepcopy(self),
+            resources=subproject_resources,
+            target_directory=target_directory,
         )
 
         # Record the subproject to create a cross-project dependency edge list
@@ -274,18 +347,23 @@ class DbtProject(BaseDbtProject):
         return subproject
 
 
-class DbtSubProject(BaseDbtProject):
+class DbtSubProject(BaseDbtProject, PathedProject):
     """
     DbtSubProjects are a filtered representation of a dbt project that leverage
     a parent DbtProject for their manifest and project definitions until a real DbtProject
     is created on disk.
     """
 
-    def __init__(self, name: str, parent_project: DbtProject, resources: Set[str]):
+    def __init__(
+        self,
+        name: str,
+        parent_project: DbtProject,
+        resources: Set[str],
+        target_directory: Optional[Path] = None,
+    ):
         self.name = name
-        self.resources = resources
         self.parent_project = parent_project
-        self.path = parent_project.path / Path(name)
+        self.path = parent_project.path / (target_directory if target_directory else Path(name))
 
         # self.manifest = parent_project.manifest.deepcopy()
         # i am running into a bug with the core deepcopy -- checking with michelle
@@ -293,54 +371,11 @@ class DbtSubProject(BaseDbtProject):
         self.project = copy.deepcopy(parent_project.project)
         self.catalog = parent_project.catalog
 
-        super().__init__(self.manifest, self.project, self.catalog, self.name)
+        super().__init__(self.manifest, self.project, self.catalog, self.name, resources)
 
         self.custom_macros = self._get_custom_macros()
         self.groups = self._get_indirect_groups()
         self._rename_project()
-        self.xproj_children_of_resources = self._get_xproj_children_of_selected_nodes()
-        self.xproj_parents_of_resources = self._get_xproj_parents_of_selected_nodes()
-        self.is_parent_of_parent_project = self._check_is_parent_of_parent_project()
-        self.is_child_of_parent_project = self._check_is_child_of_parent_project()
-        self.is_project_cycle = (
-            self.is_child_of_parent_project and self.is_parent_of_parent_project
-        )
-
-    def _get_xproj_children_of_selected_nodes(self) -> Set[str]:
-        return {
-            model.unique_id
-            for model in self.models.values()
-            if any(
-                parent
-                for parent in self.get_manifest_node(model.unique_id).depends_on.nodes
-                if parent in self.resources
-            )
-            and model.unique_id not in self.resources
-        }
-
-    def _get_xproj_parents_of_selected_nodes(self) -> Set[str]:
-        return {
-            node
-            for resource in self.resources
-            if self.get_manifest_node(resource).resource_type
-            in [NodeType.Model, NodeType.Snapshot, NodeType.Seed]
-            # ignore tests and other non buildable resources
-            for node in self.get_manifest_node(resource).depends_on.nodes
-            if node not in self.resources
-        }
-
-    def _check_is_parent_of_parent_project(self) -> bool:
-        """
-        checks if the subproject is a child of the parent project
-        """
-        return len(self.xproj_children_of_resources) > 0
-
-    def _check_is_child_of_parent_project(self) -> bool:
-        """
-        checks if the subproject is a child of the parent project
-        """
-
-        return len(self.xproj_parents_of_resources) > 0
 
     def _rename_project(self) -> None:
         """
@@ -409,28 +444,6 @@ class DbtSubProject(BaseDbtProject):
         )
 
         return set(results) - self.resources
-
-    def split(
-        self,
-        project_name: str,
-        select: str,
-        exclude: Optional[str] = None,
-    ) -> "DbtSubProject":
-        """Create a new DbtSubProject using NodeSelection syntax."""
-
-        subproject_resources = self.select_resources(select, exclude)
-
-        # Construct a new project and inject the new manifest
-        subproject = DbtSubProject(
-            name=project_name,
-            parent_project=copy.deepcopy(self.parent_project),
-            resources=subproject_resources,
-        )
-
-        # Record the subproject to create a cross-project dependency edge list
-        self.register_relationship(project_name, subproject_resources)
-
-        return subproject
 
 
 class DbtProjectHolder:

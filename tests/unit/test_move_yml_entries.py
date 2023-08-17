@@ -1,7 +1,9 @@
-import yaml
-from dbt.node_types import NodeType
+from pathlib import Path
 
-from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
+import yaml
+
+from dbt_meshify.change import EntityType, Operation, ResourceChange
+from dbt_meshify.storage.file_content_editors import NamedList, ResourceFileEditor
 
 from ..sql_and_yml_fixtures import (
     expeceted_remainder_yml__source_yml_multiple_tables,
@@ -12,8 +14,8 @@ from ..sql_and_yml_fixtures import (
     expected_remove_metric_yml__default,
     expected_remove_model_yml__default,
     expected_remove_model_yml__model_yml_no_col_no_version,
-    expected_remove_model_yml__model_yml_one_col,
     expected_remove_source_yml__default,
+    expected_yml_one_table,
     exposure_yml_multiple_exposures,
     exposure_yml_one_exposure,
     metric_yml_multiple_metrics,
@@ -25,7 +27,6 @@ from ..sql_and_yml_fixtures import (
     source_yml_one_table,
 )
 
-meshify = DbtMeshFileEditor()
 model_name = "shared_model"
 source_name = "test_source"
 source_table_name = "table"
@@ -37,133 +38,197 @@ def read_yml(yml_str):
     return yaml.safe_load(yml_str)
 
 
+current_path = Path(".").resolve()
+
+
 class TestRemoveResourceYml:
     def test_remove_model_yml_simple(self):
-        resource_yml, full_yml = meshify.get_yml_entry(
-            resource_name=model_name,
-            full_yml=read_yml(model_yml_no_col_no_version),
-            resource_type=NodeType.Model,
-            source_name=None,
+        change = ResourceChange(
+            operation=Operation.Remove,
+            entity_type=EntityType.Model,
+            identifier=model_name,
+            path=current_path,
+            data=read_yml(model_yml_no_col_no_version),
         )
-        assert resource_yml == read_yml(expected_remove_model_yml__model_yml_no_col_no_version)
-        assert full_yml == None
+        full_yml = ResourceFileEditor.remove_resource(
+            properties=read_yml(model_yml_one_col), change=change
+        )
+        assert full_yml == {}
 
     def test_remove_model_yml_simple_with_description(self):
-        resource_yml, full_yml = meshify.get_yml_entry(
-            resource_name=model_name,
-            full_yml=read_yml(model_yml_one_col),
-            resource_type=NodeType.Model,
-            source_name=None,
+        change = ResourceChange(
+            operation=Operation.Remove,
+            entity_type=EntityType.Model,
+            identifier=model_name,
+            path=current_path,
+            data={},
         )
-        assert resource_yml == read_yml(expected_remove_model_yml__model_yml_one_col)
-        assert full_yml == None
+        full_yml = ResourceFileEditor.remove_resource(
+            properties=read_yml(model_yml_one_col), change=change
+        )
+
+        assert full_yml == {}
 
     def test_remove_model_yml_other_model(self):
-        resource_yml, full_yml = meshify.get_yml_entry(
-            resource_name=model_name,
-            full_yml=read_yml(model_yml_other_model),
-            resource_type=NodeType.Model,
-            source_name=None,
+        change = ResourceChange(
+            operation=Operation.Remove,
+            entity_type=EntityType.Model,
+            identifier=model_name,
+            path=current_path,
+            data={},
         )
-        assert resource_yml == read_yml(expected_remove_model_yml__default)
+        full_yml = ResourceFileEditor.remove_resource(
+            properties=read_yml(model_yml_other_model), change=change
+        )
+
         assert full_yml == read_yml(expected_remainder_yml__model_yml_other_model)
 
     def test_remove_source_yml_one_table(self):
-        resource_yml, full_yml = meshify.get_yml_entry(
-            resource_name=source_table_name,
-            full_yml=read_yml(source_yml_one_table),
-            resource_type=NodeType.Source,
-            source_name=source_name,
+        change = ResourceChange(
+            operation=Operation.Remove,
+            entity_type=EntityType.Source,
+            identifier=source_table_name,
+            path=current_path,
+            data={},
+            source_name="test_source",
         )
-        assert resource_yml == read_yml(expected_remove_source_yml__default)
-        assert full_yml == None
+        full_yml = ResourceFileEditor.remove_resource(
+            properties=read_yml(source_yml_one_table), change=change
+        )
+
+        assert full_yml == read_yml(expected_yml_one_table)
 
     def test_remove_source_yml_multiple_table(self):
-        resource_yml, full_yml = meshify.get_yml_entry(
-            resource_name=source_table_name,
-            full_yml=read_yml(source_yml_multiple_tables),
-            resource_type=NodeType.Source,
-            source_name=source_name,
+        change = ResourceChange(
+            operation=Operation.Remove,
+            entity_type=EntityType.Source,
+            identifier=source_table_name,
+            path=current_path,
+            data={},
+            source_name="test_source",
         )
-        assert resource_yml == read_yml(expected_remove_source_yml__default)
+        full_yml = ResourceFileEditor.remove_resource(
+            properties=read_yml(source_yml_multiple_tables), change=change
+        )
+
         assert full_yml == read_yml(expeceted_remainder_yml__source_yml_multiple_tables)
 
     def test_remove_exposure_yml_one_exposure(self):
-        resource_yml, full_yml = meshify.get_yml_entry(
-            resource_name=exposure_name,
-            full_yml=read_yml(exposure_yml_one_exposure),
-            resource_type=NodeType.Exposure,
-            source_name=None,
+        change = ResourceChange(
+            operation=Operation.Remove,
+            entity_type=EntityType.Exposure,
+            identifier=exposure_name,
+            path=current_path,
+            data={},
         )
-        assert resource_yml == read_yml(expected_remove_exposure_yml__default)
-        assert full_yml == None
+        full_yml = ResourceFileEditor.remove_resource(
+            properties=read_yml(exposure_yml_one_exposure), change=change
+        )
+
+        assert full_yml == {}
 
     def test_remove_exposure_yml_multiple_exposures(self):
-        resource_yml, full_yml = meshify.get_yml_entry(
-            resource_name=exposure_name,
-            full_yml=read_yml(exposure_yml_multiple_exposures),
-            resource_type=NodeType.Exposure,
-            source_name=None,
+        change = ResourceChange(
+            operation=Operation.Remove,
+            entity_type=EntityType.Exposure,
+            identifier=exposure_name,
+            path=current_path,
+            data={},
         )
-        assert resource_yml == read_yml(expected_remove_exposure_yml__default)
+        full_yml = ResourceFileEditor.remove_resource(
+            properties=read_yml(exposure_yml_multiple_exposures), change=change
+        )
+
         assert full_yml == read_yml(expected_remainder_yml__multiple_exposures)
 
     def test_remove_metric_yml_one_metric(self):
-        resource_yml, full_yml = meshify.get_yml_entry(
-            resource_name=metric_name,
-            full_yml=read_yml(metric_yml_one_metric),
-            resource_type=NodeType.Metric,
-            source_name=None,
+        change = ResourceChange(
+            operation=Operation.Remove,
+            entity_type=EntityType.Metric,
+            identifier=metric_name,
+            path=current_path,
+            data={},
         )
-        assert resource_yml == read_yml(expected_remove_metric_yml__default)
-        assert full_yml == None
+        full_yml = ResourceFileEditor.remove_resource(
+            properties=read_yml(metric_yml_one_metric), change=change
+        )
+        assert full_yml == {}
 
     def test_remove_metric_yml_multiple_metrics(self):
-        resource_yml, full_yml = meshify.get_yml_entry(
-            resource_name=metric_name,
-            full_yml=read_yml(metric_yml_multiple_metrics),
-            resource_type=NodeType.Metric,
-            source_name=None,
+        change = ResourceChange(
+            operation=Operation.Remove,
+            entity_type=EntityType.Metric,
+            identifier=metric_name,
+            path=current_path,
+            data={},
         )
-        assert resource_yml == read_yml(expected_remove_metric_yml__default)
+        full_yml = ResourceFileEditor.remove_resource(
+            properties=read_yml(metric_yml_multiple_metrics), change=change
+        )
+
         assert full_yml == read_yml(expected_remainder_yml__multiple_metrics)
 
 
 class TestAddResourceYml:
     def test_add_model_yml_simple(self):
-        full_yml = meshify.add_entry_to_yml(
-            resource_entry=read_yml(expected_remove_model_yml__model_yml_no_col_no_version),
-            full_yml=None,
-            resource_type=NodeType.Model,
+        data = read_yml(expected_remove_model_yml__model_yml_no_col_no_version)
+        change = ResourceChange(
+            operation=Operation.Add,
+            entity_type=EntityType.Model,
+            identifier=data["name"],
+            path=current_path,
+            data=data,
         )
+        full_yml = ResourceFileEditor.update_resource(properties={}, change=change)
+
         assert full_yml == read_yml(model_yml_no_col_no_version)
 
     def test_add_model_yml_other_model(self):
-        full_yml = meshify.add_entry_to_yml(
-            resource_entry=read_yml(expected_remove_model_yml__default),
-            full_yml=read_yml(expected_remainder_yml__model_yml_other_model),
-            resource_type=NodeType.Model,
+        data = read_yml(expected_remove_model_yml__default)
+        change = ResourceChange(
+            operation=Operation.Add,
+            entity_type=EntityType.Model,
+            identifier=data["name"],
+            path=current_path,
+            data=data,
         )
+        full_yml = ResourceFileEditor.update_resource(
+            properties=read_yml(expected_remainder_yml__model_yml_other_model), change=change
+        )
+
         assert full_yml == read_yml(model_yml_other_model)
 
     def test_add_source_yml_one_table(self):
-        full_yml = meshify.add_entry_to_yml(
-            resource_entry=read_yml(expected_remove_source_yml__default),
-            full_yml=None,
-            resource_type=NodeType.Source,
+        data = read_yml(expected_remove_source_yml__default)
+        change = ResourceChange(
+            operation=Operation.Add,
+            entity_type=EntityType.Source,
+            identifier=data["name"],
+            path=current_path,
+            data=data,
         )
+        full_yml = ResourceFileEditor.update_resource(properties={}, change=change)
+
         assert full_yml == read_yml(source_yml_one_table)
 
     def test_add_source_yml_multiple_table(self):
-        full_yml = meshify.add_entry_to_yml(
-            resource_entry=read_yml(expected_remove_source_yml__default),
-            full_yml=read_yml(expeceted_remainder_yml__source_yml_multiple_tables),
-            resource_type=NodeType.Source,
+        data = read_yml(expected_remove_source_yml__default)
+        data["tables"] = NamedList(data["tables"])
+        change = ResourceChange(
+            operation=Operation.Add,
+            entity_type=EntityType.Source,
+            identifier=data["name"],
+            path=current_path,
+            data=data,
         )
+        full_yml = ResourceFileEditor.update_resource(
+            properties=read_yml(expeceted_remainder_yml__source_yml_multiple_tables), change=change
+        )
+
         expected = read_yml(source_yml_multiple_tables)
-        source_entry = list(filter(lambda x: x["name"] == source_name, full_yml['sources']))
+        source_entry = list(filter(lambda x: x["name"] == source_name, full_yml["sources"]))
         expected_source_entry = list(
-            filter(lambda x: x["name"] == source_name, expected['sources'])
+            filter(lambda x: x["name"] == source_name, expected["sources"])
         )
         source_tables = source_entry[0].pop("tables")
         expected_source_tables = expected_source_entry[0].pop("tables")
@@ -173,37 +238,61 @@ class TestAddResourceYml:
         )
 
     def test_add_exposure_yml_one_exposure(self):
-        full_yml = meshify.add_entry_to_yml(
-            resource_entry=read_yml(expected_remove_exposure_yml__default),
-            full_yml=None,
-            resource_type=NodeType.Exposure,
+        data = read_yml(expected_remove_exposure_yml__default)
+        change = ResourceChange(
+            operation=Operation.Add,
+            entity_type=EntityType.Exposure,
+            identifier=data["name"],
+            path=current_path,
+            data=data,
         )
+
+        full_yml = ResourceFileEditor.update_resource(properties={}, change=change)
         assert full_yml == read_yml(exposure_yml_one_exposure)
 
     def test_add_exposure_yml_multiple_exposures(self):
-        full_yml = meshify.add_entry_to_yml(
-            resource_entry=read_yml(expected_remove_exposure_yml__default),
-            full_yml=read_yml(expected_remainder_yml__multiple_exposures),
-            resource_type=NodeType.Exposure,
+        data = read_yml(expected_remove_exposure_yml__default)
+        change = ResourceChange(
+            operation=Operation.Add,
+            entity_type=EntityType.Exposure,
+            identifier=data["name"],
+            path=current_path,
+            data=data,
         )
+        full_yml = ResourceFileEditor.update_resource(
+            properties=read_yml(expected_remainder_yml__multiple_exposures), change=change
+        )
+
         assert sorted(full_yml["exposures"], key=lambda x: x["name"]) == sorted(
             read_yml(exposure_yml_multiple_exposures)["exposures"], key=lambda x: x["name"]
         )
 
     def test_add_metric_yml_one_metric(self):
-        full_yml = meshify.add_entry_to_yml(
-            resource_entry=read_yml(expected_remove_metric_yml__default),
-            full_yml=None,
-            resource_type=NodeType.Metric,
+        data = read_yml(expected_remove_metric_yml__default)
+        change = ResourceChange(
+            operation=Operation.Add,
+            entity_type=EntityType.Metric,
+            identifier=data["name"],
+            path=current_path,
+            data=data,
         )
+        full_yml = ResourceFileEditor.update_resource(properties={}, change=change)
+
         assert full_yml == read_yml(metric_yml_one_metric)
 
     def test_add_metric_yml_multiple_metrics(self):
-        full_yml = meshify.add_entry_to_yml(
-            resource_entry=read_yml(expected_remove_metric_yml__default),
-            full_yml=read_yml(expected_remainder_yml__multiple_metrics),
-            resource_type=NodeType.Metric,
+        data = read_yml(expected_remove_metric_yml__default)
+        change = ResourceChange(
+            operation=Operation.Add,
+            entity_type=EntityType.Metric,
+            identifier=data["name"],
+            path=current_path,
+            data=data,
         )
+        full_yml = ResourceFileEditor.update_resource(
+            properties=read_yml(expected_remainder_yml__multiple_metrics), change=change
+        )
+
         assert sorted(full_yml["metrics"], key=lambda x: x["name"]) == sorted(
             read_yml(metric_yml_multiple_metrics)["metrics"], key=lambda x: x["name"]
         )
