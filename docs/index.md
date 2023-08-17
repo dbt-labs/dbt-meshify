@@ -9,7 +9,7 @@ These dbt-core features include:
 3. __[Access](https://docs.getdbt.com/docs/collaborate/govern/model-access)__ - control the `access` level of models within groups
 4. __[Versions](https://docs.getdbt.com/docs/collaborate/govern/model-versions)__ - create and increment versions of particular models.
 
-Additionally, `dbt-meshify` automates the code development required to split a monolithic dbt project into component projects using cross-project `ref`.
+Additionally, `dbt-meshify` automates the code development required to split a monolithic dbt project into component projects, or connect multiple pre-existing dbt projects using cross-project `ref`.
 
 This package leverages the dbt-core Python API to allow users to use standard dbt selection syntax for each of the commands in this package (unless otherwise noted). See details on each of the specific commands available on the [commands page](commands.md)
 
