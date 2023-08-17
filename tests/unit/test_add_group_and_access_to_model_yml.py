@@ -90,7 +90,7 @@ class TestAddGroupToModelYML:
             operation=Operation.Add,
             entity_type=EntityType.Model,
             identifier=model_name,
-            path=pathlib.Path(group.path),
+            path=pathlib.Path(group.path).resolve(),
             data={
                 "group": group.name,
                 "access": AccessType.Public.value,

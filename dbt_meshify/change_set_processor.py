@@ -42,9 +42,9 @@ class ChangeSetProcessor:
         changes = list(chain.from_iterable(change_sets))
         for step, change in enumerate(changes):
             try:
-                level = "STARTING"
-                if self.__dry_run:
-                    level = "INFO"
+                logger.debug(change.__repr__())
+
+                level = "PLANNED" if self.__dry_run else "STARTING"
                 logger.log(level, f"{str(change)}", step=step, steps=len(changes))
 
                 if self.__dry_run:

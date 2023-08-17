@@ -71,7 +71,7 @@ class TestAddGroupToYML:
             operation=Operation.Add,
             entity_type=EntityType.Group,
             identifier=new_group.name,
-            path=pathlib.Path(new_group.path),
+            path=pathlib.Path(new_group.path).resolve(),
             data={
                 "name": new_group.name,
                 "owner": new_group.owner.to_dict(),

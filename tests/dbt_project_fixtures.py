@@ -37,7 +37,7 @@ shared_model_catalog_entry = CatalogTable.from_dict(
 @pytest.fixture
 def project():
     project = MagicMock()
-    project.resolve_patch_path.return_value = Path(".")
+    project.resolve_patch_path.return_value = Path(".").resolve()
     return project
 
 

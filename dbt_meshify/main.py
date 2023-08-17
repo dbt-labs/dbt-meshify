@@ -47,7 +47,8 @@ operation_format = (
 )
 
 STARTING_LOG_LEVEL = logger.level("STARTING", no=24, color="<yellow>")
-LOG_LEVEL = "INFO"
+PLANNED_LOG_LEVEL = logger.level("PLANNED", no=23, color="<white>")
+logger.remove()  # Remove the default sink added by Loguru
 
 
 def logger_log_level_filter(record):
@@ -55,7 +56,8 @@ def logger_log_level_filter(record):
     Filter for log records that have a level greater than or equal to the level stored in LOG_LEVEL, while filtering
     out all STARTED and SUCCESS levels.
     """
-    return record["level"].no >= logger.level(LOG_LEVEL).no and record["level"].no not in (
+    return record["level"].no not in (
+        PLANNED_LOG_LEVEL.no,
         STARTING_LOG_LEVEL.no,
         25,
     )
@@ -65,12 +67,7 @@ def logger_operation_level_filter(record):
     """
     Filter for log records that have a level of STARTED or SUCCESS.
     """
-    return record["level"].no in (STARTING_LOG_LEVEL.no, 25)
-
-
-logger.remove()  # Remove the default sink added by Loguru
-logger.add(sys.stdout, format=log_format, filter=logger_log_level_filter)
-logger.add(sys.stdout, format=operation_format, filter=logger_operation_level_filter)
+    return record["level"].no in (STARTING_LOG_LEVEL.no, PLANNED_LOG_LEVEL.no, 25)
 
 
 # define cli group
@@ -78,8 +75,10 @@ logger.add(sys.stdout, format=operation_format, filter=logger_operation_level_fi
 @click.option("--dry-run", is_flag=True)
 @click.option("--debug", is_flag=True)
 def cli(dry_run: bool, debug: bool):
-    if debug:
-        LOG_LEVEL = "DEBUG"  # noqa: F841
+    log_level = "DEBUG" if debug else "INFO"
+
+    logger.add(sys.stdout, format=log_format, filter=logger_log_level_filter, level=log_level)
+    logger.add(sys.stdout, format=operation_format, filter=logger_operation_level_filter)
 
 
 @cli.result_callback()
@@ -132,11 +131,14 @@ def connect(
     linker = Linker()
     if project_paths:
         dbt_projects = [
-            DbtProject.from_directory(project_path, read_catalog) for project_path in project_paths
+            DbtProject.from_directory(Path(project_path).resolve(), read_catalog)
+            for project_path in project_paths
         ]
 
     if projects_dir:
-        dbt_project_paths = [path.parent for path in Path(projects_dir).glob("**/dbt_project.yml")]
+        dbt_project_paths = [
+            path.parent.resolve() for path in Path(projects_dir).glob("**/dbt_project.yml")
+        ]
         all_dbt_projects = [
             DbtProject.from_directory(project_path, read_catalog)
             for project_path in dbt_project_paths

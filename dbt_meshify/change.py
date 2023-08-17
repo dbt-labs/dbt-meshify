@@ -67,10 +67,16 @@ class BaseChange:
     identifier: str
     path: Path
 
+    def __post_init__(self):
+        """Validate BaseChange objects"""
+        assert (
+            self.path.is_absolute()
+        ), f"Change paths must be absolute. Check the path to {self.path}"
+
     def __str__(self):
         return (
             f"{self.operation.value.capitalize()} {self.entity_type.value} "
-            f"`{self.identifier}` {prepositions[self.operation]} {self.path}"
+            f"`{self.identifier}` {prepositions[self.operation]} {self.path.relative_to(os.getcwd())}"
         )
 
 
@@ -80,6 +86,13 @@ class ResourceChange(BaseChange):
 
     data: Dict
     source_name: Optional[str] = None
+
+    def __str__(self):
+        return (
+            f"{self.operation.value.capitalize()} {self.entity_type.value} "
+            f"`{self.source_name + '.' if self.source_name else ''}{self.identifier}` "
+            f"{prepositions[self.operation]} {self.path.relative_to(os.getcwd())}"
+        )
 
 
 @dataclasses.dataclass

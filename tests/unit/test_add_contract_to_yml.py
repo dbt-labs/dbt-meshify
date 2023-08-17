@@ -32,7 +32,7 @@ model_name = "shared_model"
 @pytest.fixture
 def project():
     project = MagicMock()
-    project.resolve_patch_path.return_value = Path(".")
+    project.resolve_patch_path.return_value = Path(".").resolve()
     project.get_catalog_entry.return_value = shared_model_catalog_entry
     return project
 

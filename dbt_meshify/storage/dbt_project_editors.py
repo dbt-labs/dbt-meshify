@@ -263,6 +263,7 @@ class DbtSubprojectCreator:
             identifier=resource.name,
             path=new_yml_path,
             data=resource_entry,
+            source_name=source_name,
         )
 
     def move_resource_yml_entry(self, resource: Resource) -> ChangeSet:
@@ -284,9 +285,10 @@ class DbtSubprojectCreator:
                 ResourceChange(
                     operation=Operation.Add,
                     entity_type=EntityType(resource.resource_type.value),
-                    identifier=resource.name if not source_name else source_name,
+                    identifier=resource.name,
                     path=new_yml_path,
                     data=resource_entry,
+                    source_name=source_name,
                 ),
                 ResourceChange(
                     operation=Operation.Remove,

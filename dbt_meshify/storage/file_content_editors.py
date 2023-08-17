@@ -136,9 +136,10 @@ class ResourceFileEditor:
     def update_resource(properties: Dict[Any, Any], change: ResourceChange) -> Dict:
         """Update an identified resource in a properties dictionary using a ResourceChange."""
 
+        identifier = change.identifier if not change.source_name else change.source_name
         entities = NamedList(properties.get(change.entity_type.pluralize(), []))
-        updated_entities = safe_update(entities.get(change.identifier, {}), change.data)
-        entities[change.identifier] = format_resource(change.entity_type, updated_entities)
+        updated_entities = safe_update(entities.get(identifier, {}), change.data)
+        entities[identifier] = format_resource(change.entity_type, updated_entities)
 
         properties[change.entity_type.pluralize()] = entities.to_list()
         return properties

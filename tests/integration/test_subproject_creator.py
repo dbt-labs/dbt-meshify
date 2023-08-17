@@ -48,7 +48,7 @@ def setup_new_project(write_packages_yml: bool = False):
 
 
 def split_project(select: str = "my_first_dbt_model"):
-    project = DbtProject.from_directory(Path("test"), read_catalog=False)
+    project = DbtProject.from_directory(Path("test").resolve(), read_catalog=False)
     subproject = project.split(project_name="subdir", select=select)
     return subproject
 

@@ -3,6 +3,8 @@ from pathlib import Path
 from dbt_meshify.change import EntityType, Operation, ResourceChange
 from dbt_meshify.storage.file_content_editors import NamedList, ResourceFileEditor
 
+current_path = Path(".").resolve()
+
 
 class TestResourceFileEditor:
     def test_update_resource_adds_fields(self):
@@ -12,7 +14,7 @@ class TestResourceFileEditor:
             operation=Operation.Update,
             entity_type=EntityType.Model,
             identifier="example",
-            path=Path("."),
+            path=current_path,
             data={"description": "foobar"},
         )
         output = ResourceFileEditor.update_resource(properties, change)
@@ -26,7 +28,7 @@ class TestResourceFileEditor:
             operation=Operation.Update,
             entity_type=EntityType.Model,
             identifier="example",
-            path=Path("."),
+            path=current_path,
             data={"description": "foobar"},
         )
         output = ResourceFileEditor.update_resource(properties, change)
@@ -46,7 +48,7 @@ class TestResourceFileEditor:
             operation=Operation.Update,
             entity_type=EntityType.Model,
             identifier="example",
-            path=Path("."),
+            path=current_path,
             data={"columns": NamedList([{"name": "column_one", "data_type": "bogus"}])},
         )
         output = ResourceFileEditor.update_resource(properties, change)
@@ -68,7 +70,7 @@ class TestResourceFileEditor:
             operation=Operation.Add,
             entity_type=EntityType.Source,
             identifier="example",
-            path=Path("."),
+            path=current_path,
             data={"tables": NamedList([{"name": "new_table", "description": "new_description"}])},
         )
         output = ResourceFileEditor.update_resource(properties, change)
@@ -94,7 +96,7 @@ class TestResourceFileEditor:
             operation=Operation.Add,
             entity_type=EntityType.Source,
             identifier="example",
-            path=Path("."),
+            path=current_path,
             data={"tables": NamedList([{"name": "new_table", "description": "new_description"}])},
         )
         output = ResourceFileEditor.update_resource(properties, change)

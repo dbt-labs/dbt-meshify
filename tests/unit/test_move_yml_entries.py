@@ -38,13 +38,16 @@ def read_yml(yml_str):
     return yaml.safe_load(yml_str)
 
 
+current_path = Path(".").resolve()
+
+
 class TestRemoveResourceYml:
     def test_remove_model_yml_simple(self):
         change = ResourceChange(
             operation=Operation.Remove,
             entity_type=EntityType.Model,
             identifier=model_name,
-            path=Path("."),
+            path=current_path,
             data=read_yml(model_yml_no_col_no_version),
         )
         full_yml = ResourceFileEditor.remove_resource(
@@ -57,7 +60,7 @@ class TestRemoveResourceYml:
             operation=Operation.Remove,
             entity_type=EntityType.Model,
             identifier=model_name,
-            path=Path("."),
+            path=current_path,
             data={},
         )
         full_yml = ResourceFileEditor.remove_resource(
@@ -71,7 +74,7 @@ class TestRemoveResourceYml:
             operation=Operation.Remove,
             entity_type=EntityType.Model,
             identifier=model_name,
-            path=Path("."),
+            path=current_path,
             data={},
         )
         full_yml = ResourceFileEditor.remove_resource(
@@ -85,7 +88,7 @@ class TestRemoveResourceYml:
             operation=Operation.Remove,
             entity_type=EntityType.Source,
             identifier=source_table_name,
-            path=Path("."),
+            path=current_path,
             data={},
             source_name="test_source",
         )
@@ -100,7 +103,7 @@ class TestRemoveResourceYml:
             operation=Operation.Remove,
             entity_type=EntityType.Source,
             identifier=source_table_name,
-            path=Path("."),
+            path=current_path,
             data={},
             source_name="test_source",
         )
@@ -115,7 +118,7 @@ class TestRemoveResourceYml:
             operation=Operation.Remove,
             entity_type=EntityType.Exposure,
             identifier=exposure_name,
-            path=Path("."),
+            path=current_path,
             data={},
         )
         full_yml = ResourceFileEditor.remove_resource(
@@ -129,7 +132,7 @@ class TestRemoveResourceYml:
             operation=Operation.Remove,
             entity_type=EntityType.Exposure,
             identifier=exposure_name,
-            path=Path("."),
+            path=current_path,
             data={},
         )
         full_yml = ResourceFileEditor.remove_resource(
@@ -143,7 +146,7 @@ class TestRemoveResourceYml:
             operation=Operation.Remove,
             entity_type=EntityType.Metric,
             identifier=metric_name,
-            path=Path("."),
+            path=current_path,
             data={},
         )
         full_yml = ResourceFileEditor.remove_resource(
@@ -156,7 +159,7 @@ class TestRemoveResourceYml:
             operation=Operation.Remove,
             entity_type=EntityType.Metric,
             identifier=metric_name,
-            path=Path("."),
+            path=current_path,
             data={},
         )
         full_yml = ResourceFileEditor.remove_resource(
@@ -173,7 +176,7 @@ class TestAddResourceYml:
             operation=Operation.Add,
             entity_type=EntityType.Model,
             identifier=data["name"],
-            path=Path("."),
+            path=current_path,
             data=data,
         )
         full_yml = ResourceFileEditor.update_resource(properties={}, change=change)
@@ -186,7 +189,7 @@ class TestAddResourceYml:
             operation=Operation.Add,
             entity_type=EntityType.Model,
             identifier=data["name"],
-            path=Path("."),
+            path=current_path,
             data=data,
         )
         full_yml = ResourceFileEditor.update_resource(
@@ -201,7 +204,7 @@ class TestAddResourceYml:
             operation=Operation.Add,
             entity_type=EntityType.Source,
             identifier=data["name"],
-            path=Path("."),
+            path=current_path,
             data=data,
         )
         full_yml = ResourceFileEditor.update_resource(properties={}, change=change)
@@ -215,7 +218,7 @@ class TestAddResourceYml:
             operation=Operation.Add,
             entity_type=EntityType.Source,
             identifier=data["name"],
-            path=Path("."),
+            path=current_path,
             data=data,
         )
         full_yml = ResourceFileEditor.update_resource(
@@ -240,7 +243,7 @@ class TestAddResourceYml:
             operation=Operation.Add,
             entity_type=EntityType.Exposure,
             identifier=data["name"],
-            path=Path("."),
+            path=current_path,
             data=data,
         )
 
@@ -253,7 +256,7 @@ class TestAddResourceYml:
             operation=Operation.Add,
             entity_type=EntityType.Exposure,
             identifier=data["name"],
-            path=Path("."),
+            path=current_path,
             data=data,
         )
         full_yml = ResourceFileEditor.update_resource(
@@ -270,7 +273,7 @@ class TestAddResourceYml:
             operation=Operation.Add,
             entity_type=EntityType.Metric,
             identifier=data["name"],
-            path=Path("."),
+            path=current_path,
             data=data,
         )
         full_yml = ResourceFileEditor.update_resource(properties={}, change=change)
@@ -283,7 +286,7 @@ class TestAddResourceYml:
             operation=Operation.Add,
             entity_type=EntityType.Metric,
             identifier=data["name"],
-            path=Path("."),
+            path=current_path,
             data=data,
         )
         full_yml = ResourceFileEditor.update_resource(
