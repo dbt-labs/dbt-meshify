@@ -24,6 +24,7 @@ description = "a package to upgrade dbt packages to the dbt mesh framework"
 authors = [
     "Dave Connors <dave.connors@fishtownanalytics.com>",
     "Grace Goheen <grace.goheen@dbtlabs.com>",
+    "Nicholas Yager <yager@nicholasyager.com>",
 ]
 license = "Apache 2.0"
 readme = "README.md"
