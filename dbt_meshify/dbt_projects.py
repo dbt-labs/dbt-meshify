@@ -293,13 +293,13 @@ class DbtProject(BaseDbtProject, PathedProject):
     ) -> None:
         self.path = path
         self.dbt = dbt
-        resources = self.select_resources(select="*", output_key="unique_id")
+        resources = self.select_resources(output_key="unique_id")
 
         super().__init__(manifest, project, catalog, name, resources)
 
     def select_resources(
         self,
-        select: str,
+        select: Optional[str] = None,
         exclude: Optional[str] = None,
         selector: Optional[str] = None,
         output_key: Optional[str] = None,
