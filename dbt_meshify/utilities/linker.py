@@ -216,7 +216,7 @@ class Linker:
 
         return dependencies
 
-    def delete_source_properties(
+    def generate_delete_source_properties(
         self, project: PathedProject, resource: SourceDefinition
     ) -> ResourceChange:
         """Create a ResourceChange that removes a source from its properties YAML file."""
@@ -297,7 +297,7 @@ class Linker:
                     )
 
                 change_set.add(
-                    self.delete_source_properties(
+                    self.generate_delete_source_properties(
                         project=downstream_project, resource=downstream_manifest_entry
                     )
                 )
