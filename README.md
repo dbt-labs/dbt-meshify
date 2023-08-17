@@ -21,6 +21,12 @@ Additionally, `dbt-meshify` automates the code development required to split a m
 
 ## Installation
 
+To install dbt-meshify, run:
 ```bash
 pip install dbt-meshify
+```
+
+To upgrade dbt-meshify, run:
+```bash
+pip install --upgrade dbt-meshify
 ```
