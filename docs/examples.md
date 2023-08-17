@@ -66,9 +66,34 @@ This will add an enforced contract to the `stores` model:
 
 ## Group together a subset of models
 
-TO DO: add example here 
+Let's say you want to group together your sales analytics models.
+![group together sales analytics models](https://github.com/dave-connors-3/barnold-corp/assets/53586774/b192bf70-e854-46f6-be40-915eb48adbb3)
+
+You can run the following command:
+```bash
+dbt-meshify group sales_analytics --owner-name Ralphie --select +int_sales__unioned +int_returns__unioned transactions
+```
+
+This will create a new group named "sales_analytics" with the owner "Ralphie", add all selected models to that group with the appropriate `access` configuration, _and add contracts to the public-identified models_:
+- create a new group definition in a `_groups.yml` file
+![yml file with group defition](https://github.com/dave-connors-3/barnold-corp/assets/53586774/b3fa812a-157f-41b3-842d-c67e59f77298)
+- add all selected models to that group with the appropriate `access` config
+    - all models that are only referenced by other models in their _same group_ will have `access: private`
+    ![int_sales__unioned access set to private](https://github.com/dave-connors-3/barnold-corp/assets/53586774/481010bb-ceed-4feb-a46e-05c185fac4e4)
+    - all other models (those that are referenced by models _outside their group_ or are leaf nodes) will have `access: public`
+    ![transactions access set to public](https://github.com/dave-connors-3/barnold-corp/assets/53586774/4c8665ac-d14c-424d-81e3-51c0bf12c701)
+- for all `public` models:
+    - add a `contract` config and set `enforced: true`
+    ![yml file updated with added contract config for transactions model](https://github.com/dave-connors-3/barnold-corp/assets/53586774/d40cef1b-fbb8-4cc3-9be6-f782378164cf)
+    - add every column's `name` and `data_type` if not already defined
+    ![yml file updated with added column names and data_types for transactions model](https://github.com/dave-connors-3/barnold-corp/assets/53586774/f6402db9-95f0-4dc3-bc17-5966e79811a4)
 
 ## Split out a new subproject
+
+Let's say you want to split our your sales analytics models into a new subproject.
+![split sales analytics models into a new subproject](https://github.com/dave-connors-3/barnold-corp/assets/53586774/402a5637-800e-4945-b2e0-5271f2bf2c25)
+
+
 
 TO DO: add example here 
 
