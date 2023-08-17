@@ -162,8 +162,6 @@ def test_add_contract_read_catalog(start_yml, end_yml, read_catalog, caplog, pro
     with open(yml_file, "r") as f:
         actual = yaml.safe_load(f)
 
-    print(caplog)
-
     if read_catalog:
         assert "Reading catalog from" in caplog.text
         assert "Generating catalog with dbt docs generate..." not in caplog.text
