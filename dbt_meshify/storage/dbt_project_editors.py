@@ -167,7 +167,6 @@ class DbtSubprojectCreator:
                 change_set.add(self.move_resource(resource))
                 change_set.extend(self.move_resource_yml_entry(resource))
 
-
                 if isinstance(resource, (ModelNode, GenericTestNode, SnapshotNode)) and any(
                     node
                     for node in resource.depends_on.nodes

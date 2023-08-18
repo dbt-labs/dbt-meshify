@@ -49,12 +49,12 @@ class BaseDbtProject:
         self.resources = resources if resources else set()
 
         self.model_relation_names: Dict[str, str] = {
-            model.relation_name: unique_id
+            model.relation_name.lower(): unique_id
             for unique_id, model in self.models.items()
             if model.relation_name is not None
         }
         self.source_relation_names: Dict[str, str] = {
-            source.relation_name: unique_id
+            source.relation_name.lower(): unique_id
             for unique_id, source in self.sources().items()
             if source.relation_name is not None
         }

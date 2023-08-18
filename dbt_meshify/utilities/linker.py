@@ -73,12 +73,12 @@ class Linker:
 
         relations = self._find_relation_dependencies(
             source_relations={
-                model.relation_name
+                model.relation_name.lower()
                 for model in project.models.values()
                 if model.relation_name is not None
             },
             target_relations={
-                source.relation_name
+                source.relation_name.lower()
                 for source in other_project.sources().values()
                 if source.relation_name is not None
             },
@@ -97,12 +97,12 @@ class Linker:
 
         backwards_relations = self._find_relation_dependencies(
             source_relations={
-                model.relation_name
+                model.relation_name.lower()
                 for model in other_project.models.values()
                 if model.relation_name is not None
             },
             target_relations={
-                source.relation_name
+                source.relation_name.lower()
                 for source in project.sources().values()
                 if source.relation_name is not None
             },
@@ -142,12 +142,12 @@ class Linker:
         # find which models are in both manifests
         relations = self._find_relation_dependencies(
             source_relations={
-                model.relation_name
+                model.relation_name.lower()
                 for model in project.models.values()
                 if model.relation_name is not None
             },
             target_relations={
-                model.relation_name
+                model.relation_name.lower()
                 for model in other_project.models.values()
                 if model.relation_name is not None
             },
