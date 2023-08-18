@@ -48,7 +48,7 @@ class DbtSubprojectCreator:
         self, path: Path, name: str, resource_type: NodeType, nested_name: Optional[str] = None
     ) -> Dict:
         """Load the Model patch YAML for a given ModelNode."""
-        raw_yml = YAMLFileManager.read_file(path)
+        raw_yml = YAMLFileManager.read_file(path) if path.exists() else {}
 
         if not isinstance(raw_yml, dict):
             raise Exception(
@@ -163,10 +163,8 @@ class DbtSubprojectCreator:
                 logger.debug(
                     f"Moving {resource.unique_id} and associated YML to subproject {subproject.name}..."
                 )
-
                 change_set.add(self.move_resource(resource))
                 change_set.extend(self.move_resource_yml_entry(resource))
-
 
                 if isinstance(resource, (ModelNode, GenericTestNode, SnapshotNode)) and any(
                     node
@@ -279,7 +277,8 @@ class DbtSubprojectCreator:
         resource_entry = self.load_resource_yml(
             current_yml_path, resource.name, resource.resource_type, source_name
         )
-
+        if not resource_entry:
+            return change_set
         change_set.extend(
             [
                 ResourceChange(
