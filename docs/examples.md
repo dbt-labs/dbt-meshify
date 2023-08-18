@@ -98,7 +98,17 @@ You can run the following command:
 dbt-meshify split sales_analytics --select +int_sales__unioned +int_returns__unioned transactions
 ```
 
-TO DO: add what happens with screenshots here
+This will create a new subproject that contains the selected sales analytics models, configure the "edge" models to be `public` and contracted, and replace all dependencies in the downstream project on the upstreams's models with cross project `ref`s:
+- create a new subproject that contains the selected sales analytics models
+![selected models moved to a subproject](https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/e638d83e-eb24-4f1e-852d-2c058bfedb4f)
+- add a `dependencies.yml` to the _downstream_ project (in our case, our new subproject is downstream of the original project because the `transactions` model depends on some of the models that remain in the original project - `stores` and `customers`)
+- add `access: public` to all models in the upstream project that are referenced by models in the downstream project
+![customers access set to public](https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/9e110ca4-40c5-4013-ab89-773b59638320)
+- for all `public` models:
+    - add a `contract` config and set `enforced: true`
+    ![yml file updated with added contract config for stores model](https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/800fc871-ce56-4e80-b746-8bd84aa05574)
+    - add every column's `name` and `data_type` if not already defined
+    ![yml file updated with added column names and data_types for stores model](https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/48d41e17-0ad3-4a31-863b-1a8646d1d7c9)
 
 ## Connect multiple dbt projects
 
