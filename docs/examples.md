@@ -93,9 +93,12 @@ This will create a new group named "sales_analytics" with the owner "Ralphie", a
 Let's say you want to split our your sales analytics models into a new subproject.
 ![split sales analytics models into a new subproject](https://github.com/dave-connors-3/barnold-corp/assets/53586774/402a5637-800e-4945-b2e0-5271f2bf2c25)
 
+You can run the following command:
+```bash
+dbt-meshify split sales_analytics --select +int_sales__unioned +int_returns__unioned transactions
+```
 
-
-TO DO: add example here 
+TO DO: add what happens with screenshots here
 
 ## Connect multiple dbt projects
 
