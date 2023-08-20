@@ -96,8 +96,15 @@ class YAMLFileManager:
         for key, value in content.items():
             if isinstance(value, dict):
                 content[key] = YAMLFileManager._clean_content(value)
-            if isinstance(value, List) and len(value) == 0:
-                keys_to_remove.add(key)
+            if isinstance(value, List):
+                if len(value) == 0:
+                    keys_to_remove.add(key)
+                    continue
+
+                for index, subcontent in enumerate(value):
+                    if isinstance(subcontent, dict):
+                        cleaned_content = YAMLFileManager._clean_content(subcontent)
+                        content[key][index] = cleaned_content
 
         for key in keys_to_remove:
             del content[key]
