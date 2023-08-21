@@ -5,3 +5,4 @@ sources:
     schema: main
     tables:
       - name: shared_model
+        identifier: SHARED_MODEL
