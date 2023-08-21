@@ -1,8 +1,7 @@
 from typing import Union
 
-from dbt_meshify.change import EntityType, FileChange, Operation
+from dbt_meshify.change import EntityType, Operation, ResourceChange
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject
-from dbt_meshify.storage.file_manager import YAMLFileManager, yaml
 
 
 class DependenciesUpdater:
@@ -11,7 +10,7 @@ class DependenciesUpdater:
         upstream_project: Union[DbtProject, DbtSubProject],
         downstream_project: Union[DbtProject, DbtSubProject],
         reversed: bool = False,
-    ) -> FileChange:
+    ) -> ResourceChange:
         true_upstream_project = upstream_project
         true_downstream_project = downstream_project
 
@@ -21,18 +20,12 @@ class DependenciesUpdater:
             true_upstream_project = downstream_project
             true_downstream_project = upstream_project
 
-        try:
-            contents = YAMLFileManager.read_file(true_downstream_project.path / "dependencies.yml")
+        path = true_downstream_project.path / "dependencies.yml"
 
-        except FileNotFoundError:
-            contents = {"projects": []}
-
-        contents["projects"].append({"name": true_upstream_project.name})
-
-        return FileChange(
-            operation=Operation.Add,
-            entity_type=EntityType.Code,
-            identifier="dependencies.yml",
-            path=true_downstream_project.path / "dependencies.yml",
-            data=yaml.dump(contents),
+        return ResourceChange(
+            operation=Operation.Update if path.exists() else Operation.Add,
+            entity_type=EntityType.Project,
+            identifier=true_upstream_project.name,
+            path=path,
+            data={"name": true_upstream_project.name},
         )
