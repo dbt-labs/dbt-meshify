@@ -111,6 +111,10 @@ class TestSplitCommand:
         assert (
             Path(dest_project_path) / "my_new_project" / "macros" / "cents_to_dollars.sql"
         ).exists()
+        # copied custom macro parents too!
+        assert (
+            Path(dest_project_path) / "my_new_project" / "macros" / "type_numeric.sql"
+        ).exists()
 
         # assert only one source moved
         source_yml = yaml.safe_load(
