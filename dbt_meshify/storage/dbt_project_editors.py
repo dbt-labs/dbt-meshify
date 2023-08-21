@@ -136,7 +136,6 @@ class DbtSubprojectCreator:
 
         for unique_id in subproject.resources | subproject.custom_macros | subproject.groups:
             resource = subproject.get_manifest_node(unique_id)
-
             if not resource:
                 raise KeyError(f"Resource {unique_id} not found in manifest")
             if resource.resource_type in ["model", "test", "snapshot", "seed"]:
@@ -257,7 +256,7 @@ class DbtSubprojectCreator:
         )
         return ResourceChange(
             operation=Operation.Add,
-            entity_type=EntityType[resource.resource_type.value],
+            entity_type=EntityType(resource.resource_type.value),
             identifier=resource.name,
             path=new_yml_path,
             data=resource_entry,

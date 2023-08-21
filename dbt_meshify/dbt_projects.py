@@ -231,14 +231,18 @@ class PathedProject:
 
     def resolve_patch_path(self, node: Union[Resource, CompiledNode]) -> Path:
         """Get a YML patch path for a node"""
-        if isinstance(node, ParsedNode):
+        if isinstance(node, (ParsedNode, Macro)):
             if not node.patch_path and not node.original_file_path:
                 raise FileNotFoundError(
                     f"Unable to identify patch path for resource {node.unique_id}"
                 )
 
             if not node.patch_path:
-                return self.path / Path(node.original_file_path).parent / "_models.yml"
+                return (
+                    self.path
+                    / Path(node.original_file_path).parent
+                    / f"_{node.resource_type.pluralize()}.yml"
+                )
 
             return self.path / Path(node.patch_path.split(":")[-1][2:])
 

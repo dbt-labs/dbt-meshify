@@ -1,0 +1,3 @@
+macros:
+  - name: cents_to_dollars
+    description: Converts cents to dollars
