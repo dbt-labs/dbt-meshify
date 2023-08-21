@@ -1,5 +1,7 @@
 from typing import Any, Dict, List, Optional
 
+from loguru import logger
+
 from dbt_meshify.change import EntityType, FileChange, ResourceChange
 from dbt_meshify.exceptions import FileEditorException
 from dbt_meshify.storage.file_manager import RawFileManager, YAMLFileManager
@@ -142,6 +144,9 @@ class ResourceFileEditor:
         entities[identifier] = format_resource(change.entity_type, updated_entities)
 
         properties[change.entity_type.pluralize()] = entities.to_list()
+        if len(properties[change.entity_type.pluralize()]) == 0:
+            del properties[change.entity_type.pluralize()]
+
         return properties
 
     @staticmethod
@@ -154,6 +159,11 @@ class ResourceFileEditor:
             source_tables = entities[change.source_name].get("tables", {})
             del source_tables[change.identifier]
             entities[change.source_name]["tables"] = source_tables
+
+            # Remove the source definition if the last table has been removed.
+            if len(entities[change.source_name]["tables"]) == 0:
+                del entities[change.source_name]
+
         else:
             del entities[change.identifier]
 
@@ -183,10 +193,24 @@ class ResourceFileEditor:
 
         properties = YAMLFileManager.read_file(change.path)
         properties = self.update_resource(properties, change)
+
+        # If there are no more resources in the file, remove it.
+        if len(properties.keys()) == 0 or set(properties.keys()) == {"version"}:
+            logger.debug("There are no resources remaining in {change.path}. Removing the file.")
+            RawFileManager.delete_file(change.path)
+            return
+
         YAMLFileManager.write_file(change.path, properties)
 
     def remove(self, change: ResourceChange) -> None:
         """Remove an existing resource from a YAML file"""
         properties = YAMLFileManager.read_file(change.path)
         properties = self.remove_resource(properties, change)
+
+        # If there are no more resources in the file, remove it.
+        if len(properties.keys()) == 0 or set(properties.keys()) == {"version"}:
+            logger.debug("There are no resources remaining in {change.path}. Removing the file.")
+            RawFileManager.delete_file(change.path)
+            return
+
         YAMLFileManager.write_file(change.path, properties)

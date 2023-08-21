@@ -289,15 +289,6 @@ sources:
         description: "this is a test table"
 """
 
-expected_yml_one_table = """
-sources:
-  - name: test_source
-    description: "this is a test source"
-    schema: bogus
-    database: bogus
-    tables: []
-"""
-
 
 expected_remove_source_yml__default = """
 name: test_source

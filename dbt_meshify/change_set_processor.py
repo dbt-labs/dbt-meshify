@@ -45,12 +45,12 @@ class ChangeSetProcessor:
                 logger.debug(change.__repr__())
 
                 level = "PLANNED" if self.__dry_run else "STARTING"
-                logger.log(level, f"{str(change)}", step=step, steps=len(changes))
+                logger.log(level, f"{str(change)}", step=step + 1, steps=len(changes))
 
                 if self.__dry_run:
                     continue
 
                 self.write(change)
-                logger.success(f"{str(change)}", step=step, steps=len(changes))
+                logger.success(f"{str(change)}", step=step + 1, steps=len(changes))
             except Exception as e:
                 raise ChangeSetProcessorException(change=change, exception=e)

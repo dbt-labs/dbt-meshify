@@ -3,7 +3,7 @@
 
 import shutil
 from pathlib import Path
-from typing import Any, Dict, Protocol
+from typing import Any, Dict, List, Protocol
 
 from dbt.contracts.util import Identifier
 from ruamel.yaml import YAML
@@ -90,6 +90,28 @@ class YAMLFileManager:
     """The YAMLFileManager is a FileManager for interacting with YAML files in the filesystem."""
 
     @staticmethod
+    def _clean_content(content: Dict) -> Dict:
+        """Clean up a dictionary content to remove empty list fields."""
+        keys_to_remove = set()
+        for key, value in content.items():
+            if isinstance(value, dict):
+                content[key] = YAMLFileManager._clean_content(value)
+            if isinstance(value, List):
+                if len(value) == 0:
+                    keys_to_remove.add(key)
+                    continue
+
+                for index, subcontent in enumerate(value):
+                    if isinstance(subcontent, dict):
+                        cleaned_content = YAMLFileManager._clean_content(subcontent)
+                        content[key][index] = cleaned_content
+
+        for key in keys_to_remove:
+            del content[key]
+
+        return content
+
+    @staticmethod
     def read_file(path: Path) -> Dict:
         """Read a file from the filesystem and return a string value."""
         file_text = RawFileManager.read_file(path)
@@ -98,5 +120,6 @@ class YAMLFileManager:
     @staticmethod
     def write_file(path: Path, content: Dict) -> None:
         """Write a string value to a file in the filesystem"""
-        file_text = yaml.dump(content)
+        clean_content = YAMLFileManager._clean_content(content)
+        file_text = yaml.dump(clean_content)
         RawFileManager.write_file(path, file_text)
