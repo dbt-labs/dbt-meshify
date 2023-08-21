@@ -15,7 +15,6 @@ from ..sql_and_yml_fixtures import (
     expected_remove_model_yml__default,
     expected_remove_model_yml__model_yml_no_col_no_version,
     expected_remove_source_yml__default,
-    expected_yml_one_table,
     exposure_yml_multiple_exposures,
     exposure_yml_one_exposure,
     metric_yml_multiple_metrics,
@@ -96,7 +95,7 @@ class TestRemoveResourceYml:
             properties=read_yml(source_yml_one_table), change=change
         )
 
-        assert full_yml == read_yml(expected_yml_one_table)
+        assert full_yml == {}
 
     def test_remove_source_yml_multiple_table(self):
         change = ResourceChange(
