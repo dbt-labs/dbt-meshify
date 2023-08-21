@@ -136,3 +136,28 @@ class TestConnectCommand:
         teardown_test_project(subdir_package_consumer_project)
         teardown_test_project(subdir_source_consumer_project)
         teardown_test_project(subdir_producer_project.parent)
+
+    def test_connect_source_hack_existing_dependency(self, producer_project):
+        """Test that connecting projects via source-hacked dependencies will not add duplicate dependency listings."""
+
+        # Add a previous project to confirm that we're not overwriting or duplicating anything.
+        dependency_path = Path(copy_source_consumer_project_path) / "dependencies.yml"
+
+        dependency_path.write_text("projects:\n - name: src_proj_b")
+
+        runner = CliRunner()
+        runner.invoke(
+            cli,
+            [
+                "connect",
+                "--project-paths",
+                copy_producer_project_path,
+                copy_source_consumer_project_path,
+            ],
+        )
+
+        # assert that the dependencies.yml was preserved existing project dependency
+        assert "src_proj_b" in dependency_path.read_text()
+
+        # assert that the dependencies.yml was created with a pointer to the upstream project
+        assert "src_proj_a" in dependency_path.read_text()

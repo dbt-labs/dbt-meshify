@@ -49,12 +49,12 @@ class BaseDbtProject:
         self.resources = resources if resources else set()
 
         self.model_relation_names: Dict[str, str] = {
-            model.relation_name: unique_id
+            model.relation_name.lower(): unique_id
             for unique_id, model in self.models.items()
             if model.relation_name is not None
         }
         self.source_relation_names: Dict[str, str] = {
-            source.relation_name: unique_id
+            source.relation_name.lower(): unique_id
             for unique_id, source in self.sources().items()
             if source.relation_name is not None
         }
@@ -106,12 +106,10 @@ class BaseDbtProject:
     def _load_graph(manifest: Manifest) -> Graph:
         """Generate a dbt Graph using a project manifest and the internal dbt Compiler and Linker."""
 
-        from dbt.compilation import Compiler, Linker
+        from dbt.compilation import Linker
 
-        compiler = Compiler(config={})
         linker = Linker()
-        compiler.link_graph(linker=linker, manifest=manifest)
-        return Graph(linker.graph)
+        return linker.get_graph(manifest=manifest)
 
     @property
     def graph(self):
