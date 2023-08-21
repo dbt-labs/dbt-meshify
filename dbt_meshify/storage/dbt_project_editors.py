@@ -277,27 +277,26 @@ class DbtSubprojectCreator:
         resource_entry = self.load_resource_yml(
             current_yml_path, resource.name, resource.resource_type, source_name
         )
-        if not resource_entry:
-            return change_set
-        change_set.extend(
-            [
-                ResourceChange(
-                    operation=Operation.Add,
-                    entity_type=EntityType(resource.resource_type.value),
-                    identifier=resource.name,
-                    path=new_yml_path,
-                    data=resource_entry,
-                    source_name=source_name,
-                ),
-                ResourceChange(
-                    operation=Operation.Remove,
-                    entity_type=EntityType(resource.resource_type.value),
-                    identifier=resource.name,
-                    path=current_yml_path,
-                    data={},
-                    source_name=source_name,
-                ),
-            ]
-        )
+        if resource_entry:
+            change_set.extend(
+                [
+                    ResourceChange(
+                        operation=Operation.Add,
+                        entity_type=EntityType(resource.resource_type.value),
+                        identifier=resource.name,
+                        path=new_yml_path,
+                        data=resource_entry,
+                        source_name=source_name,
+                    ),
+                    ResourceChange(
+                        operation=Operation.Remove,
+                        entity_type=EntityType(resource.resource_type.value),
+                        identifier=resource.name,
+                        path=current_yml_path,
+                        data={},
+                        source_name=source_name,
+                    ),
+                ]
+            )
 
         return change_set
