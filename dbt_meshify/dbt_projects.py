@@ -106,12 +106,10 @@ class BaseDbtProject:
     def _load_graph(manifest: Manifest) -> Graph:
         """Generate a dbt Graph using a project manifest and the internal dbt Compiler and Linker."""
 
-        from dbt.compilation import Compiler, Linker
+        from dbt.compilation import Linker
 
-        compiler = Compiler(config={})
         linker = Linker()
-        compiler.link_graph(linker=linker, manifest=manifest)
-        return Graph(linker.graph)
+        return linker.get_graph(manifest=manifest)
 
     @property
     def graph(self):
