@@ -390,25 +390,29 @@ class DbtSubProject(BaseDbtProject, PathedProject):
         project_dict["name"] = self.name
         self.project = Project.from_dict(project_dict)
 
+    def _get_macro_dependencies(self, unique_id: str) -> Set[str]:
+        resource = self.get_manifest_node(unique_id)
+        if not resource or any(isinstance(resource, class_) for class_ in [Documentation, Group]):
+            return set()
+        macros = resource.depends_on.macros  # type: ignore
+        project_macros = {
+            macro
+            for macro in macros
+            if hashlib.md5((macro.split(".")[1]).encode()).hexdigest()
+            == self.manifest.metadata.project_id
+        }
+        return project_macros
+
     def _get_custom_macros(self) -> Set[str]:
         """
         get a set of macro unique_ids for all the selected resources
         """
         macros_set = set()
         for unique_id in self.resources:
-            resource = self.get_manifest_node(unique_id)
-            if not resource or any(
-                isinstance(resource, class_) for class_ in [Documentation, Group]
-            ):
-                continue
-            macros = resource.depends_on.macros  # type: ignore
-            project_macros = [
-                macro
-                for macro in macros
-                if hashlib.md5((macro.split(".")[1]).encode()).hexdigest()
-                == self.manifest.metadata.project_id
-            ]
+            project_macros = self._get_macro_dependencies(unique_id)
             macros_set.update(project_macros)
+            for macro in project_macros:
+                macros_set.update(self._get_macro_dependencies(macro))
         return macros_set
 
     def _get_indirect_groups(self) -> Set[str]:
