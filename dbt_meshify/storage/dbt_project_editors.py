@@ -48,7 +48,7 @@ class DbtSubprojectCreator:
         self, path: Path, name: str, resource_type: NodeType, nested_name: Optional[str] = None
     ) -> Dict:
         """Load the Model patch YAML for a given ModelNode."""
-        raw_yml = YAMLFileManager.read_file(path)
+        raw_yml = YAMLFileManager.read_file(path) if path.exists() else {}
 
         if not isinstance(raw_yml, dict):
             raise Exception(
@@ -163,7 +163,6 @@ class DbtSubprojectCreator:
                 logger.debug(
                     f"Moving {resource.unique_id} and associated YML to subproject {subproject.name}..."
                 )
-
                 change_set.add(self.move_resource(resource))
                 change_set.extend(self.move_resource_yml_entry(resource))
 
@@ -278,26 +277,26 @@ class DbtSubprojectCreator:
         resource_entry = self.load_resource_yml(
             current_yml_path, resource.name, resource.resource_type, source_name
         )
-
-        change_set.extend(
-            [
-                ResourceChange(
-                    operation=Operation.Add,
-                    entity_type=EntityType(resource.resource_type.value),
-                    identifier=resource.name,
-                    path=new_yml_path,
-                    data=resource_entry,
-                    source_name=source_name,
-                ),
-                ResourceChange(
-                    operation=Operation.Remove,
-                    entity_type=EntityType(resource.resource_type.value),
-                    identifier=resource.name,
-                    path=current_yml_path,
-                    data={},
-                    source_name=source_name,
-                ),
-            ]
-        )
+        if resource_entry:
+            change_set.extend(
+                [
+                    ResourceChange(
+                        operation=Operation.Add,
+                        entity_type=EntityType(resource.resource_type.value),
+                        identifier=resource.name,
+                        path=new_yml_path,
+                        data=resource_entry,
+                        source_name=source_name,
+                    ),
+                    ResourceChange(
+                        operation=Operation.Remove,
+                        entity_type=EntityType(resource.resource_type.value),
+                        identifier=resource.name,
+                        path=current_yml_path,
+                        data={},
+                        source_name=source_name,
+                    ),
+                ]
+            )
 
         return change_set
