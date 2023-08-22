@@ -110,7 +110,7 @@ def operation():
 @read_catalog
 def connect(
     project_paths: tuple, projects_dir: Path, exclude_projects: List[str], read_catalog: bool
-):
+) -> List[ChangeSet]:
     """
     Connects multiple dbt projects together by adding all necessary dbt Mesh constructs
     """
@@ -164,8 +164,8 @@ def connect(
         )
         all_dependencies.update(dependencies)
     if len(all_dependencies) == 0:
-        logger.info("No dependencies found between any of the projects")
-        return
+        logger.warning("No dependencies found between any of the projects")
+        return []
 
     noun = "dependency" if len(all_dependencies) == 1 else "dependencies"
     logger.info(f"Found {len(all_dependencies)} unique {noun} between all projects.")
