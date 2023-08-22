@@ -1,5 +1,5 @@
 import re
-from typing import Union
+from typing import List, Optional, Union
 
 from dbt.contracts.graph.nodes import CompiledNode
 from loguru import logger
@@ -123,12 +123,14 @@ class ReferenceUpdater:
             data=updated_code,
         )
 
-    def update_child_refs(self, resource: CompiledNode) -> ChangeSet:
+    def update_child_refs(
+        self, resource: CompiledNode, current_change_set: Optional[ChangeSet] = None
+    ) -> ChangeSet:
         """Generate a set of FileChanges to update child references"""
 
         if not isinstance(self.project, DbtSubProject):
             raise Exception(
-                "The `update_parent_refs` method requires the calling project to have a parent project to update."
+                "The `update_child_refs` method requires the calling project to have a parent project to update."
             )
 
         change_set = ChangeSet()
@@ -142,11 +144,28 @@ class ReferenceUpdater:
             if not hasattr(model_node, "language") or not isinstance(model_node, CompiledNode):
                 continue
 
+            if current_change_set:
+                previous_changes: List[FileChange] = [
+                    change
+                    for change in current_change_set.changes
+                    if (
+                        isinstance(change, FileChange)
+                        and change.identifier == model_node.name
+                        and change.operation == Operation.Update
+                        and change.entity_type == EntityType.Code
+                        and change.path
+                        == self.project.parent_project.resolve_file_path(model_node)
+                    )
+                ]
+                previous_change = previous_changes[-1] if previous_changes else None
+
             change = self.generate_reference_update(
                 project_name=self.project.name,
                 upstream_node=resource,
                 downstream_node=model_node,
-                code=model_node.raw_code,
+                code=previous_change.data
+                if (previous_change and previous_change.data)
+                else model_node.raw_code,
                 downstream_project=self.project.parent_project,
             )
 
@@ -170,8 +189,6 @@ class ReferenceUpdater:
 
         change_set = ChangeSet()
 
-        code = resource.raw_code
-
         for model in upstream_models:
             logger.debug(f"Updating reference to {model} in {resource.name}.")
             model_node = self.project.get_manifest_node(model)
@@ -181,6 +198,17 @@ class ReferenceUpdater:
             # Don't process Resources missing a language attribute
             if not hasattr(model_node, "language") or not isinstance(model_node, CompiledNode):
                 continue
+            previous_change = change_set.changes[-1] if change_set.changes else None
+
+            code = (
+                previous_change.data
+                if (
+                    previous_change
+                    and isinstance(previous_change, FileChange)
+                    and previous_change.data
+                )
+                else resource.raw_code
+            )
 
             change = self.generate_reference_update(
                 project_name=self.project.parent_project.name,

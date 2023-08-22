@@ -138,6 +138,7 @@ class DbtSubprojectCreator:
             resource = subproject.get_manifest_node(unique_id)
             if not resource:
                 raise KeyError(f"Resource {unique_id} not found in manifest")
+
             if resource.resource_type in ["model", "test", "snapshot", "seed"]:
                 # ignore generic tests, as moving the yml entry will move the test too
                 if resource.resource_type == "test" and len(resource.unique_id.split(".")) == 4:
@@ -157,7 +158,9 @@ class DbtSubprojectCreator:
                         logger.debug(
                             f"Updating ref functions for children of {resource.unique_id}..."
                         )
-                        change_set.extend(reference_updater.update_child_refs(resource))
+                        change_set.extend(
+                            reference_updater.update_child_refs(resource, change_set)
+                        )
 
                 logger.debug(
                     f"Moving {resource.unique_id} and associated YML to subproject {subproject.name}..."
