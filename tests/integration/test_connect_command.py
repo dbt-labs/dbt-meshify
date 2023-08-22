@@ -86,10 +86,17 @@ class TestConnectCommand:
 
         # assert that the source is replaced with a ref
         x_proj_ref = "{{ ref('src_proj_a', 'shared_model') }}"
+        x_proj_ref_2 = "{{ ref('src_proj_a', 'new_model') }}"
         child_sql = (
             Path(copy_package_consumer_project_path) / "models" / "downstream_model.sql"
         ).read_text()
         assert x_proj_ref in child_sql
+
+        child_sql_2 = (
+            Path(copy_package_consumer_project_path) / "models" / "downstream_model_2.sql"
+        ).read_text()
+        assert x_proj_ref in child_sql_2
+        assert x_proj_ref_2 in child_sql_2
 
         # assert that the dependecies yml was created with a pointer to the upstream project
         assert (
