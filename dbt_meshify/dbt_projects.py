@@ -60,6 +60,9 @@ class BaseDbtProject:
         }
 
         self._graph = None
+        self.child_map: Dict[str, Set[str]] = {}
+        self.parent_map: Dict[str, Set[str]] = {}
+        self._build_parent_and_child_maps()
 
         self._changes: Dict[str, str] = {}
 
@@ -72,22 +75,27 @@ class BaseDbtProject:
         )
 
     def _get_xproj_children_of_selected_nodes(self) -> Set[str]:
-        return {
-            model.unique_id
-            for model in self.models.values()
-            if any(parent for parent in model.depends_on.nodes if parent in self.resources)
-            and model.unique_id not in self.resources
-        }
+        all_children: Set[str] = set()
+        for resource in self.resources:
+            if resource.startswith("test"):
+                continue
+            all_children.update(self.child_map.get(resource, {}))
+        return all_children - self.resources
 
     def _get_xproj_parents_of_selected_nodes(self) -> Set[str]:
-        resources = [self.get_manifest_node(resource) for resource in self.resources]
-        return {
-            node
-            for resource in resources
-            if resource is not None and isinstance(resource, (ModelNode, SnapshotNode))
-            for node in resource.depends_on.nodes
-            if node not in self.resources
-        }
+        all_parents: Set[str] = set()
+        for resource in self.resources:
+            if resource.startswith("test"):
+                continue
+            all_parents.update(self.parent_map.get(resource, {}))
+        return all_parents - self.resources
+
+    def _build_parent_and_child_maps(self) -> None:
+        if hasattr(self.manifest, "child_map") and hasattr(self, "parent_map"):
+            return
+        self.manifest.build_parent_and_child_maps()
+        self.child_map = self.manifest.child_map
+        self.parent_map = self.manifest.parent_map
 
     def _check_is_parent_of_parent_project(self) -> bool:
         """
