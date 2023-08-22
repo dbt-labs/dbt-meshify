@@ -133,7 +133,6 @@ class ReferenceUpdater:
 
         change_set = ChangeSet()
 
-        # import ipdb; ipdb.set_trace()
         for model in self.project.child_map[resource.unique_id]:
             if model in self.project.resources:
                 continue
