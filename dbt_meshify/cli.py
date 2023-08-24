@@ -24,8 +24,8 @@ project_paths = click.option(
 projects_dir = click.option(
     "--projects-dir",
     type=click.Path(exists=True),
-    default=None,
-    help="The path to a directory containing multiple dbt projects. Directory must contain 2+ projects.",
+    default=".",
+    help="The path to a directory containing multiple dbt projects. Directory must contain 2+ projects. Defaults to the current directory.",
 )
 
 exclude_projects = click.option(
