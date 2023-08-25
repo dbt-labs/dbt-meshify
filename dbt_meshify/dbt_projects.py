@@ -77,7 +77,7 @@ class BaseDbtProject:
         for resource in self.resources:
             if resource.startswith("test"):
                 continue
-            all_children.update(self.child_map.get(resource, {}))
+            all_children.update(self.child_map.get(resource, []))
         return all_children - self.resources
 
     def _get_xproj_parents_of_selected_nodes(self) -> Set[str]:
@@ -85,7 +85,10 @@ class BaseDbtProject:
         for resource in self.resources:
             if resource.startswith("test"):
                 continue
-            all_parents.update(self.parent_map.get(resource, {}))
+            import ipdb
+
+            ipdb.set_trace()
+            all_parents.update(self.parent_map.get(resource, []))
         return all_parents - self.resources
 
     def _build_parent_and_child_maps(self) -> None:
