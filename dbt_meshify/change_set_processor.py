@@ -27,7 +27,6 @@ class ChangeSetProcessor:
         file_editor = (
             RawFileEditor() if change.entity_type == EntityType.Code else ResourceFileEditor()
         )
-
         file_editor.__getattribute__(change.operation)(change)
 
     def process(self, change_sets: Iterable[ChangeSet]) -> None:

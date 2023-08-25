@@ -158,7 +158,7 @@ class ReferenceUpdater:
         change_set = ChangeSet()
 
         for model in self.project.child_map[resource.unique_id]:
-            if model in self.project.resources:
+            if model in self.project.resources or model.split(".")[1] != self.project.name:
                 continue
             model_node = self.project.get_manifest_node(model)
             if not model_node:
