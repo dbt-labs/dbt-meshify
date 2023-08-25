@@ -16,7 +16,7 @@ from dbt_meshify.dbt_projects import BaseDbtProject, DbtProject, PathedProject
 from dbt_meshify.utilities.contractor import Contractor
 from dbt_meshify.utilities.dependencies import DependenciesUpdater
 from dbt_meshify.utilities.grouper import ResourceGrouper
-from dbt_meshify.utilities.references import ReferenceUpdater
+from dbt_meshify.utilities.references import ReferenceUpdater, get_latest_file_change
 
 
 class ProjectDependencyType(str, Enum):
@@ -322,19 +322,11 @@ class Linker:
                 )
 
             if current_change_set:
-                previous_changes: List[FileChange] = [
-                    change
-                    for change in current_change_set.changes
-                    if (
-                        isinstance(change, FileChange)
-                        and change.identifier == downstream_manifest_entry.name
-                        and change.operation == Operation.Update
-                        and change.entity_type == EntityType.Code
-                        and change.path
-                        == downstream_project.resolve_file_path(downstream_manifest_entry)
-                    )
-                ]
-                previous_change = previous_changes[-1] if previous_changes else None
+                previous_change = get_latest_file_change(
+                    changeset=current_change_set,
+                    identifier=downstream_manifest_entry.name,
+                    path=downstream_project.resolve_file_path(downstream_manifest_entry),
+                )
 
             code_to_update = (
                 previous_change.data

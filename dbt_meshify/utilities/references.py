@@ -1,4 +1,5 @@
 import re
+from pathlib import Path
 from typing import List, Optional, Union
 
 from dbt.contracts.graph.nodes import CompiledNode
@@ -6,6 +7,27 @@ from loguru import logger
 
 from dbt_meshify.change import ChangeSet, EntityType, FileChange, Operation
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject, PathedProject
+
+
+def get_latest_file_change(
+    changeset: ChangeSet,
+    path: Path,
+    identifier: str,
+    entity_type: EntityType = EntityType.Code,
+    operation: Operation = Operation.Update,
+) -> Optional[FileChange]:
+    previous_changes: List[FileChange] = [
+        change
+        for change in changeset.changes
+        if (
+            isinstance(change, FileChange)
+            and change.identifier == identifier
+            and change.operation == operation
+            and change.entity_type == entity_type
+            and change.path == path
+        )
+    ]
+    return previous_changes[-1] if previous_changes else None
 
 
 class ReferenceUpdater:
@@ -145,27 +167,22 @@ class ReferenceUpdater:
                 continue
 
             if current_change_set:
-                previous_changes: List[FileChange] = [
-                    change
-                    for change in current_change_set.changes
-                    if (
-                        isinstance(change, FileChange)
-                        and change.identifier == model_node.name
-                        and change.operation == Operation.Update
-                        and change.entity_type == EntityType.Code
-                        and change.path
-                        == self.project.parent_project.resolve_file_path(model_node)
-                    )
-                ]
-                previous_change = previous_changes[-1] if previous_changes else None
+                previous_change = get_latest_file_change(
+                    changeset=current_change_set,
+                    identifier=model_node.name,
+                    path=self.project.parent_project.resolve_file_path(model_node),
+                )
+                code = (
+                    previous_change.data
+                    if (previous_change and previous_change.data)
+                    else model_node.raw_code
+                )
 
             change = self.generate_reference_update(
                 project_name=self.project.name,
                 upstream_node=resource,
                 downstream_node=model_node,
-                code=previous_change.data
-                if (previous_change and previous_change.data)
-                else model_node.raw_code,
+                code=code,
                 downstream_project=self.project.parent_project,
             )
 
