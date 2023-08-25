@@ -85,9 +85,6 @@ class BaseDbtProject:
         for resource in self.resources:
             if resource.startswith("test"):
                 continue
-            import ipdb
-
-            ipdb.set_trace()
             all_parents.update(self.parent_map.get(resource, []))
         return all_parents - self.resources
 
