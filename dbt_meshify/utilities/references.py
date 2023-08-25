@@ -133,7 +133,9 @@ class ReferenceUpdater:
 
         change_set = ChangeSet()
 
-        for model in self.project.xproj_children_of_resources:
+        for model in self.project.child_map[resource.unique_id]:
+            if model in self.project.resources:
+                continue
             model_node = self.project.get_manifest_node(model)
             if not model_node:
                 raise KeyError(f"Resource {model} not found in manifest")
