@@ -73,9 +73,8 @@ class DbtSubprojectCreator:
         """
         nodes = set(filter(lambda x: not x.startswith("source"), self.subproject.resources))  # type: ignore
         parent_project_name = self.subproject.parent_project.name  # type: ignore
-        interface = ResourceGrouper.identify_interface(
-            graph=self.subproject.graph.graph, selected_bunch=nodes
-        )
+        cleaned_graph = ResourceGrouper.clean_subgraph(self.subproject.graph.graph)
+        interface = ResourceGrouper.identify_interface(graph=cleaned_graph, selected_bunch=nodes)
         boundary_models = set(
             filter(
                 lambda x: (x.startswith("model") and x.split(".")[1] == parent_project_name),

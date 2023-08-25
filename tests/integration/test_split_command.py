@@ -215,6 +215,36 @@ class TestSplitCommand:
 
         teardown_test_project(dest_project_path)
 
+    def test_split_public_leaf_nodes(self, project):
+        """
+        asserts that the split command will split out a model that is a leaf node mark it as public
+        """
+        setup_test_project(src_project_path, dest_project_path)
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "split",
+                "my_new_project",
+                "--project-path",
+                dest_project_path,
+                "--select",
+                "+leaf_node",
+            ],
+        )
+
+        assert result.exit_code == 0
+        assert (
+            Path(dest_project_path) / "my_new_project" / "models" / "marts" / "leaf_node.sql"
+        ).exists()
+        # this is lazy, but this should be the only model in that yml file
+        assert (
+            "access: public"
+            in (
+                Path(dest_project_path) / "my_new_project" / "models" / "marts" / "__models.yml"
+            ).read_text()
+        )
+
     def test_split_upstream_multiple_boundary_parents(self):
         """
         Test that splitting out a project downstream of the base project splits as expected
