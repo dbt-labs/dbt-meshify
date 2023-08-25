@@ -444,17 +444,17 @@ def group(
 ) -> List[ChangeSet]:
     """
     Creates a new dbt group based on the selection syntax
-    Detects the edges of the group, makes their access public, and adds contracts to them
+    Detects the edges of the group, makes their access protected, and adds contracts to them
     """
 
     group_changes: List[ChangeSet] = ctx.forward(create_group)
 
     # Here's where things get a little weird. We only want to add contracts to projects
-    # that have a public access configuration on the boundary of our group. But, we don't
+    # that have a non-private access configuration on the boundary of our group. But, we don't
     # actually want to update our manifest yet. This puts us between a rock and a hard place.
     # to work around this, we can "trust" that create_group will always return a change for
-    # each public model, and rewrite our selection criteria to only select the models that
-    # will be having a public access config.
+    # each accessible model, and rewrite our selection criteria to only select the models that
+    # will be having a non-private access config.
 
     contract_changes = ctx.invoke(  # noqa: F841
         add_contract,
@@ -464,7 +464,7 @@ def group(
                 for change in group_changes[0]
                 if isinstance(change, ResourceChange)
                 and change.entity_type == EntityType.Model
-                and change.data["access"] == "public"
+                and change.data["access"] != "private"
             ]
         ),
         project_path=project_path,

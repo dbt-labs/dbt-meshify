@@ -32,8 +32,8 @@ class TestResourceGrouper:
         assert resources == {
             "a": AccessType.Private,
             "b": AccessType.Private,
-            "c": AccessType.Public,
-            "d": AccessType.Public,
+            "c": AccessType.Protected,
+            "d": AccessType.Protected,
         }
 
     def test_clean_graph_removes_test_nodes(self, example_graph_with_tests):
