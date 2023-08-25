@@ -50,7 +50,7 @@ def test_group_command(select, expected_public_contracted_models):
     public_contracted_models = [
         model.name
         for _, model in project.models.items()
-        if model.access == "public" and model.config.contract.enforced
+        if model.access == "protected" and model.config.contract.enforced
     ]
     assert public_contracted_models == expected_public_contracted_models
     teardown_test_project(dest_path_string)
