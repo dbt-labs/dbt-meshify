@@ -60,8 +60,6 @@ class BaseDbtProject:
         }
 
         self._graph = None
-        self.child_map: Dict[str, Set[str]] = {}
-        self.parent_map: Dict[str, Set[str]] = {}
         self._build_parent_and_child_maps()
 
         self._changes: Dict[str, str] = {}
@@ -91,8 +89,6 @@ class BaseDbtProject:
         return all_parents - self.resources
 
     def _build_parent_and_child_maps(self) -> None:
-        if hasattr(self.manifest, "child_map") and hasattr(self, "parent_map"):
-            return
         self.manifest.build_parent_and_child_maps()
         self.child_map = self.manifest.child_map
         self.parent_map = self.manifest.parent_map
