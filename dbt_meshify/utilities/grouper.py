@@ -43,12 +43,12 @@ class ResourceGrouper:
         Identify what access types each node should have. We can make some simplifying assumptions about
         recommended access for a group.
 
-        For example, interfaces (nodes on the boundary of a subgraph or leaf nodes) should be public,
+        For example, interfaces (nodes on the boundary of a subgraph or leaf nodes) should be protected,
         whereas nodes that are not a referenced are safe for a private access level.
         """
         boundary_nodes = cls.identify_interface(graph, nodes)
         resources = {
-            node: AccessType.Public if node in boundary_nodes else AccessType.Private
+            node: AccessType.Protected if node in boundary_nodes else AccessType.Private
             for node in nodes
         }
         logger.info(f"Identified resource access types based on the graph: {resources}")

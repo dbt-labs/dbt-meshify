@@ -464,7 +464,7 @@ def group(
                 for change in group_changes[0]
                 if isinstance(change, ResourceChange)
                 and change.entity_type == EntityType.Model
-                and change.data["access"] == "public"
+                and change.data["access"] != "private"
             ]
         ),
         project_path=project_path,
