@@ -80,3 +80,13 @@ models:
         description: A boolean indicating if this order included any food items.
       - name: is_drink_order
         description: A boolean indicating if this order included any drink items.
+
+
+  - name: leaf_node
+    description: A leaf node model that is not referenced by any other model.
+    columns:
+      - name: order_id
+        description: The unique key of the leaf node.
+        tests:
+          - not_null
+          - unique
