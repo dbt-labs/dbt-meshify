@@ -179,6 +179,7 @@ def connect(
                 dependency,
                 project_map[dependency.upstream_project_name],
                 project_map[dependency.downstream_project_name],
+                change_set,
             )
             change_set.extend(changes)
         except Exception as e:

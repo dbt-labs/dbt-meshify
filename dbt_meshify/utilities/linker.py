@@ -1,16 +1,22 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Set, Union
+from typing import List, Optional, Set, Union
 
 from dbt.contracts.graph.nodes import CompiledNode, ModelNode, SourceDefinition
 from dbt.node_types import AccessType
 
-from dbt_meshify.change import ChangeSet, EntityType, Operation, ResourceChange
+from dbt_meshify.change import (
+    ChangeSet,
+    EntityType,
+    FileChange,
+    Operation,
+    ResourceChange,
+)
 from dbt_meshify.dbt_projects import BaseDbtProject, DbtProject, PathedProject
 from dbt_meshify.utilities.contractor import Contractor
 from dbt_meshify.utilities.dependencies import DependenciesUpdater
 from dbt_meshify.utilities.grouper import ResourceGrouper
-from dbt_meshify.utilities.references import ReferenceUpdater
+from dbt_meshify.utilities.references import ReferenceUpdater, get_latest_file_change
 
 
 class ProjectDependencyType(str, Enum):
@@ -235,6 +241,7 @@ class Linker:
         dependency: ProjectDependency,
         upstream_project: DbtProject,
         downstream_project: DbtProject,
+        current_change_set: Optional[ChangeSet] = None,
     ) -> ChangeSet:
         upstream_manifest_entry = upstream_project.get_manifest_node(dependency.upstream_resource)
         if not upstream_manifest_entry:
@@ -314,12 +321,25 @@ class Linker:
                     f"{upstream_manifest_entry.unique_id}"
                 )
 
+            if current_change_set:
+                previous_change = get_latest_file_change(
+                    changeset=current_change_set,
+                    identifier=downstream_manifest_entry.name,
+                    path=downstream_project.resolve_file_path(downstream_manifest_entry),
+                )
+
+            code_to_update = (
+                previous_change.data
+                if (previous_change and previous_change.data)
+                else downstream_manifest_entry.raw_code
+            )
+
             change_set.add(
                 reference_updater.generate_reference_update(
                     project_name=upstream_project.name,
                     downstream_node=downstream_manifest_entry,
                     upstream_node=upstream_manifest_entry,
-                    code=downstream_manifest_entry.raw_code,
+                    code=code_to_update,
                     downstream_project=downstream_project,
                 )
             )

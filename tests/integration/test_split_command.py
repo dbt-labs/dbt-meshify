@@ -244,3 +244,76 @@ class TestSplitCommand:
                 Path(dest_project_path) / "my_new_project" / "models" / "marts" / "__models.yml"
             ).read_text()
         )
+
+    def test_split_upstream_multiple_boundary_parents(self):
+        """
+        Test that splitting out a project downstream of the base project splits as expected
+        """
+        setup_test_project(src_project_path, dest_project_path)
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "split",
+                "my_new_project",
+                "--project-path",
+                dest_project_path,
+                "--select",
+                "+stg_orders",
+                "+stg_order_items",
+            ],
+        )
+
+        assert result.exit_code == 0
+        # selected model is moved to subdirectory
+        assert (
+            Path(dest_project_path) / "my_new_project" / "models" / "staging" / "stg_orders.sql"
+        ).exists()
+        x_proj_ref_1 = "{{ ref('my_new_project', 'stg_orders') }}"
+        x_proj_ref_2 = "{{ ref('my_new_project', 'stg_order_items') }}"
+        child_sql = (Path(dest_project_path) / "models" / "marts" / "orders.sql").read_text()
+        # downstream model has all cross project refs updated
+        assert x_proj_ref_1 in child_sql
+        assert x_proj_ref_2 in child_sql
+
+        teardown_test_project(dest_project_path)
+
+    def test_split_downstream_multiple_boundary_parents(self):
+        """
+        Test that splitting out a project downstream of the base project splits as expected
+        """
+        setup_test_project(src_project_path, dest_project_path)
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "split",
+                "my_new_project",
+                "--project-path",
+                dest_project_path,
+                "--select",
+                "orders+",
+            ],
+        )
+
+        assert result.exit_code == 0
+        # selected model is moved to subdirectory
+        assert (
+            Path(dest_project_path) / "my_new_project" / "models" / "marts" / "orders.sql"
+        ).exists()
+        x_proj_ref_1 = "{{ ref('split_proj', 'stg_orders') }}"
+        x_proj_ref_2 = "{{ ref('split_proj', 'stg_order_items') }}"
+        x_proj_ref_3 = "{{ ref('split_proj', 'stg_products') }}"
+        x_proj_ref_4 = "{{ ref('split_proj', 'stg_locations') }}"
+        x_proj_ref_5 = "{{ ref('split_proj', 'stg_supplies') }}"
+        child_sql = (
+            Path(dest_project_path) / "my_new_project" / "models" / "marts" / "orders.sql"
+        ).read_text()
+        # downstream model has all cross project refs updated
+        assert x_proj_ref_1 in child_sql
+        assert x_proj_ref_2 in child_sql
+        assert x_proj_ref_3 in child_sql
+        assert x_proj_ref_4 in child_sql
+        assert x_proj_ref_5 in child_sql
+
+        teardown_test_project(dest_project_path)
