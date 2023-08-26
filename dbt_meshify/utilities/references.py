@@ -156,9 +156,13 @@ class ReferenceUpdater:
             )
 
         change_set = ChangeSet()
+        if isinstance(self.project, DbtSubProject):
+            compare_project = self.project.parent_project.name
+        else:
+            compare_project = self.project.name
 
         for model in self.project.child_map[resource.unique_id]:
-            if model in self.project.resources or model.split(".")[1] != self.project.name:
+            if model in self.project.resources or model.split(".")[1] != compare_project:
                 continue
             model_node = self.project.get_manifest_node(model)
             if not model_node:
