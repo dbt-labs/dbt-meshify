@@ -1,11 +1,33 @@
 import re
-from typing import Union
+from pathlib import Path
+from typing import List, Optional, Union
 
 from dbt.contracts.graph.nodes import CompiledNode
 from loguru import logger
 
 from dbt_meshify.change import ChangeSet, EntityType, FileChange, Operation
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject, PathedProject
+
+
+def get_latest_file_change(
+    changeset: ChangeSet,
+    path: Path,
+    identifier: str,
+    entity_type: EntityType = EntityType.Code,
+    operation: Operation = Operation.Update,
+) -> Optional[FileChange]:
+    previous_changes: List[FileChange] = [
+        change
+        for change in changeset.changes
+        if (
+            isinstance(change, FileChange)
+            and change.identifier == identifier
+            and change.operation == operation
+            and change.entity_type == entity_type
+            and change.path == path
+        )
+    ]
+    return previous_changes[-1] if previous_changes else None
 
 
 class ReferenceUpdater:
@@ -123,17 +145,21 @@ class ReferenceUpdater:
             data=updated_code,
         )
 
-    def update_child_refs(self, resource: CompiledNode) -> ChangeSet:
+    def update_child_refs(
+        self, resource: CompiledNode, current_change_set: Optional[ChangeSet] = None
+    ) -> ChangeSet:
         """Generate a set of FileChanges to update child references"""
 
         if not isinstance(self.project, DbtSubProject):
             raise Exception(
-                "The `update_parent_refs` method requires the calling project to have a parent project to update."
+                "The `update_child_refs` method requires the calling project to have a parent project to update."
             )
 
         change_set = ChangeSet()
 
-        for model in self.project.xproj_children_of_resources:
+        for model in self.project.child_map[resource.unique_id]:
+            if model in self.project.resources:
+                continue
             model_node = self.project.get_manifest_node(model)
             if not model_node:
                 raise KeyError(f"Resource {model} not found in manifest")
@@ -142,11 +168,23 @@ class ReferenceUpdater:
             if not hasattr(model_node, "language") or not isinstance(model_node, CompiledNode):
                 continue
 
+            if current_change_set:
+                previous_change = get_latest_file_change(
+                    changeset=current_change_set,
+                    identifier=model_node.name,
+                    path=self.project.parent_project.resolve_file_path(model_node),
+                )
+                code = (
+                    previous_change.data
+                    if (previous_change and previous_change.data)
+                    else model_node.raw_code
+                )
+
             change = self.generate_reference_update(
                 project_name=self.project.name,
                 upstream_node=resource,
                 downstream_node=model_node,
-                code=model_node.raw_code,
+                code=code,
                 downstream_project=self.project.parent_project,
             )
 
@@ -170,8 +208,6 @@ class ReferenceUpdater:
 
         change_set = ChangeSet()
 
-        code = resource.raw_code
-
         for model in upstream_models:
             logger.debug(f"Updating reference to {model} in {resource.name}.")
             model_node = self.project.get_manifest_node(model)
@@ -181,6 +217,17 @@ class ReferenceUpdater:
             # Don't process Resources missing a language attribute
             if not hasattr(model_node, "language") or not isinstance(model_node, CompiledNode):
                 continue
+            previous_change = change_set.changes[-1] if change_set.changes else None
+
+            code = (
+                previous_change.data
+                if (
+                    previous_change
+                    and isinstance(previous_change, FileChange)
+                    and previous_change.data
+                )
+                else resource.raw_code
+            )
 
             change = self.generate_reference_update(
                 project_name=self.project.parent_project.name,
