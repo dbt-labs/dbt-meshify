@@ -1,13 +1,12 @@
-
 # Name your project! Project names should contain only lowercase characters
 # and underscores. A good package name should reflect your organization's
 # name or the intended use of these models
-name: 'split_proj'
-version: '1.0.0'
+name: "split_proj"
+version: "1.0.0"
 config-version: 2
 
 # This setting configures which "profile" dbt uses for this project.
-profile: 'split_proj'
+profile: "split_proj"
 
 # These configurations specify where dbt should look for different types of files.
 # The `model-paths` config, for example, states that models in this project can be
@@ -20,10 +19,11 @@ seed-paths: ["seeds", "jaffle_data"]
 macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
 
-clean-targets:         # directories to be removed by `dbt clean`
+clean-targets: # directories to be removed by `dbt clean`
   - "target"
   - "dbt_packages"
 
+require-dbt-version: [">=1.6.0", "<1.7.0"]
 
 vars:
   truncate_timespan_to: "{{ current_timestamp() }}"
@@ -43,7 +43,6 @@ models:
 
 seeds:
   +schema: jaffle_raw
-
 # the below config for seeds is only relevant when seeding the project for the fist time with the raw jaffle data
 # pont the seed path to the jaffle data directory and make sure this is uncommented
 
