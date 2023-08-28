@@ -94,7 +94,15 @@ class DbtSubprojectCreator:
         # this one appears in the project yml, but i don't think it should be written
         contents.pop("query-comment")
         contents = filter_empty_dict_items(contents)
-        # project_file_path = self.target_directory / Path("dbt_project.yml")
+
+        # Serialize the `require-dbt-version` field into a string. This happens because dbt is expecting a list of
+        # strings, but also accepts a singular string value, too. We can handle the latter case by checking the length
+        # of each item in the list. If they're all one character long, then we're really working with a single version
+        # string.
+        if "require-dbt-version" in contents:
+            if max([len(version) for version in contents["require-dbt-version"]]) == 1:
+                contents["require-dbt-version"] = "".join(contents["require-dbt-version"])
+
         return FileChange(
             operation=Operation.Add,
             entity_type=EntityType.Code,
