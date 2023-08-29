@@ -34,7 +34,7 @@ The **global** commands combine _multiple_ **component** commands to complete a 
 
 all at once!
 
-The next question to ask yourself is "which of my models do I want to add these feature(s) to?". This informs the selection syntax you provide to the `dbt-meshify` command of choice. `dbt-meshify` uses the same selection syntax as `dbt`, so you can `--select` based on model names, tags, and so on!
+The next question to ask yourself is "which of my models do I want to add these feature(s) to?". This informs the selection syntax you provide to the `dbt-meshify` command of choice. `dbt-meshify` uses the same selection syntax as `dbt`, so you can use the `--select`, `--exclude` and `--selector` flags to select resources based on model names, tags, and so on!
 
 Once you've decided:
 1. which governance feature(s) you want to add to your dbt project
