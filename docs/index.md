@@ -43,3 +43,11 @@ Once you've decided:
 you're ready to use `dbt-meshify`!
 
 For further information, check out the available [commands](commands.md) or read through some [examples](examples.md).
+
+## What dbt-meshify does not handle
+
+There are a handful of known edge cases that this package does not automatically handle. In these cases, we recommend doing a manual check to make sure you've handled these appropriately:
+| edge case | manual check |
+|-----------|--------------|
+|`dbt-meshify split` copies over the entire contents of the `packages.yml` file from the original project to the new subproject | remove unnecessary packages from each project |
+| `dbt-meshify split` makes a copy of all necessary macros from the original project to the new subproject | consider creating a private "macros only" project to install as a package into all of your other projects, instead of maintaining duplicate copies of shared macros |
