@@ -103,7 +103,7 @@ This will create a new subproject that contains the selected sales analytics mod
 ![selected models moved to a subproject](https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/e638d83e-eb24-4f1e-852d-2c058bfedb4f)
 - add a `dependencies.yml` to the _downstream_ project (in our case, our new subproject is downstream of the original project because the `transactions` model depends on some of the models that remain in the original project - `stores` and `customers`)
 ![add dependencies.yml](https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/65e47b65-30ca-475f-bfa7-fffb26d85e11)
-- add `access: public` to all models in the upstream project that are referenced by models in the downstream project
+- add `access: public` to all "leaf" models (models with no downstream dependencies) and models in the upstream project that are referenced by models in the downstream project 
 ![customers access set to public](https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/9e110ca4-40c5-4013-ab89-773b59638320)
 - for all `public` models:
     - add a `contract` config and set `enforced: true`
