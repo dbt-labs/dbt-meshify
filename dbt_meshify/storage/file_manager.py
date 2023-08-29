@@ -1,14 +1,13 @@
 # classes that deal specifically with file manipulation
 # of dbt files to be used in the meshify dbt project
-import abc
-from abc import ABC
+
+import shutil
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Protocol
 
 from dbt.contracts.util import Identifier
 from ruamel.yaml import YAML
 from ruamel.yaml.compat import StringIO
-from ruamel.yaml.representer import Representer
 
 
 class DbtYAML(YAML):
@@ -32,74 +31,95 @@ class DbtYAML(YAML):
 
 yaml = DbtYAML()
 yaml.register_class(Identifier)
-FileContent = Union[Dict[str, str], str]
 
 
-class BaseFileManager(ABC):
-    @abc.abstractmethod
-    def read_file(self, path: Path) -> Union[Dict[str, Any], str, None]:
+class FileManager(Protocol):
+    def read_file(self, path: Path):
         """Returns the content from a file."""
         pass
 
-    @abc.abstractmethod
-    def write_file(self, path: Path, file_contents: Any) -> None:
+    def write_file(self, path: Path, content: Any) -> None:
         """Write content to a file."""
         pass
 
 
-class DbtFileManager(BaseFileManager):
-    def __init__(
-        self,
-        read_project_path: Path,
-        write_project_path: Optional[Path] = None,
-    ) -> None:
-        self.read_project_path = read_project_path
-        self.write_project_path = write_project_path if write_project_path else read_project_path
+class RawFileManager:
+    """RawFileManager is a FileManager for operating on raw files in the filesystem."""
 
-    def read_file(self, path: Path) -> Union[Dict[str, Any], str, None]:
-        """Returns the file contents at a given path"""
-        full_path = self.read_project_path / path
-        is_yml = full_path.suffix == ".yml"
-        if not full_path.exists():
-            return {} if is_yml else None
-        elif is_yml:
-            return yaml.load(full_path.read_text())
-        else:
-            return full_path.read_text()
+    @staticmethod
+    def read_file(path: Path) -> str:
+        """Read a file from the filesystem and return a string value."""
+        return path.read_text()
 
-    def write_file(
-        self,
-        path: Path,
-        file_contents: Optional[Union[Dict[str, Any], str]] = None,
-        writeback=False,
-    ) -> None:
-        """Returns the yaml for a model in the dbt project's manifest"""
-        # workaround to let the same DbtFileManager write back to the same project in the event that it's managing movements between two project paths
-        # let it be known I do not like this
-        if not writeback:
-            full_path = self.write_project_path / path
-        else:
-            full_path = self.read_project_path / path
-        full_path.parent.mkdir(parents=True, exist_ok=True)
-        if full_path.suffix == ".yml":
-            full_path.write_text(yaml.dump(file_contents))
-        else:
-            full_path.write_text(file_contents)  # type: ignore
+    @staticmethod
+    def touch_file(path: Path) -> None:
+        """Create a file, but do not write any data."""
+        file = open(path, "w")
+        file.close()
 
-    def copy_file(self, path: Path) -> None:
-        file_contents = self.read_file(path)
-        self.write_file(path, file_contents)
+    @staticmethod
+    def write_file(path: Path, content: str) -> None:
+        """Write a string value to a file in the filesystem"""
+        path.write_text(content)
 
-    def move_file(self, path: Path) -> None:
+    @staticmethod
+    def copy_file(source_path: Path, target_path: Path) -> None:
+        if not target_path.parent.exists():
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+
+        shutil.copy(source_path, target_path)
+
+    @staticmethod
+    def move_file(source_path: Path, target_path: Path) -> None:
         """
         move a file from the read project to the write project
         """
-        old_path = self.read_project_path / path
-        new_path = self.write_project_path / path
-        new_path.parent.mkdir(parents=True, exist_ok=True)
-        old_path.rename(new_path)
+        if not target_path.parent.exists():
+            target_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def delete_file(self, path: Path) -> None:
+        shutil.move(source_path, target_path)
+
+    @staticmethod
+    def delete_file(path: Path) -> None:
         """deletes the specified file"""
-        delete_path = self.read_project_path / path
-        delete_path.unlink()
+
+        path.unlink()
+
+
+class YAMLFileManager:
+    """The YAMLFileManager is a FileManager for interacting with YAML files in the filesystem."""
+
+    @staticmethod
+    def _clean_content(content: Dict) -> Dict:
+        """Clean up a dictionary content to remove empty list fields."""
+        keys_to_remove = set()
+        for key, value in content.items():
+            if isinstance(value, dict):
+                content[key] = YAMLFileManager._clean_content(value)
+            if isinstance(value, List):
+                if len(value) == 0:
+                    keys_to_remove.add(key)
+                    continue
+
+                for index, subcontent in enumerate(value):
+                    if isinstance(subcontent, dict):
+                        cleaned_content = YAMLFileManager._clean_content(subcontent)
+                        content[key][index] = cleaned_content
+
+        for key in keys_to_remove:
+            del content[key]
+
+        return content
+
+    @staticmethod
+    def read_file(path: Path) -> Dict:
+        """Read a file from the filesystem and return a string value."""
+        file_text = RawFileManager.read_file(path)
+        return yaml.load(file_text)
+
+    @staticmethod
+    def write_file(path: Path, content: Dict) -> None:
+        """Write a string value to a file in the filesystem"""
+        clean_content = YAMLFileManager._clean_content(content)
+        file_text = yaml.dump(clean_content)
+        RawFileManager.write_file(path, file_text)

@@ -1,13 +1,17 @@
 import os
+import shutil
 import subprocess
 from pathlib import Path
 
+import pytest
 import yaml
 
+from dbt_meshify.change import ChangeSet
+from dbt_meshify.change_set_processor import ChangeSetProcessor
 from dbt_meshify.dbt import Dbt
 from dbt_meshify.dbt_projects import DbtProject
 from dbt_meshify.storage.dbt_project_editors import DbtSubprojectCreator
-from dbt_meshify.storage.file_content_editors import DbtMeshConstructor
+from dbt_meshify.utilities.dependencies import DependenciesUpdater
 
 test_project_profile = yaml.safe_load(
     """
@@ -44,109 +48,84 @@ def setup_new_project(write_packages_yml: bool = False):
 
 
 def split_project(select: str = "my_first_dbt_model"):
-    project = DbtProject.from_directory(Path("test"), read_catalog=False)
-    subproject = project.split(project_name='subdir', select=select)
+    project = DbtProject.from_directory(Path("test").resolve(), read_catalog=False)
+    subproject = project.split(project_name="subdir", select=select)
     return subproject
 
 
-def get_meshify_constructor(subproject, unique_id):
-    resource = subproject.get_manifest_node(unique_id)
-    if not resource:
-        raise KeyError(f"Resource {unique_id} not found in manifest")
-    meshify_constructor = DbtMeshConstructor(
-        project_path=subproject.path, node=resource, catalog=None
-    )
-    return meshify_constructor
-
-
 def teardown_new_project():
-    os.system("rm -rf test-projects/test")
+    shutil.rmtree("test-projects/test")
+
+
+@pytest.fixture
+def subproject():
+    starting_directory = os.getcwd()
+    os.chdir(Path("test-projects"))
+    setup_new_project(write_packages_yml=True)
+    subproject = split_project()
+    yield subproject
+
+    os.chdir(starting_directory)
+    teardown_new_project()
 
 
 class TestDbtSubprojectCreator:
-    def test_move_model_file(self) -> None:
-        starting_directory = os.getcwd()
-        os.chdir(Path("test-projects"))
-        setup_new_project()
+    def test_move_model_file(self, subproject) -> None:
         original_contents = Path("test/models/example/my_first_dbt_model.sql").read_text()
-        subproject = split_project()
-        meshify_constructor = get_meshify_constructor(subproject, model_unique_id)
+        resource = subproject.get_manifest_node(model_unique_id)
         creator = DbtSubprojectCreator(subproject)
-        creator.move_resource(meshify_constructor)
+        change = creator.move_resource(resource)
+        ChangeSetProcessor().process([ChangeSet([change])])
         assert Path("test/subdir/models/example/my_first_dbt_model.sql").exists()
         assert not Path("test/models/example/my_first_dbt_model.sql").exists()
         assert (
             Path("test/subdir/models/example/my_first_dbt_model.sql").read_text()
             == original_contents
         )
-        os.chdir(starting_directory)
-        teardown_new_project()
 
-    def test_copy_model_file(self) -> None:
-        starting_directory = os.getcwd()
-        os.chdir(Path("test-projects"))
-        setup_new_project()
-        subproject = split_project()
-        meshify_constructor = get_meshify_constructor(subproject, model_unique_id)
+    def test_copy_model_file(self, subproject) -> None:
+        resource = subproject.get_manifest_node(model_unique_id)
         creator = DbtSubprojectCreator(subproject)
-        creator.copy_resource(meshify_constructor)
+        change = creator.copy_resource(resource)
+        ChangeSetProcessor().process([ChangeSet([change])])
         assert Path("test/subdir/models/example/my_first_dbt_model.sql").exists()
         assert Path("test/models/example/my_first_dbt_model.sql").exists()
         assert (
             Path("test/subdir/models/example/my_first_dbt_model.sql").read_text()
             == Path("test/models/example/my_first_dbt_model.sql").read_text()
         )
-        os.chdir(starting_directory)
-        teardown_new_project()
 
-    def test_move_yml_entry(self) -> None:
-        starting_directory = os.getcwd()
-        os.chdir(Path("test-projects"))
-        setup_new_project()
-        subproject = split_project()
-        meshify_constructor = get_meshify_constructor(subproject, model_unique_id)
+    def test_move_yml_entry(self, subproject) -> None:
+        resource = subproject.get_manifest_node(model_unique_id)
         creator = DbtSubprojectCreator(subproject)
-        creator.update_resource_yml_entry(meshify_constructor)
+        change_set = creator.move_resource_yml_entry(resource)
+        ChangeSetProcessor().process([change_set])
         # the original path should still exist, since we take only the single model entry
         assert Path("test/models/example/schema.yml").exists()
         assert Path("test/subdir/models/example/schema.yml").exists()
-        os.chdir(starting_directory)
-        teardown_new_project()
 
-    def test_write_project_yml(self) -> None:
-        starting_directory = os.getcwd()
-        os.chdir(Path("test-projects"))
-        setup_new_project()
-        subproject = split_project()
+    def test_write_project_yml(self, subproject) -> None:
         creator = DbtSubprojectCreator(subproject)
-        creator.write_project_file()
+        change = creator.write_project_file()
+        ChangeSetProcessor().process([ChangeSet([change])])
         # the original path should still exist, since we take only the single model entry
         assert Path("test/dbt_project.yml").exists()
         assert Path("test/subdir/dbt_project.yml").exists()
-        os.chdir(starting_directory)
-        teardown_new_project()
 
-    def test_write_packages_yml(self) -> None:
-        starting_directory = os.getcwd()
-        os.chdir(Path("test-projects"))
-        setup_new_project(write_packages_yml=True)
-        subproject = split_project()
+    def test_write_packages_yml(self, subproject) -> None:
         creator = DbtSubprojectCreator(subproject)
-        creator.copy_packages_yml_file()
+        change = creator.copy_packages_yml_file()
+        ChangeSetProcessor().process([ChangeSet([change])])
         # the original path should still exist, since we take only the single model entry
         assert Path("test/packages.yml").exists()
         assert Path("test/subdir/packages.yml").exists()
-        os.chdir(starting_directory)
-        teardown_new_project()
 
-    def test_write_dependencies_yml(self) -> None:
-        starting_directory = os.getcwd()
-        os.chdir(Path("test-projects"))
-        setup_new_project(write_packages_yml=True)
-        subproject = split_project()
-        creator = DbtSubprojectCreator(subproject)
-        creator.update_dependencies_yml()
+    def test_write_dependencies_yml(self, subproject) -> None:
+        change = DependenciesUpdater.update_dependencies_yml(
+            upstream_project=subproject.parent_project,
+            downstream_project=subproject,
+            reversed=subproject.is_parent_of_parent_project,
+        )
+        ChangeSetProcessor().process([ChangeSet([change])])
         # the original path should still exist, since we take only the single model entry
         assert Path("test/dependencies.yml").exists()
-        os.chdir(starting_directory)
-        teardown_new_project()

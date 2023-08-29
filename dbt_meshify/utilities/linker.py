@@ -1,14 +1,22 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import Set, Union
+from typing import List, Optional, Set, Union
 
+from dbt.contracts.graph.nodes import CompiledNode, ModelNode, SourceDefinition
 from dbt.node_types import AccessType
-from loguru import logger
 
-from dbt_meshify.dbt_projects import BaseDbtProject, DbtProject
-from dbt_meshify.exceptions import FatalMeshifyException, FileEditorException
-from dbt_meshify.storage.dbt_project_editors import DbtProjectEditor, YMLOperationType
-from dbt_meshify.storage.file_content_editors import DbtMeshConstructor
+from dbt_meshify.change import (
+    ChangeSet,
+    EntityType,
+    FileChange,
+    Operation,
+    ResourceChange,
+)
+from dbt_meshify.dbt_projects import BaseDbtProject, DbtProject, PathedProject
+from dbt_meshify.utilities.contractor import Contractor
+from dbt_meshify.utilities.dependencies import DependenciesUpdater
+from dbt_meshify.utilities.grouper import ResourceGrouper
+from dbt_meshify.utilities.references import ReferenceUpdater, get_latest_file_change
 
 
 class ProjectDependencyType(str, Enum):
@@ -71,12 +79,12 @@ class Linker:
 
         relations = self._find_relation_dependencies(
             source_relations={
-                model.relation_name
+                model.relation_name.lower()
                 for model in project.models.values()
                 if model.relation_name is not None
             },
             target_relations={
-                source.relation_name
+                source.relation_name.lower()
                 for source in other_project.sources().values()
                 if source.relation_name is not None
             },
@@ -95,12 +103,12 @@ class Linker:
 
         backwards_relations = self._find_relation_dependencies(
             source_relations={
-                model.relation_name
+                model.relation_name.lower()
                 for model in other_project.models.values()
                 if model.relation_name is not None
             },
             target_relations={
-                source.relation_name
+                source.relation_name.lower()
                 for source in project.sources().values()
                 if source.relation_name is not None
             },
@@ -140,12 +148,12 @@ class Linker:
         # find which models are in both manifests
         relations = self._find_relation_dependencies(
             source_relations={
-                model.relation_name
+                model.relation_name.lower()
                 for model in project.models.values()
                 if model.relation_name is not None
             },
             target_relations={
-                model.relation_name
+                model.relation_name.lower()
                 for model in other_project.models.values()
                 if model.relation_name is not None
             },
@@ -154,8 +162,8 @@ class Linker:
         # find the children of the shared models in the downstream project
         package_children = [
             {
-                'upstream_resource': project.model_relation_names[relation],
-                'downstream_resource': child,
+                "upstream_resource": project.model_relation_names[relation],
+                "downstream_resource": child,
             }
             for relation in relations
             for child in other_project.manifest.child_map[project.model_relation_names[relation]]
@@ -163,9 +171,9 @@ class Linker:
 
         forward_dependencies = {
             ProjectDependency(
-                upstream_resource=child['upstream_resource'],
+                upstream_resource=child["upstream_resource"],
                 upstream_project_name=project.name,
-                downstream_resource=child['downstream_resource'],
+                downstream_resource=child["downstream_resource"],
                 downstream_project_name=other_project.name,
                 type=ProjectDependencyType.Package,
             )
@@ -175,8 +183,8 @@ class Linker:
         # find the children of the shared models in the downstream project
         backward_package_children = [
             {
-                'upstream_resource': other_project.model_relation_names[relation],
-                'downstream_resource': child,
+                "upstream_resource": other_project.model_relation_names[relation],
+                "downstream_resource": child,
             }
             for relation in relations
             for child in project.manifest.child_map[other_project.model_relation_names[relation]]
@@ -184,9 +192,9 @@ class Linker:
 
         backward_dependencies = {
             ProjectDependency(
-                upstream_resource=child['upstream_resource'],
+                upstream_resource=child["upstream_resource"],
                 upstream_project_name=other_project.name,
-                downstream_resource=child['downstream_resource'],
+                downstream_resource=child["downstream_resource"],
                 downstream_project_name=project.name,
                 type=ProjectDependencyType.Package,
             )
@@ -214,12 +222,27 @@ class Linker:
 
         return dependencies
 
+    def generate_delete_source_properties(
+        self, project: PathedProject, resource: SourceDefinition
+    ) -> ResourceChange:
+        """Create a ResourceChange that removes a source from its properties YAML file."""
+
+        return ResourceChange(
+            operation=Operation.Remove,
+            entity_type=EntityType.Source,
+            identifier=resource.name,
+            path=project.resolve_patch_path(resource),
+            data={},
+            source_name=resource.source_name,
+        )
+
     def resolve_dependency(
         self,
         dependency: ProjectDependency,
         upstream_project: DbtProject,
         downstream_project: DbtProject,
-    ):
+        current_change_set: Optional[ChangeSet] = None,
+    ) -> ChangeSet:
         upstream_manifest_entry = upstream_project.get_manifest_node(dependency.upstream_resource)
         if not upstream_manifest_entry:
             raise ValueError(
@@ -228,87 +251,105 @@ class Linker:
         downstream_manifest_entry = downstream_project.get_manifest_node(
             dependency.downstream_resource
         )
-        upstream_catalog_entry = upstream_project.get_catalog_entry(dependency.upstream_resource)
-        upstream_mesh_constructor = DbtMeshConstructor(
-            project_path=upstream_project.path,
-            node=upstream_manifest_entry,  # type: ignore
-            catalog=upstream_catalog_entry,
-        )
 
-        downstream_mesh_constructor = DbtMeshConstructor(
-            project_path=downstream_project.path,
-            node=downstream_manifest_entry,  # type: ignore
-            catalog=None,
-        )
-        downstream_editor = DbtProjectEditor(downstream_project)
-        # for either dependency type, add contracts and make model public
-        try:
-            upstream_mesh_constructor.add_model_access(AccessType.Public)
-            logger.success(
-                f"Successfully update model access : {dependency.upstream_resource} is now {AccessType.Public}"
+        if downstream_manifest_entry is None:
+            raise TypeError(
+                f"Unable to find the downstream entity {dependency.downstream_resource} in downstream project."
             )
-        except FatalMeshifyException as e:
-            logger.error(f"Failed to update model access: {dependency.upstream_resource}")
-            raise e
-        try:
-            upstream_mesh_constructor.add_model_contract()
-            logger.success(f"Successfully added contract to model: {dependency.upstream_resource}")
-        except FatalMeshifyException as e:
-            logger.error(f"Failed to add contract to model: {dependency.upstream_resource}")
-            raise e
+
+        resource_grouper = ResourceGrouper(project=upstream_project)
+        contractor = Contractor(project=upstream_project)
+        reference_updater = ReferenceUpdater(project=downstream_project)
+
+        change_set = ChangeSet()
+
+        if isinstance(upstream_manifest_entry, ModelNode):
+            change_set.add(
+                resource_grouper.generate_access(
+                    model=upstream_manifest_entry, access=AccessType.Public
+                )
+            )
+
+            change_set.add(contractor.generate_contract(model=upstream_manifest_entry))
 
         if dependency.type == ProjectDependencyType.Source:
             for child in downstream_project.manifest.child_map[dependency.downstream_resource]:
-                constructor = DbtMeshConstructor(
-                    project_path=downstream_project.path,
-                    node=downstream_project.get_manifest_node(child),  # type: ignore
-                    catalog=None,
-                )
-                try:
-                    constructor.replace_source_with_refs(
+                child_resource = downstream_project.get_manifest_node(child)
+
+                if child_resource is None:
+                    raise Exception("Identified child resource not found in downstream project.")
+                elif not isinstance(child_resource, CompiledNode):
+                    raise TypeError(
+                        "The child resource identified in this Source dependency is not a CompiledNode. "
+                        f"{child_resource.unique_id}"
+                    )
+                elif not isinstance(upstream_manifest_entry, CompiledNode):
+                    raise TypeError(
+                        "The upstream resource identified in this Source dependency is not a CompiledNode. "
+                        f"{upstream_manifest_entry.unique_id}"
+                    )
+
+                change_set.add(
+                    reference_updater.replace_source_with_refs(
+                        resource=child_resource,
+                        upstream_resource=upstream_manifest_entry,
                         source_unique_id=dependency.downstream_resource,
-                        model_unique_id=dependency.upstream_resource,
                     )
-                    logger.success(
-                        f"Successfully replaced source function with ref to upstream resource: {dependency.downstream_resource} now calls {dependency.upstream_resource} directly"
+                )
+
+                if not isinstance(downstream_manifest_entry, SourceDefinition):
+                    raise TypeError(
+                        "The downstream resource identified in this Source dependency is not a Source. "
+                        f"{downstream_manifest_entry.unique_id}"
                     )
-                except FileEditorException as e:
-                    logger.error(
-                        f"Failed to replace source function with ref to upstream resource"
+
+                change_set.add(
+                    self.generate_delete_source_properties(
+                        project=downstream_project, resource=downstream_manifest_entry
                     )
-                    raise e
-                try:
-                    downstream_editor.update_resource_yml_entry(
-                        downstream_mesh_constructor, operation_type=YMLOperationType.Delete
-                    )
-                    logger.success(
-                        f"Successfully deleted unnecessary source: {dependency.downstream_resource}"
-                    )
-                except FatalMeshifyException as e:
-                    logger.error(f"Failed to delete unnecessary source")
-                    raise e
+                )
 
         if dependency.type == ProjectDependencyType.Package:
-            try:
-                downstream_mesh_constructor.update_model_refs(
-                    model_name=upstream_manifest_entry.name,
-                    project_name=dependency.upstream_project_name,
+            if not isinstance(downstream_manifest_entry, CompiledNode):
+                raise TypeError(
+                    f"The downstream resource identified in this Package dependency is not a CompiledNode. "
+                    f"{downstream_manifest_entry.unique_id}"
                 )
-                logger.success(
-                    f"Successfully updated model refs: {dependency.downstream_resource} now references {dependency.upstream_resource}"
+            elif not isinstance(upstream_manifest_entry, CompiledNode):
+                raise TypeError(
+                    f"The upstream resource identified in this Package dependency is not a CompiledNode. "
+                    f"{upstream_manifest_entry.unique_id}"
                 )
-            except FileEditorException as e:
-                logger.error(f"Failed to update model refs")
-                raise e
 
-        # for both types, add upstream project to downstream project's dependencies.yml
-        try:
-            downstream_editor.update_dependencies_yml(parent_project=upstream_project.name)
-            logger.success(
-                f"Successfully added {dependency.upstream_project_name} to {dependency.downstream_project_name}'s dependencies.yml"
+            if current_change_set:
+                previous_change = get_latest_file_change(
+                    changeset=current_change_set,
+                    identifier=downstream_manifest_entry.name,
+                    path=downstream_project.resolve_file_path(downstream_manifest_entry),
+                )
+
+            code_to_update = (
+                previous_change.data
+                if (previous_change and previous_change.data)
+                else downstream_manifest_entry.raw_code
             )
-        except FileEditorException as e:
-            logger.error(
-                f"Failed to add {dependency.upstream_project_name} to {dependency.downstream_project_name}'s dependencies.yml"
+
+            change_set.add(
+                reference_updater.generate_reference_update(
+                    project_name=upstream_project.name,
+                    downstream_node=downstream_manifest_entry,
+                    upstream_node=upstream_manifest_entry,
+                    code=code_to_update,
+                    downstream_project=downstream_project,
+                )
             )
-            raise e
+
+            # for both types, add upstream project to downstream project's dependencies.yml
+
+        change_set.add(
+            DependenciesUpdater.update_dependencies_yml(
+                upstream_project=upstream_project, downstream_project=downstream_project
+            )
+        )
+
+        return change_set

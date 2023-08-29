@@ -50,7 +50,7 @@ class Dbt:
 
     def docs_generate(self, directory: os.PathLike) -> CatalogArtifact:
         """
-        Excute dbt docs generate with the given arguments
+        Execute dbt docs generate with the given arguments
         """
         logger.info("Generating catalog with dbt docs generate...")
         args = ["--quiet", "docs", "generate"]

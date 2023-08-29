@@ -2,6 +2,10 @@
 # TODO: widen range of files as we fix issues
 namespace_packages = true
 
+[[tool.mypy.overrides]]
+module = ['ruamel', 'networkx']
+ignore_missing_imports = true
+
 [tool.isort]
 profile = "black"
 
@@ -9,17 +13,22 @@ profile = "black"
 line-length = 99
 target-version = ['py38']
 
+[tool.ruff]
+# Allow lines to be as long as 120 characters.
+line-length = 120
+
 [tool.poetry]
 name = "dbt-meshify"
 version = "0.3.0"
 description = "a package to upgrade dbt packages to the dbt mesh framework"
 authors = [
     "Dave Connors <dave.connors@fishtownanalytics.com>",
-    "Grace Goheen <grace.goheen@dbtlabs.com>"
+    "Grace Goheen <grace.goheen@dbtlabs.com>",
+    "Nicholas Yager <yager@nicholasyager.com>",
 ]
 license = "Apache 2.0"
 readme = "README.md"
-packages = [{include = "dbt_meshify"}]
+packages = [{ include = "dbt_meshify" }]
 
 [tool.poetry.dependencies]
 python = "^3.9"

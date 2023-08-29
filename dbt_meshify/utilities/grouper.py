@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Any, Dict, Optional, Set, Tuple, Union
+from typing import Dict, Optional, Set, Tuple, Union
 
 import networkx
 from dbt.contracts.graph.nodes import Group, ModelNode
@@ -8,10 +8,8 @@ from dbt.contracts.graph.unparsed import Owner
 from dbt.node_types import AccessType, NodeType
 from loguru import logger
 
+from dbt_meshify.change import ChangeSet, EntityType, Operation, ResourceChange
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject
-from dbt_meshify.exceptions import ModelFileNotFoundError
-from dbt_meshify.storage.file_content_editors import DbtMeshFileEditor
-from dbt_meshify.storage.file_manager import DbtFileManager
 
 
 class ResourceGroupingException(BaseException):
@@ -27,8 +25,6 @@ class ResourceGrouper:
 
     def __init__(self, project: Union[DbtProject, DbtSubProject]):
         self.project = project
-        self.meshify = DbtMeshFileEditor()
-        self.file_manager = DbtFileManager(read_project_path=project.path)
 
     @classmethod
     def identify_interface(cls, graph: networkx.Graph, selected_bunch: Set[str]) -> Set[str]:
@@ -47,12 +43,12 @@ class ResourceGrouper:
         Identify what access types each node should have. We can make some simplifying assumptions about
         recommended access for a group.
 
-        For example, interfaces (nodes on the boundary of a subgraph or leaf nodes) should be public,
+        For example, interfaces (nodes on the boundary of a subgraph or leaf nodes) should be protected,
         whereas nodes that are not a referenced are safe for a private access level.
         """
         boundary_nodes = cls.identify_interface(graph, nodes)
         resources = {
-            node: AccessType.Public if node in boundary_nodes else AccessType.Private
+            node: AccessType.Protected if node in boundary_nodes else AccessType.Private
             for node in nodes
         }
         logger.info(f"Identified resource access types based on the graph: {resources}")
@@ -61,7 +57,7 @@ class ResourceGrouper:
     @classmethod
     def clean_subgraph(cls, graph: networkx.DiGraph) -> networkx.DiGraph:
         """Generate a subgraph that does not contain test resource types."""
-        test_nodes = set(node for node in graph.nodes if node.startswith('test'))
+        test_nodes = set(node for node in graph.nodes if node.startswith("test"))
         return graph.subgraph(set(graph.nodes) - test_nodes)
 
     def _generate_resource_group(
@@ -111,59 +107,57 @@ class ResourceGrouper:
 
         return group, resources
 
+    def generate_access(
+        self, model: ModelNode, access: AccessType, group: Optional[Group] = None
+    ) -> ResourceChange:
+        """Generate a Change to set the access level for a model."""
+
+        data: Dict[str, str] = {"name": model.name, "access": access.value}
+        if group:
+            data["group"] = group.name
+
+        patch_path = self.project.resolve_patch_path(model)
+
+        return ResourceChange(
+            operation=Operation.Update if patch_path.exists() else Operation.Add,
+            entity_type=EntityType.Model,
+            identifier=model.name,
+            path=patch_path,
+            data=data,
+        )
+
     def add_group(
         self,
         name: str,
         owner: Owner,
-        path: os.PathLike,
+        path: Path,
         select: str,
         exclude: Optional[str] = None,
         selector: Optional[str] = None,
-    ) -> None:
+    ) -> ChangeSet:
         """Create a ResourceGroup for a dbt project."""
 
         group, resources = self._generate_resource_group(
             name, owner, path, select, exclude, selector
         )
 
-        group_path = Path(group.original_file_path)
-        try:
-            group_yml: Dict[str, str] = self.file_manager.read_file(group_path)  # type: ignore
-        except FileNotFoundError:
-            group_yml = {}
+        changes = ChangeSet()
 
-        output_yml = self.meshify.add_group_to_yml(group, group_yml)
-        self.file_manager.write_file(group_path, output_yml)
+        changes.add(
+            ResourceChange(
+                operation=Operation.Add,
+                entity_type=EntityType.Group,
+                identifier=group.name,
+                path=path,
+                data={"name": group.name, "owner": group.owner.to_dict()},
+            )
+        )
 
-        logger.info(f"Adding resources to group '{group.name}'...")
         for resource, access_type in resources.items():
-            # TODO: revisit this logic other resource types
             if not resource.startswith("model"):
                 continue
+
             model: ModelNode = self.project.models[resource]
-            if model.patch_path:
-                path = Path(model.patch_path.split("://")[1])
-            else:
-                if not model.original_file_path:
-                    raise ModelFileNotFoundError("Unable to locate model file. Failing.")
+            changes.add(self.generate_access(model, access_type, group))
 
-                path = Path(model.original_file_path).parent / '_models.yml'
-
-            try:
-                file_yml: Dict[str, Any] = self.file_manager.read_file(path)  # type: ignore
-            except FileNotFoundError:
-                file_yml = {}
-
-            logger.info(
-                f"Adding model '{model.name}' to group '{group.name}' in file '{path.name}'"
-            )
-            try:
-                output_yml = self.meshify.add_group_and_access_to_model_yml(
-                    model.name, group, access_type, file_yml
-                )
-
-                self.file_manager.write_file(path, output_yml)
-                logger.success(f"Successfully added model '{model.name}' to group '{group.name}'")
-            except Exception as e:
-                logger.error(f"Failed to add model '{model.name}' to group '{group.name}'")
-                logger.exception(e)
+        return changes

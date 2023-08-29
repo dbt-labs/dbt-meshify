@@ -5,7 +5,8 @@ import yaml
 from click.testing import CliRunner
 
 from dbt_meshify.dbt import Dbt
-from dbt_meshify.main import add_contract
+from dbt_meshify.main import cli
+from tests.dbt_project_utils import setup_test_project, teardown_test_project
 
 from ..sql_and_yml_fixtures import (
     expected_contract_yml_all_col,
@@ -20,9 +21,16 @@ from ..sql_and_yml_fixtures import (
     model_yml_other_model,
 )
 
-proj_path_string = "test-projects/source-hack/src_proj_a"
-proj_path = Path(proj_path_string)
+proj_path = Path("test-projects/source-hack/src_proj_a")
+dest_project = Path("test-projects/source-hack/testing/src_proj_a")
 dbt = Dbt()
+
+
+@pytest.fixture
+def project():
+    setup_test_project(proj_path, dest_project)
+    yield
+    teardown_test_project(dest_project.parent)
 
 
 @pytest.mark.parametrize(
@@ -36,13 +44,13 @@ dbt = Dbt()
     ],
     ids=["1", "2", "3", "4", "5"],
 )
-def test_add_contract_to_yml(start_yml, end_yml):
-    yml_file = proj_path / "models" / "_models.yml"
+def test_add_contract_to_yml(start_yml, end_yml, project):
+    yml_file = dest_project / "models" / "_models.yml"
     yml_file.parent.mkdir(parents=True, exist_ok=True)
     runner = CliRunner()
     # do a dbt run to create the duckdb
     # and enable the docs generate command to work
-    dbt.invoke(directory=proj_path, runner_args=["run"])
+    dbt.invoke(directory=dest_project, runner_args=["run"])
     # only create file if start_yml is not None
     # in situations where models don't have a patch path, there isn't a yml file to read from
     if start_yml:
@@ -51,13 +59,21 @@ def test_add_contract_to_yml(start_yml, end_yml):
         with open(yml_file, "w+") as f:
             yaml.safe_dump(start_yml_content, f, sort_keys=False)
     result = runner.invoke(
-        add_contract, ["--select", "shared_model", "--project-path", proj_path_string]
+        cli,
+        [
+            "operation",
+            "add-contract",
+            "--select",
+            "shared_model",
+            "--project-path",
+            str(dest_project),
+        ],
     )
     assert result.exit_code == 0
     # reset the read path to the default in the logic
     with open(yml_file, "r") as f:
         actual = yaml.safe_load(f)
-    yml_file.unlink()
+
     assert actual == yaml.safe_load(end_yml)
 
 
@@ -68,25 +84,42 @@ def test_add_contract_to_yml(start_yml, end_yml):
     ],
     ids=["1"],
 )
-def test_add_squential_contracts_to_yml(start_yml, end_yml):
-    yml_file = proj_path / "models" / "_models.yml"
+def test_add_sequential_contracts_to_yml(start_yml, end_yml, project):
+    yml_file = dest_project / "models" / "_models.yml"
     runner = CliRunner()
     # do a dbt run to create the duckdb
     # and enable the docs generate command to work
-    dbt.invoke(directory=proj_path, runner_args=["run"])
+    dbt.invoke(directory=dest_project, runner_args=["run"])
 
     result = runner.invoke(
-        add_contract, ["--select", "shared_model", "--project-path", proj_path_string]
+        cli,
+        [
+            "operation",
+            "add-contract",
+            "--select",
+            "shared_model",
+            "--project-path",
+            str(dest_project),
+        ],
     )
+
     assert result.exit_code == 0
     result2 = runner.invoke(
-        add_contract, ["--select", "new_model", "--project-path", proj_path_string]
+        cli,
+        [
+            "operation",
+            "add-contract",
+            "--select",
+            "new_model",
+            "--project-path",
+            str(dest_project),
+        ],
     )
     assert result2.exit_code == 0
     # reset the read path to the default in the logic
     with open(yml_file, "r") as f:
         actual = yaml.safe_load(f)
-    yml_file.unlink()
+
     assert actual == yaml.safe_load(end_yml)
 
 
@@ -98,13 +131,13 @@ def test_add_squential_contracts_to_yml(start_yml, end_yml):
     ],
     ids=["1", "2"],
 )
-def test_add_contract_read_catalog(start_yml, end_yml, read_catalog, caplog):
-    yml_file = proj_path / "models" / "_models.yml"
+def test_add_contract_read_catalog(start_yml, end_yml, read_catalog, caplog, project):
+    yml_file = dest_project / "models" / "_models.yml"
     yml_file.parent.mkdir(parents=True, exist_ok=True)
     runner = CliRunner()
     # do a dbt run to create the duckdb
     # and enable the docs generate command to work
-    dbt.invoke(directory=proj_path, runner_args=["run"])
+    dbt.invoke(directory=dest_project, runner_args=["run"])
     # only create file if start_yml is not None
     # in situations where models don't have a patch path, there isn't a yml file to read from
     if start_yml:
@@ -112,19 +145,28 @@ def test_add_contract_read_catalog(start_yml, end_yml, read_catalog, caplog):
         start_yml_content = yaml.safe_load(start_yml)
         with open(yml_file, "w+") as f:
             yaml.safe_dump(start_yml_content, f, sort_keys=False)
-    args = ["--select", "shared_model", "--project-path", proj_path_string]
+    args = [
+        "operation",
+        "add-contract",
+        "--select",
+        "shared_model",
+        "--project-path",
+        str(dest_project),
+    ]
     if read_catalog:
         args.append("--read-catalog")
-    result = runner.invoke(add_contract, args)
+    result = runner.invoke(cli, args)
+
     assert result.exit_code == 0
     # reset the read path to the default in the logic
     with open(yml_file, "r") as f:
         actual = yaml.safe_load(f)
-    yml_file.unlink()
-    assert actual == yaml.safe_load(end_yml)
+
     if read_catalog:
         assert "Reading catalog from" in caplog.text
         assert "Generating catalog with dbt docs generate..." not in caplog.text
     else:
         assert "Reading catalog from" not in caplog.text
         assert "Generating catalog with dbt docs generate..." in caplog.text
+
+    assert actual == yaml.safe_load(end_yml)

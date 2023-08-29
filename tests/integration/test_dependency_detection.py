@@ -4,7 +4,11 @@ import pytest as pytest
 
 from dbt_meshify.dbt import Dbt
 from dbt_meshify.dbt_projects import DbtProject
-from dbt_meshify.linker import Linker, ProjectDependency, ProjectDependencyType
+from dbt_meshify.utilities.linker import (
+    Linker,
+    ProjectDependency,
+    ProjectDependencyType,
+)
 
 
 class TestLinkerSourceDependencies:
@@ -87,7 +91,21 @@ class TestLinkerSourceDependencies:
                 downstream_resource="model.dest_proj_a.downstream_model",
                 downstream_project_name="dest_proj_a",
                 type=ProjectDependencyType.Package,
-            )
+            ),
+            ProjectDependency(
+                upstream_resource="model.src_proj_a.shared_model",
+                upstream_project_name="src_proj_a",
+                downstream_resource="model.dest_proj_a.downstream_model_2",
+                downstream_project_name="dest_proj_a",
+                type=ProjectDependencyType.Package,
+            ),
+            ProjectDependency(
+                upstream_resource="model.src_proj_a.new_model",
+                upstream_project_name="src_proj_a",
+                downstream_resource="model.dest_proj_a.downstream_model_2",
+                downstream_project_name="dest_proj_a",
+                type=ProjectDependencyType.Package,
+            ),
         }
 
     # This doesn't exist yet as of 1.5.0. We'll test it out once it's a thing.
