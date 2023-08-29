@@ -28,8 +28,8 @@ This will create a new group named "sales_analytics" with the owner "Ralphie" an
 - add all selected models to that group with the appropriate `access` config
     - all models that are only referenced by other models in their _same group_ will have `access: private`
     ![int_sales__unioned access set to private](https://github.com/dave-connors-3/barnold-corp/assets/53586774/481010bb-ceed-4feb-a46e-05c185fac4e4)
-    - all other models (those that are referenced by models _outside their group_ or are leaf nodes) will have `access: public`
-    ![transactions access set to public](https://github.com/dave-connors-3/barnold-corp/assets/53586774/4c8665ac-d14c-424d-81e3-51c0bf12c701)
+    - all other models (those that are referenced by models _outside their group_ or are "leaf" models) will have `access: protected`
+    ![transactions access set to protected](https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/ad612ca7-2415-429f-aed8-108c4f16f9db)
 
 ### Add/increment model versions
 
@@ -80,11 +80,11 @@ This will create a new group named "sales_analytics" with the owner "Ralphie", a
 - add all selected models to that group with the appropriate `access` config
     - all models that are only referenced by other models in their _same group_ will have `access: private`
     ![int_sales__unioned access set to private](https://github.com/dave-connors-3/barnold-corp/assets/53586774/481010bb-ceed-4feb-a46e-05c185fac4e4)
-    - all other models (those that are referenced by models _outside their group_ or are leaf nodes) will have `access: public`
-    ![transactions access set to public](https://github.com/dave-connors-3/barnold-corp/assets/53586774/4c8665ac-d14c-424d-81e3-51c0bf12c701)
+    - all other models (those that are referenced by models _outside their group_ or are "leaf" models) will have `access: protected`
+    ![transactions access set to protected](https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/ad612ca7-2415-429f-aed8-108c4f16f9db)
 - for all `public` models:
     - add a `contract` config and set `enforced: true`
-    ![yml file updated with added contract config for transactions model](https://github.com/dave-connors-3/barnold-corp/assets/53586774/d40cef1b-fbb8-4cc3-9be6-f782378164cf)
+    ![yml file updated with added contract config for transactions model](https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/747a7a25-d352-4913-95ed-4c6f72721bbb)
     - add every column's `name` and `data_type` if not already defined
     ![yml file updated with added column names and data_types for transactions model](https://github.com/dave-connors-3/barnold-corp/assets/53586774/f6402db9-95f0-4dc3-bc17-5966e79811a4)
 

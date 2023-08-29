@@ -29,8 +29,8 @@ and that's it!
 The **global** commands combine _multiple_ **component** commands to complete a larger set of work and begin with `dbt-meshify`. For example, if you wanted to define a group for a subset of your models, you would run something like `dbt-meshify group finance --owner-name "Monopoly Man" --select +tag:finance`. This command would:
 1. define a new group named "finance" in your dbt project, setting the owner name to "Monopoly Man"
 2. add all models tagged with "finance" to that new group
-3. set `access` to public for all leaf nodes and nodes with cross-group dependencies
-4. add contracts to all public nodes 
+3. set `access` to protected for all "leaf" models (models with no downstream dependencies) and models with cross-group dependencies
+4. add contracts to all public nodes ... TO DO: if access is "protected" instead of "public" should we add contracts? would need to update examples below as well
 
 all at once!
 
