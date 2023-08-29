@@ -84,7 +84,7 @@ This will create a new group named "sales_analytics" with the owner "Ralphie", a
     ![int_sales__unioned access set to private](https://github.com/dave-connors-3/barnold-corp/assets/53586774/481010bb-ceed-4feb-a46e-05c185fac4e4)
     - all other models (those that are referenced by models _outside their group_ or are "leaf" models) will have `access: protected`
     ![transactions access set to protected](https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/ad612ca7-2415-429f-aed8-108c4f16f9db)
-- for all `public` models:
+- for all `protected` models:
     - add a `contract` config and set `enforced: true`
     ![yml file updated with added contract config for transactions model](https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/747a7a25-d352-4913-95ed-4c6f72721bbb)
     - add every column's `name` and `data_type` if not already defined
