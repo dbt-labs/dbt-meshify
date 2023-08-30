@@ -17,9 +17,14 @@ class TestLinkerSourceDependencies:
     @pytest.fixture
     def src_proj_a(self) -> DbtProject:
         """Load the `src_proj_a` project."""
-        return DbtProject.from_directory(
-            Path("test-projects/source-hack/src_proj_a/").resolve(), read_catalog=False
-        )
+
+        path = Path("test-projects/source-hack/src_proj_a/").resolve()
+
+        # Run `dbt deps` for this project so upstream projects are loaded.
+        dbt = Dbt()
+        dbt.invoke(path, ["deps"])
+
+        return DbtProject.from_directory(path, read_catalog=False)
 
     @pytest.fixture
     def src_proj_b(self) -> DbtProject:
