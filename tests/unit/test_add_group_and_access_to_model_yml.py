@@ -58,10 +58,10 @@ models:
 expected_model_yml_multiple_models_multi_select = """
 models:
   - name: shared_model
-    access: public
+    access: protected
     group: test_group
   - name: other_model
-    access: public
+    access: protected
     group: test_group
   - name: other_other_model
 """

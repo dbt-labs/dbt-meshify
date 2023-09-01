@@ -73,9 +73,8 @@ class DbtSubprojectCreator:
         """
         nodes = set(filter(lambda x: not x.startswith("source"), self.subproject.resources))  # type: ignore
         parent_project_name = self.subproject.parent_project.name  # type: ignore
-        interface = ResourceGrouper.identify_interface(
-            graph=self.subproject.graph.graph, selected_bunch=nodes
-        )
+        cleaned_graph = ResourceGrouper.clean_subgraph(self.subproject.graph.graph)
+        interface = ResourceGrouper.identify_interface(graph=cleaned_graph, selected_bunch=nodes)
         boundary_models = set(
             filter(
                 lambda x: (x.startswith("model") and x.split(".")[1] == parent_project_name),
@@ -95,7 +94,15 @@ class DbtSubprojectCreator:
         # this one appears in the project yml, but i don't think it should be written
         contents.pop("query-comment")
         contents = filter_empty_dict_items(contents)
-        # project_file_path = self.target_directory / Path("dbt_project.yml")
+
+        # Serialize the `require-dbt-version` field into a string. This happens because dbt is expecting a list of
+        # strings, but also accepts a singular string value, too. We can handle the latter case by checking the length
+        # of each item in the list. If they're all one character long, then we're really working with a single version
+        # string.
+        if "require-dbt-version" in contents:
+            if max([len(version) for version in contents["require-dbt-version"]]) == 1:
+                contents["require-dbt-version"] = "".join(contents["require-dbt-version"])
+
         return FileChange(
             operation=Operation.Add,
             entity_type=EntityType.Code,
@@ -138,6 +145,7 @@ class DbtSubprojectCreator:
             resource = subproject.get_manifest_node(unique_id)
             if not resource:
                 raise KeyError(f"Resource {unique_id} not found in manifest")
+
             if resource.resource_type in ["model", "test", "snapshot", "seed"]:
                 # ignore generic tests, as moving the yml entry will move the test too
                 if resource.resource_type == "test" and len(resource.unique_id.split(".")) == 4:
@@ -157,7 +165,9 @@ class DbtSubprojectCreator:
                         logger.debug(
                             f"Updating ref functions for children of {resource.unique_id}..."
                         )
-                        change_set.extend(reference_updater.update_child_refs(resource))
+                        change_set.extend(
+                            reference_updater.update_child_refs(resource, change_set)
+                        )
 
                 logger.debug(
                     f"Moving {resource.unique_id} and associated YML to subproject {subproject.name}..."
