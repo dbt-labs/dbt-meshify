@@ -25,6 +25,7 @@ from dbt.node_types import NodeType
 from loguru import logger
 
 from dbt_meshify.dbt import Dbt
+from dbt_meshify.exceptions import FatalMeshifyException
 
 
 class BaseDbtProject:
@@ -256,7 +257,15 @@ class DbtProject(BaseDbtProject, PathedProject):
     @staticmethod
     def _load_project(path) -> Project:
         """Load a dbt Project configuration"""
-        project_dict = yaml.load(open(os.path.join(path, "dbt_project.yml")), Loader=yaml.Loader)
+        try:
+            project_dict = yaml.load(
+                open(os.path.join(path, "dbt_project.yml")), Loader=yaml.Loader
+            )
+        except FileNotFoundError:
+            raise FatalMeshifyException(
+                f"The provided directory ({path}) does not contain a dbt project."
+            )
+
         return Project.from_dict(project_dict)
 
     @classmethod
