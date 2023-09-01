@@ -16,7 +16,6 @@ from dbt.contracts.graph.nodes import (
     ModelNode,
     ParsedNode,
     Resource,
-    SnapshotNode,
     SourceDefinition,
 )
 from dbt.contracts.project import Project
