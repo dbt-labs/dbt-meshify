@@ -45,7 +45,7 @@ dbt-meshify operation add-version --select customers
 
 This will add a version to the `customers` model:
 - the `customers.sql` file will be renamed to `customers_v1.sql`
-- the necessary version configurations will be created (or added to a pre-xisting `yml` file)
+- the necessary version configurations will be created (or added to a pre-existing `yml` file)
 ![yml file updated with version configs](https://github.com/dave-connors-3/barnold-corp/assets/53586774/c0b12ab7-904e-4590-84aa-7b602a91f53f)
 
 ### Add contract(s)
