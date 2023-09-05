@@ -2,7 +2,7 @@ site_name: dbt_meshify
 
 theme:
 
-  palette: 
+  palette:
 
     # Palette toggle for light mode
     - media: "(prefers-color-scheme: light)"
@@ -66,5 +66,6 @@ edit_uri: edit/main/docs/
 
 nav:
   - Home: index.md
-  - Commands: 
+  - Commands:
+    - Examples: examples.md
     - List of commands: commands.md
