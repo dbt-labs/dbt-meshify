@@ -1,17 +1,16 @@
 # dbt_meshify
 
-`dbt-meshify` is a dbt-core plugin that automates the creation of dbt-core model governance features introduced in dbt-core v1.5. This package will leverage your dbt project metadata to create and/or edit the files in your project to properly configure the models in your project with these governance features.
+`dbt-meshify` is a CLI tool that automates the creation of dbt mesh features introduced in dbt-core v1.5 and v1.6. This package will leverage your dbt project metadata to create and/or edit the files in your project to properly configure the models in your project with these features.
 
-These dbt-core features include:
+These dbt mesh features include:
 
 1. __[Groups](https://docs.getdbt.com/docs/build/groups)__ - group your models into logical sets.
 2. __[Contracts](https://docs.getdbt.com/docs/collaborate/govern/model-contracts)__ - add model contracts to your models to ensure consistent data shape.
 3. __[Access](https://docs.getdbt.com/docs/collaborate/govern/model-access)__ - control the `access` level of models within groups
 4. __[Versions](https://docs.getdbt.com/docs/collaborate/govern/model-versions)__ - create and increment versions of particular models.
+5. __[Project dependencies](https://docs.getdbt.com/docs/collaborate/govern/project-dependencies)__ - split a monolithic dbt project into component projects, or connect multiple pre-existing dbt projects using cross-project `ref`.
 
-Additionally, `dbt-meshify` automates the code development required to split a monolithic dbt project into component projects, or connect multiple pre-existing dbt projects using cross-project `ref`.
-
-This package leverages the dbt-core Python API to allow users to use standard dbt selection syntax for each of the commands in this package (unless otherwise noted). See details on each of the specific commands available on the [commands page](commands.md)
+This package leverages the dbt-core Python API to allow users to use standard dbt selection syntax for each of the commands in this package (unless otherwise noted). See details on each of the specific commands available on the [commands page](commands.md).
 
 ## Getting Started
 
@@ -30,7 +29,7 @@ The **global** commands combine _multiple_ **component** commands to complete a 
 1. define a new group named "finance" in your dbt project, setting the owner name to "Monopoly Man"
 2. add all models tagged with "finance" to that new group
 3. set `access` to protected for all "leaf" models (models with no downstream dependencies) and models with cross-group dependencies
-4. add contracts to all public nodes ... TO DO: if access is "protected" instead of "public" should we add contracts? would need to update examples below as well
+4. add contracts to all protected nodes
 
 all at once!
 
