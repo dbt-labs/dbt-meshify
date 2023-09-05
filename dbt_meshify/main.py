@@ -139,7 +139,11 @@ def connect(
         dbt_project_paths = [
             path.parent.resolve()
             for path in Path(projects_dir).glob("**/dbt_project.yml")
-            if ("dbt_packages" not in path.parts and "site-packages" not in path.parts)
+            if (
+                "dbt_packages" not in path.parts
+                and "site-packages" not in path.parts
+                and path.is_file()
+            )
         ]
         all_dbt_projects = [
             DbtProject.from_directory(project_path, read_catalog)
