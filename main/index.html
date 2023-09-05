@@ -10,7 +10,7 @@
       
       
       
-        <link rel="next" href="commands/">
+        <link rel="next" href="examples/">
       
       <link rel="icon" href="assets/images/favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
@@ -280,8 +280,15 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#basic-usage" class="md-nav__link">
-    Basic Usage
+  <a href="#getting-started" class="md-nav__link">
+    Getting Started
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#what-dbt-meshify-does-not-handle" class="md-nav__link">
+    What dbt-meshify does not handle
   </a>
   
 </li>
@@ -329,6 +336,20 @@
   
   
     <li class="md-nav__item">
+      <a href="examples/" class="md-nav__link">
+        Examples
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="commands/" class="md-nav__link">
         List of commands
       </a>
@@ -367,35 +388,61 @@
 
 
 <h1 id="dbt_meshify">dbt_meshify<a class="headerlink" href="#dbt_meshify" title="Permanent link">#</a></h1>
-<p><code>dbt-meshify</code> is a dbt-core plugin that automates the management and creation of dbt-core model governance features introduced in dbt-core v1.5. Each command in the package will leverage your dbt project metadata to create and/or edit the files in your project to properly configure the models in your project with these governance features.</p>
-<p>These dbt-core features include:</p>
+<p><code>dbt-meshify</code> is a CLI tool that automates the creation of dbt mesh features introduced in dbt-core v1.5 and v1.6. This package will leverage your dbt project metadata to create and/or edit the files in your project to properly configure the models in your project with these features.</p>
+<p>These dbt mesh features include:</p>
 <ol>
 <li><strong><a href="https://docs.getdbt.com/docs/build/groups">Groups</a></strong> - group your models into logical sets.</li>
 <li><strong><a href="https://docs.getdbt.com/docs/collaborate/govern/model-contracts">Contracts</a></strong> - add model contracts to your models to ensure consistent data shape.</li>
 <li><strong><a href="https://docs.getdbt.com/docs/collaborate/govern/model-access">Access</a></strong> - control the <code>access</code> level of models within groups</li>
 <li><strong><a href="https://docs.getdbt.com/docs/collaborate/govern/model-versions">Versions</a></strong> - create and increment versions of particular models.</li>
+<li><strong><a href="https://docs.getdbt.com/docs/collaborate/govern/project-dependencies">Project dependencies</a></strong> - split a monolithic dbt project into component projects, or connect multiple pre-existing dbt projects using cross-project <code>ref</code>.</li>
 </ol>
-<p>This package leverages the dbt-core Python API to allow users to use standard dbt selection syntax for each of the commands in this package (unless otherwise noted). See details on each of the specific commands available on the <a href="commands/">commands page</a></p>
-<h2 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">#</a></h2>
-<p>Each of the available <a href="commands/">commands page</a> allows you to add one (or many) of the above features to a set of models specified by the selection syntax in the command.</p>
-<p>The goal of this package is to make it more straightforward to apply to your project so that splitting apart a monolithic project into component projects is a more automated, dbt-tonic experience.</p>
-<p>The process of splitting a dbt monolith apart roughly requires you to:</p>
+<p>This package leverages the dbt-core Python API to allow users to use standard dbt selection syntax for each of the commands in this package (unless otherwise noted). See details on each of the specific commands available on the <a href="commands/">commands page</a>.</p>
+<h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">#</a></h2>
+<p>This package helps automate the code development required for adding the dbt-core model governance features mentioned above.</p>
+<p>The first question to ask yourself is "which of these features do I want to add to my project"? Do you want to add contracts, create a new group, split your monolithic dbt project in two? Your answer to this question will establish which <code>dbt-meshify</code> command is right for you!</p>
+<p>This package consists of <strong>component</strong> and <strong>global</strong> commands - so you can decide how to best break apart your work.</p>
+<p>The <strong>component</strong> commands allow you to do a single step at a time and begin with <code>dbt-meshify operation</code>. For example, if you wanted to add a new version to a model, you would run something like <code>dbt-meshify operation add-version --select fct_orders</code>. This command would:</p>
 <ol>
-<li>Determine what parts of your project should be grouped together into subprojects</li>
-<li>Determine the access-level for the members of that group</li>
-<li>Add model contracts to the elements that are public and accessed my members outside the group specified in (1)</li>
-<li>(Optional) Add model versions to the public models to allow for development without impacting downstream stakeholders.</li>
+<li>add a new version to <code>fct_orders</code></li>
 </ol>
-<p>Here's how that might look for the process of creating a separate <code>finance</code> subproject in your dbt monolith.</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># create a group of all models tagged with &quot;finance&quot;</span>
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="c1"># leaf nodes and nodes with cross-group dependencies will be `public`</span>
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="c1"># public nodes will also have contracts added to them</span>
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>dbt-meshify<span class="w"> </span>group<span class="w"> </span>finance<span class="w"> </span>--owner-name<span class="w"> </span><span class="s2">&quot;Monopoly Man&quot;</span><span class="w"> </span>-s<span class="w"> </span>+tag:finance
-</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>
-</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="c1"># optionally use the add-version operation to add a new version to a model</span>
-</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>dbt-meshify<span class="w"> </span>operation<span class="w"> </span>add-version<span class="w"> </span>-s<span class="w"> </span>fct_orders
-</span></code></pre></div>
-<p>Future releases of this package may also include features that allow users to fully split off groups of models into entirely new dbt projects.</p>
+<p>and that's it!</p>
+<p>The <strong>global</strong> commands combine <em>multiple</em> <strong>component</strong> commands to complete a larger set of work and begin with <code>dbt-meshify</code>. For example, if you wanted to define a group for a subset of your models, you would run something like <code>dbt-meshify group finance --owner-name "Monopoly Man" --select +tag:finance</code>. This command would:</p>
+<ol>
+<li>define a new group named "finance" in your dbt project, setting the owner name to "Monopoly Man"</li>
+<li>add all models tagged with "finance" to that new group</li>
+<li>set <code>access</code> to protected for all "leaf" models (models with no downstream dependencies) and models with cross-group dependencies</li>
+<li>add contracts to all protected nodes</li>
+</ol>
+<p>all at once!</p>
+<p>The next question to ask yourself is "which of my models do I want to add these features to?". This informs the selection syntax you provide to the <code>dbt-meshify</code> command of choice. <code>dbt-meshify</code> uses the same selection syntax as <code>dbt</code>, so you can use the <code>--select</code>, <code>--exclude</code> and <code>--selector</code> flags to select resources based on model names, tags, and so on!</p>
+<p>Once you've decided:</p>
+<ol>
+<li>which governance feature(s) you want to add to your dbt project</li>
+<li>which subset of models you want to add those feature(s) to</li>
+</ol>
+<p>you're ready to use <code>dbt-meshify</code>!</p>
+<p>For further information, check out the available <a href="commands/">commands</a> or read through some <a href="examples/">examples</a>.</p>
+<h2 id="what-dbt-meshify-does-not-handle">What dbt-meshify does not handle<a class="headerlink" href="#what-dbt-meshify-does-not-handle" title="Permanent link">#</a></h2>
+<p>There are a handful of known edge cases that this package does not automatically handle. In these cases, we recommend doing a manual check to make sure you've handled these appropriately:</p>
+<table>
+<thead>
+<tr>
+<th>edge case</th>
+<th>manual check</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>dbt-meshify split</code> copies over the entire contents of the <code>packages.yml</code> file from the original project to the new subproject</td>
+<td>remove unnecessary packages from each project</td>
+</tr>
+<tr>
+<td><code>dbt-meshify split</code> makes a copy of all necessary macros from the original project to the new subproject</td>
+<td>consider creating a private "macros only" project to install as a package into all of your other projects, instead of maintaining duplicate copies of shared macros</td>
+</tr>
+</tbody>
+</table>
 
 
 
@@ -418,13 +465,13 @@
         
         
           
-          <a href="commands/" class="md-footer__link md-footer__link--next" aria-label="Next: List of commands" rel="next">
+          <a href="examples/" class="md-footer__link md-footer__link--next" aria-label="Next: Examples" rel="next">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                List of commands
+                Examples
               </div>
             </div>
             <div class="md-footer__button md-icon">
