@@ -170,3 +170,22 @@ def test_add_contract_read_catalog(start_yml, end_yml, read_catalog, caplog, pro
         assert "Generating catalog with dbt docs generate..." in caplog.text
 
     assert actual == yaml.safe_load(end_yml)
+
+
+def test_command_raises_exception_invalid_paths():
+    """Verify that proving an invalid project path raises the correct error."""
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "operation",
+            "add-contract",
+            "--select",
+            "shared_model",
+            "--project-path",
+            "tests",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "does not contain a dbt project" in result.stdout

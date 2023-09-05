@@ -218,3 +218,26 @@ def test_group_owner_properties(name, email, end_group_yml, project):
         del end_group_content["groups"][0]["owner"]["email"]
 
     assert actual == end_group_content
+
+
+def test_command_raises_exception_invalid_paths():
+    """Verify that proving an invalid project path raises the correct error."""
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "operation",
+            "create-group",
+            "test_group",
+            "--owner-name",
+            "Johnny Spells",
+            "--select",
+            "shared_model",
+            "other_model",
+            "--project-path",
+            "tests",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "does not contain a dbt project" in result.stdout

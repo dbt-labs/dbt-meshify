@@ -156,4 +156,22 @@ def test_add_version_to_invalid_yml(start_yml, start_files, project):
     ]
     result = runner.invoke(cli, base_command, catch_exceptions=True)
     assert result.exit_code == 1
-    # reset the read path to the default in the logic
+
+
+def test_command_raises_exception_invalid_paths():
+    """Verify that proving an invalid project path raises the correct error."""
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "operation",
+            "add-version",
+            "--select",
+            "shared_model",
+            "--project-path",
+            "tests",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "does not contain a dbt project" in result.stdout

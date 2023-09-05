@@ -317,3 +317,22 @@ class TestSplitCommand:
         assert x_proj_ref_5 in child_sql
 
         teardown_test_project(dest_project_path)
+
+
+def test_command_raises_exception_invalid_paths():
+    """Verify that proving an invalid project path raises the correct error."""
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "split",
+            "my_new_project",
+            "--project-path",
+            "tests",
+            "--select",
+            "orders+",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "does not contain a dbt project" in result.stdout
