@@ -24,6 +24,7 @@ clean-targets:         # directories to be removed by `dbt clean`
   - "target"
   - "dbt_packages"
 
+on-run-end: "select true as col"
 
 # Configuring models
 # Full documentation: https://docs.getdbt.com/docs/configuring-models
