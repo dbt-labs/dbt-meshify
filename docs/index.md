@@ -14,18 +14,21 @@ This package leverages the dbt-core Python API to allow users to use standard db
 
 ## Getting Started
 
-This package helps automate the code development required for adding the dbt-core model governance features mentioned above. 
+This package helps automate the code development required for adding the dbt-core model governance features mentioned above.
 
-The first question to ask yourself is "which of these features do I want to add to my project"? Do you want to add contracts, create a new group, split your monolithic dbt project in two? Your answer to this question will establish which `dbt-meshify` command is right for you! 
+The first question to ask yourself is "which of these features do I want to add to my project"? Do you want to add contracts, create a new group, split your monolithic dbt project in two? Your answer to this question will establish which `dbt-meshify` command is right for you!
 
-This package consists of **component** and **global** commands - so you can decide how to best break apart your work. 
+This package consists of **component** and **global** commands - so you can decide how to best break apart your work.
 
 The **component** commands allow you to do a single step at a time and begin with `dbt-meshify operation`. For example, if you wanted to add a new version to a model, you would run something like `dbt-meshify operation add-version --select fct_orders`. This command would:
+
 1. add a new version to `fct_orders`
+
 
 and that's it!
 
 The **global** commands combine _multiple_ **component** commands to complete a larger set of work and begin with `dbt-meshify`. For example, if you wanted to define a group for a subset of your models, you would run something like `dbt-meshify group finance --owner-name "Monopoly Man" --select +tag:finance`. This command would:
+
 1. define a new group named "finance" in your dbt project, setting the owner name to "Monopoly Man"
 2. add all models tagged with "finance" to that new group
 3. set `access` to protected for all "leaf" models (models with no downstream dependencies) and models with cross-group dependencies
@@ -36,6 +39,7 @@ all at once!
 The next question to ask yourself is "which of my models do I want to add these features to?". This informs the selection syntax you provide to the `dbt-meshify` command of choice. `dbt-meshify` uses the same selection syntax as `dbt`, so you can use the `--select`, `--exclude` and `--selector` flags to select resources based on model names, tags, and so on!
 
 Once you've decided:
+
 1. which governance feature(s) you want to add to your dbt project
 2. which subset of models you want to add those feature(s) to
 
@@ -46,6 +50,7 @@ For further information, check out the available [commands](commands.md) or read
 ## What dbt-meshify does not handle
 
 There are a handful of known edge cases that this package does not automatically handle. In these cases, we recommend doing a manual check to make sure you've handled these appropriately:
+
 | edge case | manual check |
 |-----------|--------------|
 |`dbt-meshify split` copies over the entire contents of the `packages.yml` file from the original project to the new subproject | remove unnecessary packages from each project |
