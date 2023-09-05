@@ -68,7 +68,7 @@ This will add an enforced contract to the `stores` model:
 
 ## Group together a subset of models
 
-Let's say you want to group together your sales analytics models.
+Let's say you want to group together your sales analytics models - create a new group and add access and contracts to appropriate models simultaneously.
 ![group together sales analytics models](https://github.com/dave-connors-3/barnold-corp/assets/53586774/b192bf70-e854-46f6-be40-915eb48adbb3)
 
 You can run the following command:
