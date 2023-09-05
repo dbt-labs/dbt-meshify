@@ -76,7 +76,7 @@ You can run the following command:
 dbt-meshify group sales_analytics --owner-name Ralphie --select +int_sales__unioned +int_returns__unioned transactions
 ```
 
-This will create a new group named "sales_analytics" with the owner "Ralphie", add all selected models to that group with the appropriate `access` configuration, _and add contracts to the public-identified models_:
+This will create a new group named "sales_analytics" with the owner "Ralphie", add all selected models to that group with the appropriate `access` configuration, _and add contracts to the models at the boundary between this group and the rest of the project__:
 - create a new group definition in a `_groups.yml` file
 ![yml file with group defition](https://github.com/dave-connors-3/barnold-corp/assets/53586774/b3fa812a-157f-41b3-842d-c67e59f77298)
 - add all selected models to that group with the appropriate `access` config
