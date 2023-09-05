@@ -68,7 +68,7 @@ This will add an enforced contract to the `stores` model:
 
 ## Group together a subset of models
 
-Let's say you want to group together your sales analytics models - create a new group and add access and contracts to appropriate models simultaneously.
+Let's say you want to group together your sales analytics models - create a new group and add contracts to appropriate models simultaneously.
 ![group together sales analytics models](https://github.com/dave-connors-3/barnold-corp/assets/53586774/b192bf70-e854-46f6-be40-915eb48adbb3)
 
 You can run the following command:
@@ -114,6 +114,8 @@ This will create a new subproject that contains the selected sales analytics mod
     ![yml file updated with added column names and data_types for stores model](https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/48d41e17-0ad3-4a31-863b-1a8646d1d7c9)
 - replace any dependencies in the downstream project on the upstream's models with a cross-project `ref`
 ![refs to customers and stores replaced with cross-project ref](https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/33de63e1-0579-4ac0-9ff4-22099d701b99)
+
+By default, the new subproject will be created in the current directory; however, you can use the `--create-path` flag to create it in any directory you like.
 
 ## Connect multiple dbt projects
 
