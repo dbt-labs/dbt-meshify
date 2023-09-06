@@ -168,3 +168,19 @@ class TestConnectCommand:
 
         # assert that the dependencies.yml was created with a pointer to the upstream project
         assert "src_proj_a" in dependency_path.read_text()
+
+    def test_connect_raises_exception_invalid_paths(self, producer_project):
+        """Verify that proving an invalid project path raises the correct error."""
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "connect",
+                "--project-paths",
+                "totally_bogus_path",
+                copy_source_consumer_project_path,
+            ],
+        )
+
+        assert result.exit_code != 0
+        assert "does not contain a dbt project" in result.stdout

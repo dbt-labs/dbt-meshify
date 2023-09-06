@@ -54,3 +54,24 @@ def test_group_command(select, expected_public_contracted_models):
     ]
     assert public_contracted_models == expected_public_contracted_models
     teardown_test_project(dest_path_string)
+
+
+def test_command_raises_exception_invalid_paths():
+    """Verify that proving an invalid project path raises the correct error."""
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "group",
+            "test_group",
+            "--owner-name",
+            "Teenage Mutant Jinja Turtles",
+            "--select",
+            "foo",
+            "--project-path",
+            "tests",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "does not contain a dbt project" in result.stdout
