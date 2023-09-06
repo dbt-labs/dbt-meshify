@@ -14,7 +14,7 @@ This package leverages the dbt-core Python API to allow users to use standard db
 
 ## Getting Started
 
-This package helps automate the code development required for adding the dbt-core model governance features mentioned above.
+This package helps automate the code development required for adding the dbt mesh features mentioned above.
 
 The first question to ask yourself is "which of these features do I want to add to my project"? Do you want to add contracts, create a new group, split your monolithic dbt project in two? Your answer to this question will establish which `dbt-meshify` command is right for you!
 
@@ -40,7 +40,7 @@ The next question to ask yourself is "which of my models do I want to add these 
 
 Once you've decided:
 
-1. which governance feature(s) you want to add to your dbt project
+1. which dbt mesh feature(s) you want to add to your dbt project
 2. which subset of models you want to add those feature(s) to
 
 you're ready to use `dbt-meshify`!
