@@ -40,7 +40,7 @@ The next question to ask yourself is "which of my models do I want to add these 
 
 Once you've decided:
 
-1. which governance feature(s) you want to add to your dbt project
+1. which dbt mesh feature(s) you want to add to your dbt project
 2. which subset of models you want to add those feature(s) to
 
 you're ready to use `dbt-meshify`!
