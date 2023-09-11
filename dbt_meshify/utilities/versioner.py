@@ -71,7 +71,7 @@ class ModelVersioner:
 
         model_versions: NamedList = self.get_model_versions(model_yml)
 
-        current_version = model_yml.get("latest_version", 0)
+        current_version = model_yml.get("latest_version", 1)
         latest_version = self.get_latest_model_version(model_versions)
 
         new_latest_version_number = latest_version + 1

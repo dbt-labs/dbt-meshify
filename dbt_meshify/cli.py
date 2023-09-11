@@ -103,6 +103,10 @@ read_catalog = click.option(
     help="Skips the dbt docs generate step and reads the local catalog.json file.",
 )
 
+no_prerelease = click.option("--no-prerelease", default=False, is_flag=True)
+
+defined_in = click.option("--defined-in", default=None)
+
 
 def owner(func):
     """Add click options and argument validation for creating Owner objects."""

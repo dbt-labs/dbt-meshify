@@ -23,9 +23,11 @@ from dbt_meshify.utilities.versioner import ModelVersioner
 from .cli import (
     TupleCompatibleCommand,
     create_path,
+    defined_in,
     exclude,
     exclude_projects,
     group_yml_path,
+    no_prerelease,
     owner,
     owner_email,
     owner_name,
@@ -305,14 +307,14 @@ def add_contract(
 @read_catalog
 @select
 @selector
-@click.option("--prerelease", "--pre", default=False, is_flag=True)
-@click.option("--defined-in", default=None)
+@no_prerelease
+@defined_in
 def add_version(
     select,
     exclude,
     project_path,
     selector,
-    prerelease: bool,
+    no_prerelease: bool,
     defined_in: Optional[Path],
     read_catalog,
 ) -> List[ChangeSet]:
@@ -345,7 +347,7 @@ def add_version(
                 continue
 
             changes: ChangeSet = versioner.generate_version(
-                model=model_node, prerelease=prerelease, defined_in=defined_in
+                model=model_node, prerelease=not (no_prerelease), defined_in=defined_in
             )
             change_set.extend(changes)
 
