@@ -32,14 +32,14 @@ def read_yml(yml_str):
     return yaml.safe_load(yml_str)
 
 
-class TestAddContractToYML:
+class TestAddVersionToYML:
     def test_add_version_to_model_yml_no_yml(self, model, project):  # noqa: F811
         input = {}
         file_manager = MagicMock()
         file_manager.read_file.return_value = input
 
         versioner = ModelVersioner(project=project, file_manager=file_manager)
-        changes = list(versioner.generate_version(model))
+        changes = list(versioner.generate_version(model, prerelease=True))
         yml_dict = ResourceFileEditor.update_resource(properties=input, change=changes[0])
 
         assert yml_dict == read_yml(expected_versioned_model_yml_no_yml)
@@ -50,7 +50,7 @@ class TestAddContractToYML:
         file_manager.read_file.return_value = input
 
         versioner = ModelVersioner(project=project, file_manager=file_manager)
-        changes = list(versioner.generate_version(model))
+        changes = list(versioner.generate_version(model, prerelease=True))
         yml_dict = ResourceFileEditor.update_resource(properties=input, change=changes[0])
 
         assert yml_dict == read_yml(expected_versioned_model_yml_no_version)
@@ -81,7 +81,9 @@ class TestAddContractToYML:
         self, model, project, file_manager  # noqa: F811
     ):
         versioner = ModelVersioner(project=project, file_manager=file_manager)
-        changes = list(versioner.generate_version(model, defined_in="daves_model"))
+        changes = list(
+            versioner.generate_version(model, prerelease=True, defined_in="daves_model")
+        )
         yml_dict = ResourceFileEditor.update_resource(
             properties=read_yml(model_yml_increment_version), change=changes[0]
         )
