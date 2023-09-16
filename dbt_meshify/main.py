@@ -27,7 +27,7 @@ from .cli import (
     exclude,
     exclude_projects,
     group_yml_path,
-    no_prerelease,
+    latest,
     owner,
     owner_email,
     owner_name,
@@ -307,14 +307,14 @@ def add_contract(
 @read_catalog
 @select
 @selector
-@no_prerelease
+@latest
 @defined_in
 def add_version(
     select,
     exclude,
     project_path,
     selector,
-    no_prerelease: bool,
+    latest: bool,
     defined_in: Optional[Path],
     read_catalog,
 ) -> List[ChangeSet]:
@@ -347,7 +347,7 @@ def add_version(
                 continue
 
             changes: ChangeSet = versioner.generate_version(
-                model=model_node, prerelease=not (no_prerelease), defined_in=defined_in
+                model=model_node, prerelease=not (latest), defined_in=defined_in
             )
             change_set.extend(changes)
 

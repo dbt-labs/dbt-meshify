@@ -54,7 +54,7 @@ def project():
             expected_versioned_model_yml_increment_version_no_prerelease,
             ["shared_model.sql"],
             ["shared_model_v1.sql", "shared_model_v2.sql"],
-            ["--no-prerelease"],
+            ["--latest"],
         ),
         (
             model_yml_increment_version,
@@ -82,7 +82,7 @@ def project():
             expected_versioned_model_yml_increment_prerelease_version,
             ["shared_model_v1.sql", "shared_model_v2.sql"],
             ["shared_model_v1.sql", "shared_model_v2.sql", "shared_model_v3.sql"],
-            ["--no-prerelease"],
+            ["--latest"],
         ),
     ],
     ids=["1", "2", "3", "4", "5", "6", "7"],

@@ -103,7 +103,12 @@ read_catalog = click.option(
     help="Skips the dbt docs generate step and reads the local catalog.json file.",
 )
 
-no_prerelease = click.option("--no-prerelease", default=False, is_flag=True)
+latest = click.option(
+    "--latest",
+    default=False,
+    is_flag=True,
+    help="makes the newly created model version the latest version",
+)
 
 defined_in = click.option("--defined-in", default=None)
 
