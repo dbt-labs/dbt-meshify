@@ -149,7 +149,7 @@ class ModelVersioner:
 
         # Bump versions
         new_greatest_version_number = greatest_version + 1
-        new_latest_version_number = latest_version if prerelease else new_greatest_version_number
+        new_latest_version_number = latest_version if prerelease else latest_version + 1
 
         # Setup the new version definitions
         new_version_data: Dict[str, Any] = {"v": new_greatest_version_number}
