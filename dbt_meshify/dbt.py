@@ -5,6 +5,7 @@ from typing import List, Optional
 from dbt.cli.main import dbtRunner
 from dbt.contracts.graph.manifest import Manifest
 from dbt.contracts.results import CatalogArtifact
+from dbt.exceptions import UninstalledPackagesFoundError
 from loguru import logger
 
 
@@ -27,7 +28,12 @@ class Dbt:
 
     def parse(self, directory: os.PathLike):
         logger.info("Executing dbt parse...")
-        return self.invoke(directory, ["--quiet", "parse"])
+        try:
+            return self.invoke(directory, ["--quiet", "parse"])
+        except UninstalledPackagesFoundError:
+            logger.debug("Project missing packages, installing...")
+            self.invoke(directory, ["deps"])
+            return self.invoke(directory, ["--quiet", "parse"])
 
     def ls(
         self,
