@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 from dbt.contracts.graph.nodes import ModelNode
+from loguru import logger
 
 from dbt_meshify.change import (
     ChangeSet,
@@ -13,6 +14,10 @@ from dbt_meshify.change import (
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject
 from dbt_meshify.storage.file_content_editors import NamedList
 from dbt_meshify.storage.file_manager import FileManager, YAMLFileManager
+
+
+class ModelVersionerException(Exception):
+    """Exceptions raised during versioning of a Model."""
 
 
 class ModelVersioner:
@@ -58,10 +63,71 @@ class ModelVersioner:
         except ValueError:
             raise ValueError("Version not an integer, can't increment version.")
 
-    def generate_version(
+    def add_version(self, model: ModelNode, defined_in: Optional[Path] = None):
+        """Pass add versioning to an existing model."""
+
+        path = self.project.resolve_patch_path(model)
+        model_path = self.project.path / model.original_file_path
+
+        try:
+            model_yml = self.load_model_yml(path, model.name)
+        except FileNotFoundError:
+            model_yml = {}
+
+        model_versions: NamedList = self.get_model_versions(model_yml)
+
+        if len(model_versions) > 0:
+            raise ModelVersionerException(
+                f"The model {model.name} already has versions defined. Please use bump-version instead."
+            )
+
+        new_latest_version_number = 1
+        new_version_data: Dict[str, Any] = {"v": new_latest_version_number}
+
+        if defined_in:
+            new_version_data["defined_in"] = defined_in
+
+        model_versions[new_version_data["v"]] = new_version_data
+
+        next_version_file_name = model_path.parent / Path(
+            f"{defined_in}.{model.language}"
+            if defined_in
+            else f"{model.name}_v{new_latest_version_number}.{model.language}"
+        )
+
+        change_set = ChangeSet()
+
+        change_set.add(
+            ResourceChange(
+                operation=Operation.Update if path.exists() else Operation.Add,
+                entity_type=EntityType.Model,
+                identifier=model.name,
+                path=path,
+                data={
+                    "name": model.name,
+                    "latest_version": new_latest_version_number,
+                    "versions": model_versions.to_list(),
+                },
+            )
+        )
+
+        change_set.add(
+            FileChange(
+                operation=Operation.Move,
+                path=next_version_file_name,
+                entity_type=EntityType.Code,
+                identifier=model.name,
+                source=model_path,
+            )
+        )
+
+        return change_set
+
+    def bump_version(
         self, model: ModelNode, prerelease: bool = False, defined_in: Optional[Path] = None
-    ) -> ChangeSet:
-        """Create a Change that adds a Version config to a Model."""
+    ):
+        """Create a new version for a versioned model."""
+
         path = self.project.resolve_patch_path(model)
 
         try:
@@ -70,6 +136,15 @@ class ModelVersioner:
             model_yml = {}
 
         model_versions: NamedList = self.get_model_versions(model_yml)
+
+        if len(model_versions) == 0:
+            logger.debug(
+                "The model {model} does not have versions defined. Please use add-version instead.",
+                model=model.name,
+            )
+            raise ModelVersionerException(
+                f"The model {model.name} does not have versions defined."
+            )
 
         current_version = model_yml.get("latest_version", 0)
         latest_version = self.get_latest_model_version(model_versions)

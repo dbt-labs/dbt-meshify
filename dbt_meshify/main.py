@@ -305,19 +305,17 @@ def add_contract(
 @read_catalog
 @select
 @selector
-@click.option("--prerelease", "--pre", default=False, is_flag=True)
 @click.option("--defined-in", default=None)
 def add_version(
     select,
     exclude,
     project_path,
     selector,
-    prerelease: bool,
     defined_in: Optional[Path],
     read_catalog,
 ) -> List[ChangeSet]:
     """
-    Adds/increments model versions for all selected models.
+    Adds model version boilerplate for all selected models.
     """
     path = Path(project_path).expanduser().resolve()
 
@@ -344,13 +342,67 @@ def add_version(
             if model_node.version != model_node.latest_version:
                 continue
 
-            changes: ChangeSet = versioner.generate_version(
+            changes: ChangeSet = versioner.add_version(model=model_node, defined_in=defined_in)
+            change_set.extend(changes)
+
+        except Exception as e:
+            raise FatalMeshifyException(f"Error adding version to model: {model_unique_id}. {e}")
+
+    return [change_set]
+
+
+@operation.command(name="bump-version")
+@exclude
+@project_path
+@read_catalog
+@select
+@selector
+@click.option("--prerelease", "--pre", default=False, is_flag=True)
+@click.option("--defined-in", default=None)
+def bump_version(
+    select,
+    exclude,
+    project_path,
+    selector,
+    prerelease: bool,
+    defined_in: Optional[Path],
+    read_catalog,
+) -> List[ChangeSet]:
+    """
+    Create new model versions for all selected models.
+    """
+    path = Path(project_path).expanduser().resolve()
+
+    logger.info(f"Reading dbt project at {path}")
+    project = DbtProject.from_directory(path, read_catalog)
+    resources = list(
+        project.select_resources(
+            select=select, exclude=exclude, selector=selector, output_key="unique_id"
+        )
+    )
+    models = filter(lambda x: x.startswith("model"), resources)
+    logger.info(f"Selected {len(resources)} resources: {resources}")
+    logger.info("Adding version to models in selected resources...")
+
+    versioner = ModelVersioner(project=project)
+    change_set = ChangeSet()
+    for model_unique_id in models:
+        try:
+            model_node = project.get_manifest_node(model_unique_id)
+
+            if not isinstance(model_node, ModelNode):
+                continue
+
+            if model_node.version != model_node.latest_version:
+                continue
+
+            changes: ChangeSet = versioner.bump_version(
                 model=model_node, prerelease=prerelease, defined_in=defined_in
             )
             change_set.extend(changes)
 
         except Exception as e:
-            raise FatalMeshifyException(f"Error adding version to model: {model_unique_id}") from e
+            raise FatalMeshifyException(f"Error adding version to model: {model_unique_id}. {e}")
 
     return [change_set]
 
