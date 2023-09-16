@@ -452,39 +452,55 @@ def version(
             if model_node.version != model_node.latest_version:
                 continue
 
-            add_changes: ChangeSet = versioner.add_version(model=model_node, defined_in=defined_in)
+            if model_node.latest_version is not None:
+                # We already have a version. Simply bump
 
-            model_add_change = add_changes[0]
-            file_add_change = add_changes[1]
-
-            if not isinstance(model_add_change, ResourceChange) or not isinstance(
-                file_add_change, FileChange
-            ):
-                raise FatalMeshifyException(
-                    f"Fault in change calculations for model {model_unique_id}"
+                change_set.extend(
+                    versioner.bump_version(
+                        model=model_node,
+                        defined_in=defined_in,
+                        prerelease=prerelease,
+                    )
                 )
 
-            bump_change: ChangeSet = versioner.bump_version(
-                model=model_node,
-                defined_in=defined_in,
-                prerelease=prerelease,
-                model_override=model_add_change.data,
-            )
+            else:
+                # We don't have a version! This means we have to both add versions to the model, and then bump it!
 
-            # Update the bump change for the model copy to reference the new model path
-            file_bump_change = bump_change[1]
-            if not isinstance(file_bump_change, FileChange):
-                raise FatalMeshifyException(
-                    f"Fault in change calculations for model {model_unique_id}"
+                add_changes: ChangeSet = versioner.add_version(
+                    model=model_node, defined_in=defined_in
                 )
-            file_bump_change.source = file_add_change.path
-            bump_change[1] = file_bump_change
 
-            # We don't need to update the model properties twice. Let's remove the first one form add_changes.
-            del add_changes[0]
+                model_add_change = add_changes[0]
+                file_add_change = add_changes[1]
 
-            change_set.extend(add_changes)
-            change_set.extend(bump_change)
+                if not isinstance(model_add_change, ResourceChange) or not isinstance(
+                    file_add_change, FileChange
+                ):
+                    raise FatalMeshifyException(
+                        f"Fault in change calculations for model {model_unique_id}"
+                    )
+
+                bump_change: ChangeSet = versioner.bump_version(
+                    model=model_node,
+                    defined_in=defined_in,
+                    prerelease=prerelease,
+                    model_override=model_add_change.data,
+                )
+
+                # Update the bump change for the model copy to reference the new model path
+                file_bump_change = bump_change[1]
+                if not isinstance(file_bump_change, FileChange):
+                    raise FatalMeshifyException(
+                        f"Fault in change calculations for model {model_unique_id}"
+                    )
+                file_bump_change.source = file_add_change.path
+                bump_change[1] = file_bump_change
+
+                # We don't need to update the model properties twice. Let's remove the first one form add_changes.
+                del add_changes[0]
+
+                change_set.extend(add_changes)
+                change_set.extend(bump_change)
 
         except Exception as e:
             raise FatalMeshifyException(f"Error adding version to model: {model_unique_id}. {e}")
