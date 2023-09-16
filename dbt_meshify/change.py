@@ -121,6 +121,9 @@ class ChangeSet:
     def __getitem__(self, key) -> Change:
         return self.changes[key]
 
+    def __setitem__(self, key, value: Change) -> None:
+        self.changes[key] = value
+
     def __delitem__(self, key) -> None:
         del self.changes[key]
 
