@@ -425,7 +425,7 @@ def version(
     read_catalog,
 ) -> List[ChangeSet]:
     """
-    Add version boilerplate to a selection of models, and then increment the models to the next version.
+    Increment the models to the next version, and create in the initial version if it has not yet been defined.
     """
     path = Path(project_path).expanduser().resolve()
 
