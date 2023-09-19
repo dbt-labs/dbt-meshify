@@ -48,13 +48,20 @@ class ReferenceUpdater:
         """Update refs in a SQL file."""
 
         # pattern to search for ref() with optional spaces and either single or double quotes
-        pattern = re.compile(r"{{\s*ref\s*\(\s*['\"]" + re.escape(model_name) + r"['\"]\s*\)\s*}}")
+        # this also captures the version argument if it exists
+        pattern = re.compile(
+            r"{{\s*ref\s*\(\s*['\"]" + re.escape(model_name) + r"['\"](?:,\s*(v=\d+))?\s*\)\s*}}"
+        )
 
-        # replacement string with the new format
-        replacement = f"{{{{ ref('{project_name}', '{model_name}') }}}}"
+        def replacement_function(match):
+            version_arg = match.group(1)
+            if version_arg:
+                return f"{{{{ ref('{project_name}', '{model_name}', {version_arg}) }}}}"
+            else:
+                return f"{{{{ ref('{project_name}', '{model_name}') }}}}"
 
-        # perform replacement
-        new_code = re.sub(pattern, replacement, model_code)
+        # perform replacement using the function
+        new_code = re.sub(pattern, replacement_function, model_code)
 
         return new_code
 
@@ -84,14 +91,21 @@ class ReferenceUpdater:
     def update_refs__python(model_name, project_name, model_code):
         """Update refs in a python file."""
 
-        # pattern to search for ref() with optional spaces and either single or double quotes
-        pattern = re.compile(r"dbt\.ref\s*\(\s*['\"]" + re.escape(model_name) + r"['\"]\s*\)")
+        # pattern to search for dbt.ref() with optional spaces and either single or double quotes
+        # this also captures the version argument if it exists
+        pattern = re.compile(
+            r"dbt\.ref\s*\(\s*['\"]" + re.escape(model_name) + r"['\"](?:,\s*(v=\d+))?\s*\)"
+        )
 
-        # replacement string with the new format
-        replacement = f"dbt.ref('{project_name}', '{model_name}')"
+        def replacement_function(match):
+            version_arg = match.group(1)
+            if version_arg:
+                return f"dbt.ref('{project_name}', '{model_name}', {version_arg})"
+            else:
+                return f"dbt.ref('{project_name}', '{model_name}')"
 
-        # perform replacement
-        new_code = re.sub(pattern, replacement, model_code)
+        # perform replacement using the function
+        new_code = re.sub(pattern, replacement_function, model_code)
 
         return new_code
 
