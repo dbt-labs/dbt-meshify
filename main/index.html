@@ -404,7 +404,7 @@
 <p>This package consists of <strong>component</strong> and <strong>global</strong> commands - so you can decide how to best break apart your work.</p>
 <p>The <strong>component</strong> commands allow you to do a single step at a time and begin with <code>dbt-meshify operation</code>. For example, if you wanted to add a new version to a model, you would run something like <code>dbt-meshify operation add-version --select fct_orders</code>. This command would:</p>
 <ol>
-<li>add a new version to <code>fct_orders</code></li>
+<li>add version configuration values to <code>fct_orders</code></li>
 </ol>
 <p>and that's it!</p>
 <p>The <strong>global</strong> commands combine <em>multiple</em> <strong>component</strong> commands to complete a larger set of work and begin with <code>dbt-meshify</code>. For example, if you wanted to define a group for a subset of your models, you would run something like <code>dbt-meshify group finance --owner-name "Monopoly Man" --select +tag:finance</code>. This command would:</p>

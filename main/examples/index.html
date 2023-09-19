@@ -450,8 +450,8 @@
 <p>We will give a basic example for each command, but to see the full list of additional flags you can add to a given command, check out the <a href="../commands/">commands page</a>.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>One helpful flag that you can add to all of the commands is <code>--read-catalog</code>, which will skip the <code>dbt docs generate</code> step and instead read the local <code>catalog.json</code> file - this will speed up the time it takes to run the <code>dbt-meshify</code> commands but relies on your local <code>catalog.json</code> file being up-to-date. Alternatively, you can configure this via the <code>DBT_MESHIFY_READ_CATALOG</code> environment variable.</p>
 </div>
+<p>One helpful flag that you can add to all of the commands is <code>--read-catalog</code>, which will skip the <code>dbt docs generate</code> step and instead read the local <code>catalog.json</code> file - this will speed up the time it takes to run the <code>dbt-meshify</code> commands but relies on your local <code>catalog.json</code> file being up-to-date. Alternatively, you can configure this via the <code>DBT_MESHIFY_READ_CATALOG</code> environment variable.</p>
 <p>Let's imagine a dbt project with the following models:
 <img alt="dbt dag of models" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/3775c540-ddc1-4eae-8587-8a0a9fb48c79" /></p>
 <p>You can checkout the source code for this example <a href="https://github.com/dave-connors-3/mega-corp-big-co-inc/tree/dbt-meshify-docs">here</a>.</p>
@@ -466,29 +466,28 @@
 <ul>
 <li>
 <p>create a new group definition in a <code>_groups.yml</code> file:
-<img alt="yml file with group defition" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/b3fa812a-157f-41b3-842d-c67e59f77298" /></p>
+  <img alt="yml file with group defition" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/b3fa812a-157f-41b3-842d-c67e59f77298" /></p>
 </li>
 <li>
 <p>add all selected models to that group with the appropriate <code>access</code> config</p>
-<ul>
-<li>all models that are only referenced by other models in their <em>same group</em> will have <code>access: private</code>
-<img alt="int_sales__unioned access set to private" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/481010bb-ceed-4feb-a46e-05c185fac4e4" /></li>
-<li>all other models (those that are referenced by models <em>outside their group</em> or are "leaf" models) will have <code>access: protected</code>
-<img alt="transactions access set to protected" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/ad612ca7-2415-429f-aed8-108c4f16f9db" /></li>
-</ul>
 </li>
+<li>all models that are only referenced by other models in their <em>same group</em> will have <code>access: private</code>
+    <img alt="int_sales__unioned access set to private" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/481010bb-ceed-4feb-a46e-05c185fac4e4" /></li>
+<li>all other models (those that are referenced by models <em>outside their group</em> or are "leaf" models) will have <code>access: protected</code>
+    <img alt="transactions access set to protected" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/ad612ca7-2415-429f-aed8-108c4f16f9db" /></li>
 </ul>
 <h3 id="addincrement-model-versions">Add/increment model versions<a class="headerlink" href="#addincrement-model-versions" title="Permanent link">#</a></h3>
 <p>Let's say you want to add a new version to the customers model, which is currently un-versioned. Versions can provide a smoother upgrade pathway when introducing breaking changes to models that have downstream dependencies.</p>
 <p><img alt="add a version to the customers model" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/e4097ca4-b6fa-4af4-b238-384a090573a7" /></p>
 <p>You can run the following command:</p>
-<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>dbt-meshify<span class="w"> </span>operation<span class="w"> </span>add-version<span class="w"> </span>--select<span class="w"> </span>customers
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>dbt-meshify<span class="w"> </span>version<span class="w"> </span>--select<span class="w"> </span>customers
 </span></code></pre></div>
-<p>This will add a version to the <code>customers</code> model:</p>
+<p>This will add a version to the <code>customers</code> model for your current version, and will add a new version for breaking change you wish to implement:</p>
 <ul>
 <li>the <code>customers.sql</code> file will be renamed to <code>customers_v1.sql</code></li>
+<li>a new <code>customers_v2.sql</code> file will be created based on <code>customers_v1.sql</code></li>
 <li>the necessary version configurations will be created (or added to a pre-existing <code>yml</code> file)
-<img alt="yml file updated with version configs" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/c0b12ab7-904e-4590-84aa-7b602a91f53f" /></li>
+  <img alt="yml file updated with version configs" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/c0b12ab7-904e-4590-84aa-7b602a91f53f" /></li>
 </ul>
 <h3 id="add-contracts">Add contract(s)<a class="headerlink" href="#add-contracts" title="Permanent link">#</a></h3>
 <p>Let's say you want to add a new contract to the <code>stores</code> model, which is currently un-contracted.
@@ -499,9 +498,9 @@
 <p>This will add an enforced contract to the <code>stores</code> model:</p>
 <ul>
 <li>add a <code>contract</code> config and set <code>enforced: true</code>
-<img alt="yml file updated with added contract config" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/bf1ba4e2-76a1-4a65-a0a9-7614487b7d6f" /></li>
+  <img alt="yml file updated with added contract config" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/bf1ba4e2-76a1-4a65-a0a9-7614487b7d6f" /></li>
 <li>add every column's <code>name</code> and <code>data_type</code> if not already defined
-<img alt="yml file updated with added column names and data_types" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/1d989396-2b07-48c5-bcf6-de7eaf02b928" /></li>
+  <img alt="yml file updated with added column names and data_types" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/1d989396-2b07-48c5-bcf6-de7eaf02b928" /></li>
 </ul>
 <h2 id="global-commands">Global commands<a class="headerlink" href="#global-commands" title="Permanent link">#</a></h2>
 <h3 id="group-together-a-subset-of-models">Group together a subset of models<a class="headerlink" href="#group-together-a-subset-of-models" title="Permanent link">#</a></h3>
@@ -513,21 +512,17 @@
 <p>This will create a new group named "sales_analytics" with the owner "Ralphie", add all selected models to that group with the appropriate <code>access</code> configuration, _and add contracts to the models at the boundary between this group and the rest of the project__:</p>
 <ul>
 <li>create a new group definition in a <code>_groups.yml</code> file
-<img alt="yml file with group defition" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/b3fa812a-157f-41b3-842d-c67e59f77298" /></li>
-<li>add all selected models to that group with the appropriate <code>access</code> config<ul>
+  <img alt="yml file with group defition" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/b3fa812a-157f-41b3-842d-c67e59f77298" /></li>
+<li>add all selected models to that group with the appropriate <code>access</code> config</li>
 <li>all models that are only referenced by other models in their <em>same group</em> will have <code>access: private</code>
-<img alt="int_sales__unioned access set to private" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/481010bb-ceed-4feb-a46e-05c185fac4e4" /></li>
+    <img alt="int_sales__unioned access set to private" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/481010bb-ceed-4feb-a46e-05c185fac4e4" /></li>
 <li>all other models (those that are referenced by models <em>outside their group</em> or are "leaf" models) will have <code>access: protected</code>
-<img alt="transactions access set to protected" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/ad612ca7-2415-429f-aed8-108c4f16f9db" /></li>
-</ul>
-</li>
-<li>for all <code>protected</code> models:<ul>
+    <img alt="transactions access set to protected" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/ad612ca7-2415-429f-aed8-108c4f16f9db" /></li>
+<li>for all <code>protected</code> models:</li>
 <li>add a <code>contract</code> config and set <code>enforced: true</code>
-<img alt="yml file updated with added contract config for transactions model" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/747a7a25-d352-4913-95ed-4c6f72721bbb" /></li>
+    <img alt="yml file updated with added contract config for transactions model" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/747a7a25-d352-4913-95ed-4c6f72721bbb" /></li>
 <li>add every column's <code>name</code> and <code>data_type</code> if not already defined
-<img alt="yml file updated with added column names and data_types for transactions model" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/f6402db9-95f0-4dc3-bc17-5966e79811a4" /></li>
-</ul>
-</li>
+    <img alt="yml file updated with added column names and data_types for transactions model" src="https://github.com/dave-connors-3/barnold-corp/assets/53586774/f6402db9-95f0-4dc3-bc17-5966e79811a4" /></li>
 </ul>
 <h3 id="split-out-a-new-subproject">Split out a new subproject<a class="headerlink" href="#split-out-a-new-subproject" title="Permanent link">#</a></h3>
 <p>Let's say you want to split our your sales analytics models into a new subproject.
@@ -539,32 +534,30 @@
 <ul>
 <li>
 <p>create a new subproject that contains the selected sales analytics models
-<img alt="selected models moved to a subproject" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/e638d83e-eb24-4f1e-852d-2c058bfedb4f" /></p>
+  <img alt="selected models moved to a subproject" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/e638d83e-eb24-4f1e-852d-2c058bfedb4f" /></p>
 </li>
 <li>
 <p>add a <code>dependencies.yml</code> to the <em>downstream</em> project (in our case, our new subproject is downstream of the original project because the <code>transactions</code> model depends on some of the models that remain in the original project - <code>stores</code> and <code>customers</code>)
-<img alt="add dependencies.yml" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/65e47b65-30ca-475f-bfa7-fffb26d85e11" /></p>
+  <img alt="add dependencies.yml" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/65e47b65-30ca-475f-bfa7-fffb26d85e11" /></p>
 </li>
 <li>add <code>access: public</code> to all "leaf" models (models with no downstream dependencies) and models in the upstream project that are referenced by models in the downstream project
-<img alt="customers access set to public" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/9e110ca4-40c5-4013-ab89-773b59638320" /></li>
-<li>for all <code>public</code> models:<ul>
+  <img alt="customers access set to public" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/9e110ca4-40c5-4013-ab89-773b59638320" /></li>
+<li>for all <code>public</code> models:</li>
 <li>add a <code>contract</code> config and set <code>enforced: true</code>
-<img alt="yml file updated with added contract config for stores model" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/800fc871-ce56-4e80-b746-8bd84aa05574" /></li>
+    <img alt="yml file updated with added contract config for stores model" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/800fc871-ce56-4e80-b746-8bd84aa05574" /></li>
 <li>add every column's <code>name</code> and <code>data_type</code> if not already defined
-<img alt="yml file updated with added column names and data_types for stores model" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/48d41e17-0ad3-4a31-863b-1a8646d1d7c9" /></li>
-</ul>
-</li>
+    <img alt="yml file updated with added column names and data_types for stores model" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/48d41e17-0ad3-4a31-863b-1a8646d1d7c9" /></li>
 <li>replace any dependencies in the downstream project on the upstream's models with a cross-project <code>ref</code>
-<img alt="refs to customers and stores replaced with cross-project ref" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/33de63e1-0579-4ac0-9ff4-22099d701b99" /></li>
+  <img alt="refs to customers and stores replaced with cross-project ref" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/33de63e1-0579-4ac0-9ff4-22099d701b99" /></li>
 </ul>
 <p>By default, the new subproject will be created in the current directory; however, you can use the <code>--create-path</code> flag to create it in any directory you like.</p>
 <h3 id="connect-multiple-dbt-projects">Connect multiple dbt projects<a class="headerlink" href="#connect-multiple-dbt-projects" title="Permanent link">#</a></h3>
 <p>Let's look at a slightly modified version of the example we've been working with. Instead of a single dbt project, let's imagine you're starting with two separate dbt projects connected via the "source hack":</p>
 <ul>
 <li>project A contains the following models
-<img alt="project A's dag of models" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/75771c9c-1fa4-4cc5-b9b9-380f39091031" /></li>
+  <img alt="project A's dag of models" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/75771c9c-1fa4-4cc5-b9b9-380f39091031" /></li>
 <li>project B contains the following models
-<img alt="project B's dag of models" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/a94657e5-c9bc-4b8b-ada5-63887bfd0ba3" /></li>
+  <img alt="project B's dag of models" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/a94657e5-c9bc-4b8b-ada5-63887bfd0ba3" /></li>
 </ul>
 <p>We call this type of multi-project configuration the "source hack" because there are models generated by project A (<code>stores</code> and <code>customers</code>) that are defined as sources in project B.</p>
 <p>Let's say we want to connect these two projects using model governance best practices and cross project <code>ref</code>s.</p>
@@ -574,20 +567,18 @@
 <p>This will make the upstream project a dependency for the downstream project, configure the "edge" models to be <code>public</code> and contracted, and replace all dependencies in the downstream project on the upstreams's models with cross-project <code>ref</code>s:</p>
 <ul>
 <li>add a <code>dependencies.yml</code> to the <em>downstream</em> project (in our case, project B is downstream of project A because the <code>transactions</code> model depends on some of the models that are generated by project A - <code>stores</code> and <code>customers</code>)
-<img alt="dependencies.yml" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/0dfa6e3d-5ccf-4d85-affa-0f2bda9c6ef4" /></li>
+  <img alt="dependencies.yml" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/0dfa6e3d-5ccf-4d85-affa-0f2bda9c6ef4" /></li>
 <li>add <code>access: public</code> to all models in the upstream project that are referenced by models in the downstream project
-<img alt="customers access set to public" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/9e110ca4-40c5-4013-ab89-773b59638320" /></li>
-<li>for all <code>public</code> models:<ul>
+  <img alt="customers access set to public" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/9e110ca4-40c5-4013-ab89-773b59638320" /></li>
+<li>for all <code>public</code> models:</li>
 <li>add a <code>contract</code> config and set <code>enforced: true</code>
-<img alt="yml file updated with added contract config for stores model" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/800fc871-ce56-4e80-b746-8bd84aa05574" /></li>
+    <img alt="yml file updated with added contract config for stores model" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/800fc871-ce56-4e80-b746-8bd84aa05574" /></li>
 <li>add every column's <code>name</code> and <code>data_type</code> if not already defined
-<img alt="yml file updated with added column names and data_types for stores model" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/48d41e17-0ad3-4a31-863b-1a8646d1d7c9" /></li>
-</ul>
-</li>
+    <img alt="yml file updated with added column names and data_types for stores model" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/48d41e17-0ad3-4a31-863b-1a8646d1d7c9" /></li>
 <li>replace any dependencies in the downstream project on the upstream's models with a cross-project <code>ref</code>
-<img alt="customers and stores sources replaced with cross-project ref" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/24d72b99-fbf1-489d-bda8-ccaea267981b" /></li>
+  <img alt="customers and stores sources replaced with cross-project ref" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/24d72b99-fbf1-489d-bda8-ccaea267981b" /></li>
 <li>remove unnecessary sources
-<img alt="unnecessary sources have been deleted" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/fe657aa5-f14e-461e-bacd-30ce55451cb6" /></li>
+  <img alt="unnecessary sources have been deleted" src="https://github.com/dave-connors-3/mega-corp-big-co-inc/assets/53586774/fe657aa5-f14e-461e-bacd-30ce55451cb6" /></li>
 </ul>
 
 
