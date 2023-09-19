@@ -8,9 +8,9 @@ maintained with :heart: by dbt practitioners for dbt practitioners
 
 ## Overview
 
-`dbt-meshify` is a CLI tool that automates the creation of dbt mesh features introduced in dbt-core v1.5 and v1.6. This package will leverage your dbt project metadata to create and/or edit the files in your project to properly configure the models in your project with these features.
+`dbt-meshify` is a CLI tool that automates the creation of model governance and cross-project lineage features introduced in dbt-core v1.5 and v1.6. This package will leverage your dbt project metadata to create and/or edit the files in your project to properly configure the models in your project with these features.
 
-These dbt mesh features include:
+These features include:
 
 1. __[Groups](https://docs.getdbt.com/docs/build/groups)__ - group your models into logical sets.
 2. __[Contracts](https://docs.getdbt.com/docs/collaborate/govern/model-contracts)__ - add model contracts to your models to ensure consistent data shape.

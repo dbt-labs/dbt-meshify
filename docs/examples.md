@@ -1,6 +1,6 @@
 # Examples
 
-For consistency and clarity of the following examples, we're going to use a simplified dbt project. In practice, the dbt mesh features describe are _most_ beneficial for large dbt projects that are struggling to scale.
+For consistency and clarity of the following examples, we're going to use a simplified dbt project. In practice, the model governance and cross-project lineage features describe are _most_ beneficial for large dbt projects that are struggling to scale.
 
 We will give a basic example for each command, but to see the full list of additional flags you can add to a given command, check out the [commands page](commands.md).
 
