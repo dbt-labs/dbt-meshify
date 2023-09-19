@@ -4,11 +4,11 @@
 
 These dbt mesh features include:
 
-1. __[Groups](https://docs.getdbt.com/docs/build/groups)__ - group your models into logical sets.
-2. __[Contracts](https://docs.getdbt.com/docs/collaborate/govern/model-contracts)__ - add model contracts to your models to ensure consistent data shape.
-3. __[Access](https://docs.getdbt.com/docs/collaborate/govern/model-access)__ - control the `access` level of models within groups
-4. __[Versions](https://docs.getdbt.com/docs/collaborate/govern/model-versions)__ - create and increment versions of particular models.
-5. __[Project dependencies](https://docs.getdbt.com/docs/collaborate/govern/project-dependencies)__ - split a monolithic dbt project into component projects, or connect multiple pre-existing dbt projects using cross-project `ref`.
+1. **[Groups](https://docs.getdbt.com/docs/build/groups)** - group your models into logical sets.
+2. **[Contracts](https://docs.getdbt.com/docs/collaborate/govern/model-contracts)** - add model contracts to your models to ensure consistent data shape.
+3. **[Access](https://docs.getdbt.com/docs/collaborate/govern/model-access)** - control the `access` level of models within groups
+4. **[Versions](https://docs.getdbt.com/docs/collaborate/govern/model-versions)** - create and increment versions of particular models.
+5. **[Project dependencies](https://docs.getdbt.com/docs/collaborate/govern/project-dependencies)** - split a monolithic dbt project into component projects, or connect multiple pre-existing dbt projects using cross-project `ref`.
 
 This package leverages the dbt-core Python API to allow users to use standard dbt selection syntax for each of the commands in this package (unless otherwise noted). See details on each of the specific commands available on the [commands page](commands.md).
 
@@ -22,8 +22,7 @@ This package consists of **component** and **global** commands - so you can deci
 
 The **component** commands allow you to do a single step at a time and begin with `dbt-meshify operation`. For example, if you wanted to add a new version to a model, you would run something like `dbt-meshify operation add-version --select fct_orders`. This command would:
 
-1. add a new version to `fct_orders`
-
+1. add version configuration values to `fct_orders`
 
 and that's it!
 
@@ -51,7 +50,7 @@ For further information, check out the available [commands](commands.md) or read
 
 There are a handful of known edge cases that this package does not automatically handle. In these cases, we recommend doing a manual check to make sure you've handled these appropriately:
 
-| edge case | manual check |
-|-----------|--------------|
-|`dbt-meshify split` copies over the entire contents of the `packages.yml` file from the original project to the new subproject | remove unnecessary packages from each project |
-| `dbt-meshify split` makes a copy of all necessary macros from the original project to the new subproject | consider creating a private "macros only" project to install as a package into all of your other projects, instead of maintaining duplicate copies of shared macros |
+| edge case                                                                                                                      | manual check                                                                                                                                                        |
+| ------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `dbt-meshify split` copies over the entire contents of the `packages.yml` file from the original project to the new subproject | remove unnecessary packages from each project                                                                                                                       |
+| `dbt-meshify split` makes a copy of all necessary macros from the original project to the new subproject                       | consider creating a private "macros only" project to install as a package into all of your other projects, instead of maintaining duplicate copies of shared macros |
