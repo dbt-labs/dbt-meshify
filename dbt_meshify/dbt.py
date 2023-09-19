@@ -20,6 +20,12 @@ class Dbt:
         if directory:
             os.chdir(directory)
         result = self.dbt_runner.invoke(runner_args if runner_args else [])
+        if not result.success and result.exception:
+            if isinstance(result.exception, UninstalledPackagesFoundError):
+                logger.debug("Project missing packages, running dbt deps...")
+                self.dbt_runner.invoke(["deps"])
+                result = self.dbt_runner.invoke(runner_args if runner_args else [])
+
         os.chdir(starting_directory)
 
         if not result.success and result.exception:
@@ -28,12 +34,7 @@ class Dbt:
 
     def parse(self, directory: os.PathLike):
         logger.info("Executing dbt parse...")
-        try:
-            return self.invoke(directory, ["--quiet", "parse"])
-        except UninstalledPackagesFoundError:
-            logger.debug("Project missing packages, installing...")
-            self.invoke(directory, ["deps"])
-            return self.invoke(directory, ["--quiet", "parse"])
+        return self.invoke(directory, ["--quiet", "parse"])
 
     def ls(
         self,
