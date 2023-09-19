@@ -62,7 +62,7 @@ class ModelVersioner:
         except ValueError:
             raise ValueError("Version not an integer, can't increment version.")
 
-    def add_version(self, model: ModelNode, defined_in: Optional[Path] = None):
+    def add_version(self, model: ModelNode, defined_in: Optional[Path] = None) -> ChangeSet:
         """Pass add versioning to an existing model."""
 
         path = self.project.resolve_patch_path(model)
