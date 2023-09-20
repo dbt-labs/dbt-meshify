@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 
 import pytest
@@ -271,6 +272,61 @@ def test_bump_version_in_yml(
     # reset the read path to the default in the logic
     with open(yml_file, "r") as f:
         actual = yaml.safe_load(f)
+    for file in expected_files:
+        path = proj_path / "models" / file
+        try:
+            assert path.is_file()
+        except Exception:
+            logger.exception(f"File {file} not found")
+
+    assert actual == yaml.safe_load(end_yml)
+
+
+@pytest.mark.parametrize(
+    "start_yml,end_yml,expected_files,command_options",
+    [
+        (
+            model_yml_increment_version,
+            expected_versioned_model_yml_increment_version_with_prerelease,
+            ["shared_model_v1.sql", "shared_model_v2.sql"],
+            ["--prerelease"],
+        )
+    ],
+)
+def test_bump_version_prerelease_in_yml(
+    start_yml, end_yml, expected_files, command_options, project
+):
+    # Create the original versioned model
+    shutil.move(
+        Path(proj_path / "models" / "shared_model.sql"),
+        Path(proj_path / "models" / "shared_model_v1.sql"),
+    )
+    yml_file = proj_path / "models" / "_models.yml"
+    yml_file.parent.mkdir(parents=True, exist_ok=True)
+    runner = CliRunner()
+    # only create file if start_yml is not None
+    # in situations where models don't have a patch path, there isn't a yml file to read from
+    if start_yml:
+        yml_file.touch()
+        start_yml_content = yaml.safe_load(start_yml)
+        with open(yml_file, "w+") as f:
+            yaml.safe_dump(start_yml_content, f, sort_keys=False)
+    base_command = [
+        "operation",
+        "bump-version",
+        "--select",
+        "shared_model",
+        "--project-path",
+        str(proj_path),
+    ]
+    base_command.extend(command_options)
+    result = runner.invoke(cli, base_command)
+    print(result.stdout)
+    assert result.exit_code == 0
+    # reset the read path to the default in the logic
+    with open(yml_file, "r") as f:
+        actual = yaml.safe_load(f)
+
     for file in expected_files:
         path = proj_path / "models" / file
         try:

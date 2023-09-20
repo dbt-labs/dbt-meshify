@@ -165,7 +165,7 @@ class ModelVersioner:
         next_version_file_name = model_path.parent / Path(
             f"{defined_in}.{model.language}"
             if defined_in
-            else f"{model.name}_v{new_latest_version_number}.{model.language}"
+            else f"{model.name}_v{new_greatest_version_number}.{model.language}"
         )
 
         change_set = ChangeSet()
