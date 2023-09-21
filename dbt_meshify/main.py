@@ -10,7 +10,7 @@ from dbt.contracts.graph.nodes import ModelNode
 from dbt.contracts.graph.unparsed import Owner
 from loguru import logger
 
-from dbt_meshify.change import ChangeSet, EntityType, ResourceChange
+from dbt_meshify.change import ChangeSet, EntityType, FileChange, ResourceChange
 from dbt_meshify.change_set_processor import (
     ChangeSetProcessor,
     ChangeSetProcessorException,
@@ -305,19 +305,17 @@ def add_contract(
 @read_catalog
 @select
 @selector
-@click.option("--prerelease", "--pre", default=False, is_flag=True)
 @click.option("--defined-in", default=None)
 def add_version(
     select,
     exclude,
     project_path,
     selector,
-    prerelease: bool,
     defined_in: Optional[Path],
     read_catalog,
 ) -> List[ChangeSet]:
     """
-    Adds/increments model versions for all selected models.
+    Adds model version boilerplate for all selected models.
     """
     path = Path(project_path).expanduser().resolve()
 
@@ -344,13 +342,168 @@ def add_version(
             if model_node.version != model_node.latest_version:
                 continue
 
-            changes: ChangeSet = versioner.generate_version(
+            changes: ChangeSet = versioner.add_version(model=model_node, defined_in=defined_in)
+            change_set.extend(changes)
+
+        except Exception as e:
+            raise FatalMeshifyException(f"Error adding version to model: {model_unique_id}. {e}")
+
+    return [change_set]
+
+
+@operation.command(name="bump-version")
+@exclude
+@project_path
+@read_catalog
+@select
+@selector
+@click.option("--prerelease", "--pre", default=False, is_flag=True)
+@click.option("--defined-in", default=None)
+def bump_version(
+    select,
+    exclude,
+    project_path,
+    selector,
+    prerelease: bool,
+    defined_in: Optional[Path],
+    read_catalog,
+) -> List[ChangeSet]:
+    """
+    Create new model versions for all selected models.
+    """
+    path = Path(project_path).expanduser().resolve()
+
+    logger.info(f"Reading dbt project at {path}")
+    project = DbtProject.from_directory(path, read_catalog)
+    resources = list(
+        project.select_resources(
+            select=select, exclude=exclude, selector=selector, output_key="unique_id"
+        )
+    )
+    models = filter(lambda x: x.startswith("model"), resources)
+    logger.info(f"Selected {len(resources)} resources: {resources}")
+    logger.info("Adding version to models in selected resources...")
+
+    versioner = ModelVersioner(project=project)
+    change_set = ChangeSet()
+    for model_unique_id in models:
+        try:
+            model_node = project.get_manifest_node(model_unique_id)
+
+            if not isinstance(model_node, ModelNode):
+                continue
+
+            if model_node.version != model_node.latest_version:
+                continue
+
+            changes: ChangeSet = versioner.bump_version(
                 model=model_node, prerelease=prerelease, defined_in=defined_in
             )
             change_set.extend(changes)
 
         except Exception as e:
-            raise FatalMeshifyException(f"Error adding version to model: {model_unique_id}") from e
+            raise FatalMeshifyException(f"Error adding version to model: {model_unique_id}. {e}")
+
+    return [change_set]
+
+
+@cli.command(name="version")
+@exclude
+@project_path
+@read_catalog
+@select
+@selector
+@click.option("--prerelease", "--pre", default=False, is_flag=True)
+@click.option("--defined-in", default=None)
+def version(
+    select,
+    exclude,
+    project_path,
+    selector,
+    prerelease: bool,
+    defined_in: Optional[Path],
+    read_catalog,
+) -> List[ChangeSet]:
+    """
+    Increment the models to the next version, and create in the initial version if it has not yet been defined.
+    """
+    path = Path(project_path).expanduser().resolve()
+
+    logger.info(f"Reading dbt project at {path}")
+    project = DbtProject.from_directory(path, read_catalog)
+    resources = list(
+        project.select_resources(
+            select=select, exclude=exclude, selector=selector, output_key="unique_id"
+        )
+    )
+    models = filter(lambda x: x.startswith("model"), resources)
+    logger.info(f"Selected {len(resources)} resources: {resources}")
+    logger.info("Adding version to models in selected resources...")
+
+    versioner = ModelVersioner(project=project)
+    change_set = ChangeSet()
+    for model_unique_id in models:
+        try:
+            model_node = project.get_manifest_node(model_unique_id)
+
+            if not isinstance(model_node, ModelNode):
+                continue
+
+            if model_node.version != model_node.latest_version:
+                continue
+
+            if model_node.latest_version is not None:
+                # We already have a version. Simply bump
+
+                change_set.extend(
+                    versioner.bump_version(
+                        model=model_node,
+                        defined_in=defined_in,
+                        prerelease=prerelease,
+                    )
+                )
+
+            else:
+                # We don't have a version! This means we have to both add versions to the model, and then bump it!
+
+                add_changes: ChangeSet = versioner.add_version(
+                    model=model_node, defined_in=defined_in
+                )
+
+                model_add_change = add_changes[0]
+                file_add_change = add_changes[1]
+
+                if not isinstance(model_add_change, ResourceChange) or not isinstance(
+                    file_add_change, FileChange
+                ):
+                    raise FatalMeshifyException(
+                        f"Fault in change calculations for model {model_unique_id}"
+                    )
+
+                bump_change: ChangeSet = versioner.bump_version(
+                    model=model_node,
+                    defined_in=defined_in,
+                    prerelease=prerelease,
+                    model_override=model_add_change.data,
+                )
+
+                # Update the bump change for the model copy to reference the new model path
+                file_bump_change = bump_change[1]
+                if not isinstance(file_bump_change, FileChange):
+                    raise FatalMeshifyException(
+                        f"Fault in change calculations for model {model_unique_id}"
+                    )
+                file_bump_change.source = file_add_change.path
+                bump_change[1] = file_bump_change
+
+                # We don't need to update the model properties twice. Let's remove the first one form add_changes.
+                del add_changes[0]
+
+                change_set.extend(add_changes)
+                change_set.extend(bump_change)
+
+        except Exception as e:
+            raise FatalMeshifyException(f"Error adding version to model: {model_unique_id}. {e}")
 
     return [change_set]
 

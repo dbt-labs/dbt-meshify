@@ -1,17 +1,11 @@
 from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Set, Union
+from typing import Optional, Set, Union
 
 from dbt.contracts.graph.nodes import CompiledNode, ModelNode, SourceDefinition
 from dbt.node_types import AccessType
 
-from dbt_meshify.change import (
-    ChangeSet,
-    EntityType,
-    FileChange,
-    Operation,
-    ResourceChange,
-)
+from dbt_meshify.change import ChangeSet, EntityType, Operation, ResourceChange
 from dbt_meshify.dbt_projects import BaseDbtProject, DbtProject, PathedProject
 from dbt_meshify.utilities.contractor import Contractor
 from dbt_meshify.utilities.dependencies import DependenciesUpdater

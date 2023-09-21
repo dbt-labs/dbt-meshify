@@ -11,8 +11,12 @@ from dbt_meshify.change import (
     ResourceChange,
 )
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject
-from dbt_meshify.storage.file_content_editors import NamedList
+from dbt_meshify.storage.file_content_editors import NamedList, safe_update
 from dbt_meshify.storage.file_manager import FileManager, YAMLFileManager
+
+
+class ModelVersionerException(Exception):
+    """Exceptions raised during versioning of a Model."""
 
 
 class ModelVersioner:
@@ -58,11 +62,11 @@ class ModelVersioner:
         except ValueError:
             raise ValueError("Version not an integer, can't increment version.")
 
-    def generate_version(
-        self, model: ModelNode, prerelease: bool = False, defined_in: Optional[Path] = None
-    ) -> ChangeSet:
-        """Create a Change that adds a Version config to a Model."""
+    def add_version(self, model: ModelNode, defined_in: Optional[Path] = None) -> ChangeSet:
+        """Pass add versioning to an existing model."""
+
         path = self.project.resolve_patch_path(model)
+        model_path = self.project.path / model.original_file_path
 
         try:
             model_yml = self.load_model_yml(path, model.name)
@@ -71,21 +75,24 @@ class ModelVersioner:
 
         model_versions: NamedList = self.get_model_versions(model_yml)
 
-        current_version = model_yml.get("latest_version", 0)
-        latest_version = self.get_latest_model_version(model_versions)
+        if len(model_versions) > 0:
+            raise ModelVersionerException(
+                f"The model {model.name} already has versions defined. Please use bump-version instead."
+            )
 
-        new_latest_version_number = latest_version + 1
-        new_current_version_number = current_version
-
-        if not prerelease:
-            new_current_version_number += 1
-
+        new_latest_version_number = 1
         new_version_data: Dict[str, Any] = {"v": new_latest_version_number}
 
         if defined_in:
             new_version_data["defined_in"] = defined_in
 
         model_versions[new_version_data["v"]] = new_version_data
+
+        next_version_file_name = model_path.parent / Path(
+            f"{defined_in}.{model.language}"
+            if defined_in
+            else f"{model.name}_v{new_latest_version_number}.{model.language}"
+        )
 
         change_set = ChangeSet()
 
@@ -97,50 +104,88 @@ class ModelVersioner:
                 path=path,
                 data={
                     "name": model.name,
-                    "latest_version": new_current_version_number,
+                    "latest_version": new_latest_version_number,
                     "versions": model_versions.to_list(),
                 },
             )
         )
-        model_path = self.project.path / model.original_file_path
-        current_version_file_name = model_path.parent / Path(
-            f"{model.name}_v{current_version}.{model.language}"
+
+        change_set.add(
+            FileChange(
+                operation=Operation.Move,
+                path=next_version_file_name,
+                entity_type=EntityType.Code,
+                identifier=model.name,
+                source=model_path,
+            )
         )
+
+        return change_set
+
+    def bump_version(
+        self,
+        model: ModelNode,
+        prerelease: bool = False,
+        defined_in: Optional[Path] = None,
+        model_override: Optional[Dict] = None,
+    ) -> ChangeSet:
+        """Increment a model's version, and create a new version definition and model file for the new version number"""
+
+        path = self.project.resolve_patch_path(model)
+        model_path = self.project.path / model.original_file_path
+
+        try:
+            model_yml = self.load_model_yml(path, model.name)
+
+            # If a model override has been provided safely update the `model_yml` with the override.
+            if model_override:
+                model_yml = safe_update(model_yml, model_override)
+        except FileNotFoundError:
+            model_yml = {}
+
+        latest_version = model_yml.get("latest_version", 0)
+        model_versions: NamedList = self.get_model_versions(model_yml)
+        greatest_version = self.get_latest_model_version(model_versions)
+
+        # Bump versions
+        new_greatest_version_number = greatest_version + 1
+        new_latest_version_number = latest_version if prerelease else latest_version + 1
+
+        # Setup the new version definitions
+        new_version_data: Dict[str, Any] = {"v": new_greatest_version_number}
+        if defined_in:
+            new_version_data["defined_in"] = defined_in
+        model_versions[new_version_data["v"]] = new_version_data
+
+        # Determine the file name for the versioned model
         next_version_file_name = model_path.parent / Path(
             f"{defined_in}.{model.language}"
             if defined_in
             else f"{model.name}_v{new_latest_version_number}.{model.language}"
         )
 
-        if not model.latest_version:
-            change_set.add(
-                FileChange(
-                    operation=Operation.Move,
-                    path=next_version_file_name,
-                    entity_type=EntityType.Code,
-                    identifier=model.name,
-                    source=model_path,
-                )
+        change_set = ChangeSet()
+        change_set.add(
+            ResourceChange(
+                operation=Operation.Update if path.exists() else Operation.Add,
+                entity_type=EntityType.Model,
+                identifier=model.name,
+                path=path,
+                data={
+                    "name": model.name,
+                    "latest_version": new_latest_version_number,
+                    "versions": model_versions.to_list(),
+                },
             )
-        else:
-            change_set.add(
-                FileChange(
-                    operation=Operation.Copy,
-                    path=next_version_file_name,
-                    entity_type=EntityType.Code,
-                    identifier=model.name,
-                    source=model_path,
-                )
+        )
+        change_set.add(
+            FileChange(
+                operation=Operation.Copy,
+                path=next_version_file_name,
+                entity_type=EntityType.Code,
+                identifier=model.name,
+                source=model_path,
             )
-            if not model_path.stem.endswith(f"_v{latest_version}"):
-                change_set.add(
-                    FileChange(
-                        operation=Operation.Move,
-                        path=current_version_file_name,
-                        entity_type=EntityType.Code,
-                        identifier=model.name,
-                        source=model_path,
-                    )
-                )
+        )
 
         return change_set

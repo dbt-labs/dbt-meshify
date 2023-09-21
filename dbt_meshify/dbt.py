@@ -5,6 +5,7 @@ from typing import List, Optional
 from dbt.cli.main import dbtRunner
 from dbt.contracts.graph.manifest import Manifest
 from dbt.contracts.results import CatalogArtifact
+from dbt.exceptions import UninstalledPackagesFoundError
 from loguru import logger
 
 
@@ -19,6 +20,12 @@ class Dbt:
         if directory:
             os.chdir(directory)
         result = self.dbt_runner.invoke(runner_args if runner_args else [])
+        if not result.success and result.exception:
+            if isinstance(result.exception, UninstalledPackagesFoundError):
+                logger.debug("Project missing packages, running dbt deps...")
+                self.dbt_runner.invoke(["deps"])
+                result = self.dbt_runner.invoke(runner_args if runner_args else [])
+
         os.chdir(starting_directory)
 
         if not result.success and result.exception:

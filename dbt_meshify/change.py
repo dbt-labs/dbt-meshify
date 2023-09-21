@@ -118,6 +118,15 @@ class ChangeSet:
         """Extend a ChangeSet with an iterable of Changes."""
         self.changes.extend(changes)
 
+    def __getitem__(self, key) -> Change:
+        return self.changes[key]
+
+    def __setitem__(self, key, value: Change) -> None:
+        self.changes[key] = value
+
+    def __delitem__(self, key) -> None:
+        del self.changes[key]
+
     def __iter__(self) -> "ChangeSet":
         return self
 
