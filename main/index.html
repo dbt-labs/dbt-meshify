@@ -388,8 +388,8 @@
 
 
 <h1 id="dbt_meshify">dbt_meshify<a class="headerlink" href="#dbt_meshify" title="Permanent link">#</a></h1>
-<p><code>dbt-meshify</code> is a CLI tool that automates the creation of dbt mesh features introduced in dbt-core v1.5 and v1.6. This package will leverage your dbt project metadata to create and/or edit the files in your project to properly configure the models in your project with these features.</p>
-<p>These dbt mesh features include:</p>
+<p><code>dbt-meshify</code> is a CLI tool that automates the creation of model governance and cross-project lineage features introduced in dbt-core v1.5 and v1.6. This package will leverage your dbt project metadata to create and/or edit the files in your project to properly configure the models in your project with these features.</p>
+<p>These features include:</p>
 <ol>
 <li><strong><a href="https://docs.getdbt.com/docs/build/groups">Groups</a></strong> - group your models into logical sets.</li>
 <li><strong><a href="https://docs.getdbt.com/docs/collaborate/govern/model-contracts">Contracts</a></strong> - add model contracts to your models to ensure consistent data shape.</li>
@@ -399,7 +399,7 @@
 </ol>
 <p>This package leverages the dbt-core Python API to allow users to use standard dbt selection syntax for each of the commands in this package (unless otherwise noted). See details on each of the specific commands available on the <a href="commands/">commands page</a>.</p>
 <h2 id="getting-started">Getting Started<a class="headerlink" href="#getting-started" title="Permanent link">#</a></h2>
-<p>This package helps automate the code development required for adding the dbt mesh features mentioned above.</p>
+<p>This package helps automate the code development required for adding the model governance and cross-project lineage features mentioned above.</p>
 <p>The first question to ask yourself is "which of these features do I want to add to my project"? Do you want to add contracts, create a new group, split your monolithic dbt project in two? Your answer to this question will establish which <code>dbt-meshify</code> command is right for you!</p>
 <p>This package consists of <strong>component</strong> and <strong>global</strong> commands - so you can decide how to best break apart your work.</p>
 <p>The <strong>component</strong> commands allow you to do a single step at a time and begin with <code>dbt-meshify operation</code>. For example, if you wanted to add a new version to a model, you would run something like <code>dbt-meshify operation add-version --select fct_orders</code>. This command would:</p>
@@ -418,7 +418,7 @@
 <p>The next question to ask yourself is "which of my models do I want to add these features to?". This informs the selection syntax you provide to the <code>dbt-meshify</code> command of choice. <code>dbt-meshify</code> uses the same selection syntax as <code>dbt</code>, so you can use the <code>--select</code>, <code>--exclude</code> and <code>--selector</code> flags to select resources based on model names, tags, and so on!</p>
 <p>Once you've decided:</p>
 <ol>
-<li>which dbt mesh feature(s) you want to add to your dbt project</li>
+<li>which feature(s) you want to add to your dbt project</li>
 <li>which subset of models you want to add those feature(s) to</li>
 </ol>
 <p>you're ready to use <code>dbt-meshify</code>!</p>
