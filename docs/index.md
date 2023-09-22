@@ -1,8 +1,8 @@
 # dbt_meshify
 
-`dbt-meshify` is a CLI tool that automates the creation of dbt mesh features introduced in dbt-core v1.5 and v1.6. This package will leverage your dbt project metadata to create and/or edit the files in your project to properly configure the models in your project with these features.
+`dbt-meshify` is a CLI tool that automates the creation of model governance and cross-project lineage features introduced in dbt-core v1.5 and v1.6. This package will leverage your dbt project metadata to create and/or edit the files in your project to properly configure the models in your project with these features.
 
-These dbt mesh features include:
+These features include:
 
 1. **[Groups](https://docs.getdbt.com/docs/build/groups)** - group your models into logical sets.
 2. **[Contracts](https://docs.getdbt.com/docs/collaborate/govern/model-contracts)** - add model contracts to your models to ensure consistent data shape.
@@ -14,7 +14,7 @@ This package leverages the dbt-core Python API to allow users to use standard db
 
 ## Getting Started
 
-This package helps automate the code development required for adding the dbt mesh features mentioned above.
+This package helps automate the code development required for adding the model governance and cross-project lineage features mentioned above.
 
 The first question to ask yourself is "which of these features do I want to add to my project"? Do you want to add contracts, create a new group, split your monolithic dbt project in two? Your answer to this question will establish which `dbt-meshify` command is right for you!
 
@@ -39,7 +39,7 @@ The next question to ask yourself is "which of my models do I want to add these 
 
 Once you've decided:
 
-1. which dbt mesh feature(s) you want to add to your dbt project
+1. which feature(s) you want to add to your dbt project
 2. which subset of models you want to add those feature(s) to
 
 you're ready to use `dbt-meshify`!
