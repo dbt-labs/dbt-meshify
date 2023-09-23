@@ -399,5 +399,7 @@ def test_version_no_model_yaml(project):
         ["--debug", "version", "--select", "shared_model", "--project-path", proj_path],
     )
 
-    print(result.stdout)
     assert result.exit_code == 0
+
+    assert (proj_path / "models" / "shared_model_v1.sql").exists()
+    assert (proj_path / "models" / "shared_model_v2.sql").exists()
