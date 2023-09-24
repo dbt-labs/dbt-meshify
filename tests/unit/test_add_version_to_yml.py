@@ -81,7 +81,7 @@ class TestAddContractToYML:
         self, model, project, file_manager  # noqa: F811
     ):
         versioner = ModelVersioner(project=project, file_manager=file_manager)
-        changes = list(versioner.bump_version(model, defined_in="daves_model"))
+        changes = list(versioner.bump_version(model, defined_in="daves_model", prerelease=True))
         yml_dict = ResourceFileEditor.update_resource(
             properties=read_yml(model_yml_increment_version), change=changes[0]
         )

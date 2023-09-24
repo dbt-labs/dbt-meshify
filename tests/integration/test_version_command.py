@@ -289,7 +289,7 @@ def test_bump_version_in_yml(
             model_yml_increment_version,
             expected_versioned_model_yml_increment_version_with_prerelease,
             ["shared_model_v1.sql", "shared_model_v2.sql"],
-            ["--prerelease"],
+            [],
         )
     ],
 )
