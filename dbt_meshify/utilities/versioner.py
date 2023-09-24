@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
 from dbt.contracts.graph.nodes import ModelNode
+from loguru import logger
 
 from dbt_meshify.change import (
     ChangeSet,
@@ -32,7 +33,11 @@ class ModelVersioner:
 
     def load_model_yml(self, path: Path, name: str) -> Dict:
         """Load the Model patch YAML for a given ModelNode."""
-        raw_yml = self.file_manager.read_file(path)
+        try:
+            raw_yml = self.file_manager.read_file(path)
+        except FileNotFoundError as e:
+            logger.debug(f"Unable to load file for versioning. {path}. {e}")
+            return {}
 
         if not isinstance(raw_yml, dict):
             raise Exception(
@@ -68,10 +73,7 @@ class ModelVersioner:
         path = self.project.resolve_patch_path(model)
         model_path = self.project.path / model.original_file_path
 
-        try:
-            model_yml = self.load_model_yml(path, model.name)
-        except FileNotFoundError:
-            model_yml = {}
+        model_yml = self.load_model_yml(path, model.name)
 
         model_versions: NamedList = self.get_model_versions(model_yml)
 
@@ -134,18 +136,20 @@ class ModelVersioner:
         path = self.project.resolve_patch_path(model)
         model_path = self.project.path / model.original_file_path
 
-        try:
-            model_yml = self.load_model_yml(path, model.name)
+        model_yml = self.load_model_yml(path, model.name)
+        if model_override:
+            model_yml = safe_update(model_yml, model_override)
 
-            # If a model override has been provided safely update the `model_yml` with the override.
-            if model_override:
-                model_yml = safe_update(model_yml, model_override)
-        except FileNotFoundError:
-            model_yml = {}
-
-        latest_version = model_yml.get("latest_version", 0)
         model_versions: NamedList = self.get_model_versions(model_yml)
         greatest_version = self.get_latest_model_version(model_versions)
+
+        if len(model_versions) == 0:
+            raise ModelVersionerException(
+                f"The model {model.name} does not have any versions defined. Please use add-version first."
+            )
+
+        # Within dbt-core, if unset `latest_version` defaults to the greatest version identifier.
+        latest_version = model_yml.get("latest_version", greatest_version)
 
         # Bump versions
         new_greatest_version_number = greatest_version + 1
@@ -161,7 +165,7 @@ class ModelVersioner:
         next_version_file_name = model_path.parent / Path(
             f"{defined_in}.{model.language}"
             if defined_in
-            else f"{model.name}_v{new_latest_version_number}.{model.language}"
+            else f"{model.name}_v{new_greatest_version_number}.{model.language}"
         )
 
         change_set = ChangeSet()

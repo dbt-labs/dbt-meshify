@@ -1,3 +1,4 @@
+import shutil
 from pathlib import Path
 
 import pytest
@@ -67,7 +68,7 @@ def test_add_version_version_in_yml(
             yaml.safe_dump(start_yml_content, f, sort_keys=False)
     base_command = [
         "operation",
-        "bump-version",
+        "add-version",
         "--select",
         "shared_model",
         "--project-path",
@@ -167,6 +168,45 @@ def test_add_version_version_in_yml_fails_when_versions_present(
             [],
         ),
         (
+            None,
+            expected_versioned_model_yml_no_yml,
+            ["shared_model.sql"],
+            ["shared_model_v1.sql"],
+            [],
+        ),
+    ],
+    ids=["1", "2"],
+)
+def test_bump_version_fails_when_no_versions_present(
+    start_yml, end_yml, start_files, expected_files, command_options, project
+):
+    yml_file = proj_path / "models" / "_models.yml"
+    yml_file.parent.mkdir(parents=True, exist_ok=True)
+    runner = CliRunner()
+    # only create file if start_yml is not None
+    # in situations where models don't have a patch path, there isn't a yml file to read from
+    if start_yml:
+        yml_file.touch()
+        start_yml_content = yaml.safe_load(start_yml)
+        with open(yml_file, "w+") as f:
+            yaml.safe_dump(start_yml_content, f, sort_keys=False)
+    base_command = [
+        "operation",
+        "bump-version",
+        "--select",
+        "shared_model",
+        "--project-path",
+        str(proj_path),
+    ]
+    base_command.extend(command_options)
+    result = runner.invoke(cli, base_command)
+    assert result.exit_code != 0
+
+
+@pytest.mark.parametrize(
+    "start_yml,end_yml,start_files,expected_files,command_options",
+    [
+        (
             model_yml_increment_version,
             expected_versioned_model_yml_increment_version_no_prerelease,
             ["shared_model.sql"],
@@ -188,13 +228,6 @@ def test_add_version_version_in_yml_fails_when_versions_present(
             ["--defined-in", "daves_model"],
         ),
         (
-            None,
-            expected_versioned_model_yml_no_yml,
-            ["shared_model.sql"],
-            ["shared_model_v1.sql"],
-            [],
-        ),
-        (
             expected_versioned_model_yml_increment_version_with_prerelease,
             expected_versioned_model_yml_increment_prerelease_version_with_second_prerelease,
             ["shared_model_v1.sql", "shared_model_v2.sql"],
@@ -209,7 +242,7 @@ def test_add_version_version_in_yml_fails_when_versions_present(
             [],
         ),
     ],
-    ids=["1", "2", "3", "4", "5", "6", "7"],
+    ids=["1", "2", "3", "4", "5"],
 )
 def test_bump_version_in_yml(
     start_yml, end_yml, start_files, expected_files, command_options, project
@@ -234,10 +267,66 @@ def test_bump_version_in_yml(
     ]
     base_command.extend(command_options)
     result = runner.invoke(cli, base_command)
+    print(result.stdout)
     assert result.exit_code == 0
     # reset the read path to the default in the logic
     with open(yml_file, "r") as f:
         actual = yaml.safe_load(f)
+    for file in expected_files:
+        path = proj_path / "models" / file
+        try:
+            assert path.is_file()
+        except Exception:
+            logger.exception(f"File {file} not found")
+
+    assert actual == yaml.safe_load(end_yml)
+
+
+@pytest.mark.parametrize(
+    "start_yml,end_yml,expected_files,command_options",
+    [
+        (
+            model_yml_increment_version,
+            expected_versioned_model_yml_increment_version_with_prerelease,
+            ["shared_model_v1.sql", "shared_model_v2.sql"],
+            ["--prerelease"],
+        )
+    ],
+)
+def test_bump_version_prerelease_in_yml(
+    start_yml, end_yml, expected_files, command_options, project
+):
+    # Create the original versioned model
+    shutil.move(
+        Path(proj_path / "models" / "shared_model.sql"),
+        Path(proj_path / "models" / "shared_model_v1.sql"),
+    )
+    yml_file = proj_path / "models" / "_models.yml"
+    yml_file.parent.mkdir(parents=True, exist_ok=True)
+    runner = CliRunner()
+    # only create file if start_yml is not None
+    # in situations where models don't have a patch path, there isn't a yml file to read from
+    if start_yml:
+        yml_file.touch()
+        start_yml_content = yaml.safe_load(start_yml)
+        with open(yml_file, "w+") as f:
+            yaml.safe_dump(start_yml_content, f, sort_keys=False)
+    base_command = [
+        "operation",
+        "bump-version",
+        "--select",
+        "shared_model",
+        "--project-path",
+        str(proj_path),
+    ]
+    base_command.extend(command_options)
+    result = runner.invoke(cli, base_command)
+    print(result.stdout)
+    assert result.exit_code == 0
+    # reset the read path to the default in the logic
+    with open(yml_file, "r") as f:
+        actual = yaml.safe_load(f)
+
     for file in expected_files:
         path = proj_path / "models" / file
         try:
@@ -299,3 +388,18 @@ def test_command_raises_exception_invalid_paths():
 
     assert result.exit_code != 0
     assert "does not contain a dbt project" in result.stdout
+
+
+def test_version_no_model_yaml(project):
+    """Verify that the version command running in default mode adds versions and creates a second version, too"""
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        ["--debug", "version", "--select", "shared_model", "--project-path", proj_path],
+    )
+
+    assert result.exit_code == 0
+
+    assert (proj_path / "models" / "shared_model_v1.sql").exists()
+    assert (proj_path / "models" / "shared_model_v2.sql").exists()
