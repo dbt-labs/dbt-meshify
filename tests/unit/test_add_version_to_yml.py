@@ -8,11 +8,11 @@ from dbt_meshify.utilities.versioner import ModelVersioner
 
 from ..dbt_project_fixtures import model, project  # noqa: F401
 from ..sql_and_yml_fixtures import (
-    expected_versioned_model_yml_increment_version_defined_in,
     expected_versioned_model_yml_increment_version_no_prerelease,
     expected_versioned_model_yml_increment_version_with_prerelease,
     expected_versioned_model_yml_no_version,
     expected_versioned_model_yml_no_yml,
+    expected_versioned_model_yml_prerelease_defined_in,
     model_yml_increment_version,
     model_yml_no_col_no_version,
 )
@@ -86,4 +86,4 @@ class TestAddContractToYML:
             properties=read_yml(model_yml_increment_version), change=changes[0]
         )
 
-        assert yml_dict == read_yml(expected_versioned_model_yml_increment_version_defined_in)
+        assert yml_dict == read_yml(expected_versioned_model_yml_prerelease_defined_in)
