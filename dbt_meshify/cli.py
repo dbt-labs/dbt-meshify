@@ -103,6 +103,13 @@ read_catalog = click.option(
     help="Skips the dbt docs generate step and reads the local catalog.json file.",
 )
 
+latest = click.option(
+    "--latest",
+    "-l",
+    is_flag=True,
+    help="Makes the newest version the latest version when incrementing model versions",
+)
+
 
 def owner(func):
     """Add click options and argument validation for creating Owner objects."""

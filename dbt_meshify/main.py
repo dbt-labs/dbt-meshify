@@ -26,6 +26,7 @@ from .cli import (
     exclude,
     exclude_projects,
     group_yml_path,
+    latest,
     owner,
     owner_email,
     owner_name,
@@ -357,14 +358,14 @@ def add_version(
 @read_catalog
 @select
 @selector
-@click.option("--prerelease", "--pre", default=False, is_flag=True)
+@latest
 @click.option("--defined-in", default=None)
 def bump_version(
     select,
     exclude,
     project_path,
     selector,
-    prerelease: bool,
+    latest: bool,
     defined_in: Optional[Path],
     read_catalog,
 ) -> List[ChangeSet]:
@@ -397,7 +398,7 @@ def bump_version(
                 continue
 
             changes: ChangeSet = versioner.bump_version(
-                model=model_node, prerelease=prerelease, defined_in=defined_in
+                model=model_node, prerelease=not (latest), defined_in=defined_in
             )
             change_set.extend(changes)
 
@@ -413,14 +414,14 @@ def bump_version(
 @read_catalog
 @select
 @selector
-@click.option("--prerelease", "--pre", default=False, is_flag=True)
+@latest
 @click.option("--defined-in", default=None)
 def version(
     select,
     exclude,
     project_path,
     selector,
-    prerelease: bool,
+    latest: bool,
     defined_in: Optional[Path],
     read_catalog,
 ) -> List[ChangeSet]:
@@ -459,7 +460,7 @@ def version(
                     versioner.bump_version(
                         model=model_node,
                         defined_in=defined_in,
-                        prerelease=prerelease,
+                        prerelease=not (latest),
                     )
                 )
 
@@ -483,7 +484,7 @@ def version(
                 bump_change: ChangeSet = versioner.bump_version(
                     model=model_node,
                     defined_in=defined_in,
-                    prerelease=prerelease,
+                    prerelease=not (latest),
                     model_override=model_add_change.data,
                 )
 
