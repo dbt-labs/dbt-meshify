@@ -22,7 +22,7 @@ class Dbt:
         result = self.dbt_runner.invoke(runner_args if runner_args else [])
         if not result.success and result.exception:
             if isinstance(result.exception, UninstalledPackagesFoundError):
-                logger.debug("Project missing packages, running dbt clean and deps...")
+                logger.debug("Project missing packages, running dbt clean and dbt deps...")
                 self.dbt_runner.invoke(["clean"])
                 self.dbt_runner.invoke(["deps"])
                 result = self.dbt_runner.invoke(runner_args if runner_args else [])
