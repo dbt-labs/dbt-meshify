@@ -7,6 +7,7 @@ venv/
 __pycache__/
 # IDEs
 .idea/
+.vscode/
 
 **/database.db
 logs/
