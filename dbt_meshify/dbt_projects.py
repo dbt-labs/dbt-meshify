@@ -320,12 +320,13 @@ class DbtProject(BaseDbtProject, PathedProject):
     ) -> Set[str]:
         """Select dbt resources using NodeSelection syntax"""
         args = []
+        # import pdb; pdb.set_trace()
         if select:
-            args = ["--select", select]
+            args = ["--select", " ".join(select)]
         if exclude:
-            args.extend(["--exclude", exclude])
+            args.extend(["--exclude", " ".join(exclude)])
         if selector:
-            args.extend(["--selector", selector])
+            args.extend(["--selector", " ".join(selector)])
 
         results = self.dbt.ls(self.path, args, output_key=output_key)
         if output_key:
