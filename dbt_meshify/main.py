@@ -629,6 +629,7 @@ def group(
             ]
         ),
         project_path=project_path,
+        read_catalog=read_catalog,
     )
 
     return group_changes + contract_changes

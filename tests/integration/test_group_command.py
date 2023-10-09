@@ -75,3 +75,27 @@ def test_command_raises_exception_invalid_paths():
 
     assert result.exit_code != 0
     assert "does not contain a dbt project" in result.stdout
+
+
+def test_read_catalog_group():
+    """Verify that proving an invalid project path raises the correct error."""
+    setup_test_project(src_path_string, dest_path_string)
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "group",
+            "test_group",
+            "--owner-name",
+            "Teenage Mutant Jinja Turtles",
+            "--select",
+            "foo",
+            "--project-path",
+            "tests",
+            "--read-catalog",
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "dbt docs generate" not in result.stdout
+    teardown_test_project(dest_path_string)
