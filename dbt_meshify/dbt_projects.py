@@ -26,6 +26,7 @@ from loguru import logger
 
 from dbt_meshify.dbt import Dbt
 from dbt_meshify.exceptions import FatalMeshifyException
+from dbt_meshify.storage.jinja_blocks import JinjaBlock
 
 
 class BaseDbtProject:
@@ -310,6 +311,20 @@ class DbtProject(BaseDbtProject, PathedProject):
         resources = self.select_resources(output_key="unique_id")
 
         super().__init__(manifest, project, catalog, name, resources)
+
+        self.jinja_blocks: Dict[str, JinjaBlock] = self.find_jinja_blocks()
+
+    def find_jinja_blocks(self) -> Dict[str, JinjaBlock]:
+        """For a given dbt Project, find all Jinja blocks for docs and macros"""
+
+        blocks = {}
+
+        for unique_id, item in self.manifest.docs.items():
+            blocks[unique_id] = JinjaBlock.from_file(
+                path=self.path / item.original_file_path, block_type="docs", name=item.name
+            )
+
+        return blocks
 
     def select_resources(
         self,
