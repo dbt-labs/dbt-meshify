@@ -24,16 +24,16 @@ The name of the customer's favorite potato dish.
 class TestJinjaBlock:
     def test_from_file_detects_block_range(self):
         range = JinjaBlock.find_block_range(string, "docs", "customer_id")
-        assert range == (2, 4)
+        assert range == (2, 72)
 
     def test_from_file_extracts_content(self):
-        content = JinjaBlock.isolate_content_from_line_range(string, 2, 4)
+        content = JinjaBlock.isolate_content_from_line_range(string, 2, 72)
         assert content == "The unique key for each customer."
 
     def test_from_file_detects_block_range_in_multiple_blocks(self):
         range = JinjaBlock.find_block_range(multiple_blocks, "docs", "potato_name")
-        assert range == (6, 8)
+        assert range == (74, 159)
 
     def test_from_file_extracts_content_in_files_with_multiple_blocks(self):
-        content = JinjaBlock.isolate_content_from_line_range(multiple_blocks, 6, 8)
+        content = JinjaBlock.isolate_content_from_line_range(multiple_blocks, 74, 159)
         assert content == "The name of the customer's favorite potato dish."

@@ -7,7 +7,7 @@ from typing import Tuple
 @dataclass
 class JinjaBlock:
     """
-    A common data structure for tracking blocks of text that represent Jinja blocks.
+    A data structure for tracking Jinja blocks of text. Includes the start and end character positions, and the content of the block
     """
 
     path: Path
@@ -27,15 +27,15 @@ class JinjaBlock:
             r"{%\s+" + block_type + r"\s+" + name + r"\s+%}", file_content, re.MULTILINE
         ):
             start = match.span()[0]  # .span() gives tuple (start, end)
-            start_line = file_content[:start].count("\n")
+            start_line = start  # file_content[:start].count("\n")
             break
 
         if start_line is None:
             raise Exception(f"Unable to find a {block_type} block with the name {name}.")
 
         for match in re.finditer(r"{%\s+end" + block_type + r"\s+%}", file_content, re.MULTILINE):
-            start = match.span()[0]  # .span() gives tuple (start, end)
-            new_end_line = file_content[:start].count("\n")
+            end = match.span()[1]  # .span() gives tuple (start, end)
+            new_end_line = end  # file_content[:start].count("\n")
 
             if new_end_line >= start_line:
                 end_line = new_end_line
@@ -49,8 +49,11 @@ class JinjaBlock:
     @staticmethod
     def isolate_content_from_line_range(file_content: str, start: int, end: int) -> str:
         """Given content, a start line number, and an end line number, return the content of a Jinja block."""
-        print(file_content.split("\n")[start + 1 :])
-        return "/n".join(file_content.split("\n")[start + 1 : end])
+        raw_content = file_content[start:end]
+        match = re.search(r"{%.*%}\n(.*)\n{%.*%}", raw_content)
+        if match is None:
+            raise Exception("Unable to find the jinja block within the designated range.")
+        return match.group(1)
 
     @classmethod
     def from_file(cls, path: Path, block_type: str, name: str) -> "JinjaBlock":
