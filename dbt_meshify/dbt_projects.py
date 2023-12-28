@@ -320,8 +320,19 @@ class DbtProject(BaseDbtProject, PathedProject):
         blocks = {}
 
         for unique_id, item in self.manifest.docs.items():
+            if item.package_name != self.name:
+                continue
+
             blocks[unique_id] = JinjaBlock.from_file(
                 path=self.path / item.original_file_path, block_type="docs", name=item.name
+            )
+
+        for unique_id, macro in self.manifest.macros.items():
+            if macro.package_name != self.name:
+                continue
+
+            blocks[unique_id] = JinjaBlock.from_file(
+                path=self.path / macro.original_file_path, block_type="macro", name=macro.name
             )
 
         return blocks

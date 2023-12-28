@@ -24,7 +24,9 @@ class JinjaBlock:
         end_line = None
 
         for match in re.finditer(
-            r"{%\s+" + block_type + r"\s+" + name + r"\s+%}", file_content, re.MULTILINE
+            r"{%-?\s+" + block_type + r"\s+" + name + r"([(a-zA-Z0-9=,_ )]*)\s-?%}",
+            file_content,
+            re.MULTILINE,
         ):
             start = match.span()[0]  # .span() gives tuple (start, end)
             start_line = start  # file_content[:start].count("\n")
@@ -33,7 +35,9 @@ class JinjaBlock:
         if start_line is None:
             raise Exception(f"Unable to find a {block_type} block with the name {name}.")
 
-        for match in re.finditer(r"{%\s+end" + block_type + r"\s+%}", file_content, re.MULTILINE):
+        for match in re.finditer(
+            r"{%-?\s+end" + block_type + r"\s+-?%}", file_content, re.MULTILINE
+        ):
             end = match.span()[1]  # .span() gives tuple (start, end)
             new_end_line = end  # file_content[:start].count("\n")
 
@@ -48,12 +52,8 @@ class JinjaBlock:
 
     @staticmethod
     def isolate_content_from_line_range(file_content: str, start: int, end: int) -> str:
-        """Given content, a start line number, and an end line number, return the content of a Jinja block."""
-        raw_content = file_content[start:end]
-        match = re.search(r"{%.*%}\n(.*)\n{%.*%}", raw_content)
-        if match is None:
-            raise Exception("Unable to find the jinja block within the designated range.")
-        return match.group(1)
+        """Given content, a start position, and an end position, return the content of a Jinja block."""
+        return file_content[start:end]
 
     @classmethod
     def from_file(cls, path: Path, block_type: str, name: str) -> "JinjaBlock":
