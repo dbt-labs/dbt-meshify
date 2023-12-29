@@ -311,7 +311,6 @@ class DbtProject(BaseDbtProject, PathedProject):
         resources = self.select_resources(output_key="unique_id")
 
         super().__init__(manifest, project, catalog, name, resources)
-
         self.jinja_blocks: Dict[str, JinjaBlock] = self.find_jinja_blocks()
 
     def find_jinja_blocks(self) -> Dict[str, JinjaBlock]:

@@ -108,6 +108,18 @@ class RawFileEditor:
         RawFileManager.write_file(path=change.path, content=change.data)
 
     @staticmethod
+    def append(change: FileChange):
+        """Append data to an existing file."""
+
+        if not change.path.parent.exists():
+            change.path.parent.mkdir(parents=True, exist_ok=True)
+
+        if change.data is None:
+            return RawFileManager.touch_file(change.path)
+
+        RawFileManager.append_file(path=change.path, content=change.data)
+
+    @staticmethod
     def update(change: FileChange):
         """Update data to a new file."""
 

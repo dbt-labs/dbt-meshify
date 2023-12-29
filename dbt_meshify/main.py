@@ -246,7 +246,8 @@ def split(
         change_set = subproject_creator.initialize()
 
         return [change_set]
-    except Exception:
+    except Exception as e:
+        logger.debug(e)
         raise FatalMeshifyException(f"Error creating subproject {subproject.name}")
 
 

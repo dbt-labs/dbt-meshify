@@ -9,6 +9,7 @@ class Operation(str, Enum):
     """An operation describes the type of work being performed."""
 
     Add = "add"
+    Append = "append"
     Update = "update"
     Remove = "remove"
     Copy = "copy"
@@ -17,6 +18,7 @@ class Operation(str, Enum):
 
 prepositions = {
     Operation.Add: "to",
+    Operation.Append: "to",
     Operation.Move: "to",
     Operation.Copy: "to",
     Operation.Update: "in",

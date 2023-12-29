@@ -63,6 +63,12 @@ class RawFileManager:
         path.write_text(content)
 
     @staticmethod
+    def append_file(path: Path, content: str) -> None:
+        """Append a string value to a file in the filesystem"""
+        with open(path, "a") as file:
+            file.write(content)
+
+    @staticmethod
     def copy_file(source_path: Path, target_path: Path) -> None:
         if not target_path.parent.exists():
             target_path.parent.mkdir(parents=True, exist_ok=True)
