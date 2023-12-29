@@ -188,6 +188,9 @@ class DbtSubprojectCreator:
                     change_set.add(self.copy_resource_yml(resource))
 
                 if resource.unique_id in self.subproject.parent_project.jinja_blocks:
+                    # TODO: How do we know when to copy vs move?
+                    # TODO: What about docs? Docs have no graph, right?
+
                     change_set.add(
                         self.copy_jinja_block(
                             resource,
