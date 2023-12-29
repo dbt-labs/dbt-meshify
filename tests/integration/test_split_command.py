@@ -43,6 +43,13 @@ class TestSplitCommand:
         ).read_text()
         assert x_proj_ref in child_sql
 
+        # Copied a referenced docs block
+        assert (Path(dest_project_path) / "my_new_project" / "models" / "docs.md").exists()
+        assert (
+            "customer_id"
+            in (Path(dest_project_path) / "my_new_project" / "models" / "docs.md").read_text()
+        )
+
     def test_split_one_model_one_source(self, project):
         runner = CliRunner()
         result = runner.invoke(
@@ -111,6 +118,15 @@ class TestSplitCommand:
         assert (
             Path(dest_project_path) / "my_new_project" / "macros" / "cents_to_dollars.sql"
         ).exists()
+
+        # Confirm that we did not bring over an unreferenced dollars_to_cents macro
+        assert (
+            "dollars_to_cents"
+            not in (
+                Path(dest_project_path) / "my_new_project" / "macros" / "cents_to_dollars.sql"
+            ).read_text()
+        )
+
         # copied custom macro parents too!
         assert (
             Path(dest_project_path) / "my_new_project" / "macros" / "type_numeric.sql"
