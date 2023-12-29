@@ -1,7 +1,7 @@
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Tuple
+from typing import Set, Tuple
 
 
 @dataclass
@@ -68,3 +68,10 @@ class JinjaBlock:
         return cls(
             path=path, block_type=block_type, name=name, start=start, end=end, content=content
         )
+
+
+def find_doc_reference(content: str) -> Set[str]:
+    """Find all doc block references within a string."""
+    matches = re.findall(r"{{\sdoc\(\'?\"?([a-zA-Z0-9_\-\.]+)\'?\"?\)\s}}", content)
+
+    return set(matches)

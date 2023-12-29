@@ -26,7 +26,7 @@ from loguru import logger
 
 from dbt_meshify.dbt import Dbt
 from dbt_meshify.exceptions import FatalMeshifyException
-from dbt_meshify.storage.jinja_blocks import JinjaBlock
+from dbt_meshify.storage.jinja_blocks import JinjaBlock, find_doc_reference
 
 
 class BaseDbtProject:
@@ -421,6 +421,8 @@ class DbtSubProject(BaseDbtProject, PathedProject):
         self.groups = self._get_indirect_groups()
         self._rename_project()
 
+        self._referenced_docs: Optional[Set[str]] = None
+
     def _rename_project(self) -> None:
         """
         edits the project yml to take any instance of the parent project name and update it to the subproject name
@@ -456,6 +458,39 @@ class DbtSubProject(BaseDbtProject, PathedProject):
             for macro in project_macros:
                 macros_set.update(self._get_macro_dependencies(macro))
         return macros_set
+
+    @property
+    def referenced_docs(self) -> Set[str]:
+        """Return a list of all docs referenced within this SubProject."""
+
+        if self._referenced_docs:
+            return self._referenced_docs
+
+        docs = set()
+        for unique_id in self.resources:
+            if unique_id.startswith("test."):
+                continue
+
+            node = self.get_manifest_node(unique_id)
+
+            if node is None:
+                continue
+
+            if hasattr(node, "raw_code"):
+                docs.update(find_doc_reference(node.raw_code))
+
+            if hasattr(node, "patch_path"):
+                path = self.parent_project.resolve_patch_path(node)
+                if path.exists():
+                    with open(path) as file:
+                        docs.update(find_doc_reference(file.read()))
+
+        # Use the search name for the doc to resolve a unique_id for the doc resource.
+        self._referenced_docs = {
+            unique_id for unique_id, doc in self.manifest.docs.items() if doc.name in docs
+        }
+
+        return self._referenced_docs
 
     def _get_indirect_groups(self) -> Set[str]:
         """

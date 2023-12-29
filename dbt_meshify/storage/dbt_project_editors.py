@@ -142,7 +142,12 @@ class DbtSubprojectCreator:
             f"Identifying operations required to split {subproject.name} from {subproject.parent_project.name}."
         )
 
-        for unique_id in subproject.resources | subproject.custom_macros | subproject.groups:
+        for unique_id in (
+            subproject.resources
+            | subproject.custom_macros
+            | subproject.groups
+            | subproject.referenced_docs
+        ):
             resource = subproject.get_manifest_node(unique_id)
             if not resource:
                 raise KeyError(f"Resource {unique_id} not found in manifest")
@@ -183,7 +188,7 @@ class DbtSubprojectCreator:
                 ):
                     change_set.extend(reference_updater.update_parent_refs(resource))
 
-            elif resource.resource_type in ["macro", "group"]:
+            elif resource.resource_type in ["macro", "group", "doc"]:
                 if hasattr(resource, "patch_path") and resource.patch_path:
                     change_set.add(self.copy_resource_yml(resource))
 
