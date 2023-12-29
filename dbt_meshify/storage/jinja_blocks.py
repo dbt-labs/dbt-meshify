@@ -51,7 +51,7 @@ class JinjaBlock:
         return start_line, end_line
 
     @staticmethod
-    def isolate_content_from_line_range(file_content: str, start: int, end: int) -> str:
+    def isolate_content(file_content: str, start: int, end: int) -> str:
         """Given content, a start position, and an end position, return the content of a Jinja block."""
         return file_content[start:end]
 
@@ -61,9 +61,7 @@ class JinjaBlock:
 
         file_content = open(path).read()
         start, end = cls.find_block_range(file_content, block_type, name)
-        content = cls.isolate_content_from_line_range(
-            file_content=file_content, start=start, end=end
-        )
+        content = cls.isolate_content(file_content=file_content, start=start, end=end)
 
         return cls(
             path=path, block_type=block_type, name=name, start=start, end=end, content=content

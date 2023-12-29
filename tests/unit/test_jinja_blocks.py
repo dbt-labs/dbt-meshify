@@ -27,7 +27,7 @@ class TestJinjaBlock:
         assert range == (2, 72)
 
     def test_from_file_extracts_content(self):
-        content = JinjaBlock.isolate_content_from_line_range(string, 2, 72)
+        content = JinjaBlock.isolate_content(string, 2, 72)
         assert (
             content == "{% docs customer_id %}\nThe unique key for each customer.\n{% enddocs %}"
         )
@@ -37,7 +37,7 @@ class TestJinjaBlock:
         assert range == (74, 159)
 
     def test_from_file_extracts_content_in_files_with_multiple_blocks(self):
-        content = JinjaBlock.isolate_content_from_line_range(multiple_blocks, 74, 159)
+        content = JinjaBlock.isolate_content(multiple_blocks, 74, 159)
         assert (
             content
             == "{% docs potato_name %}\nThe name of the customer's favorite potato dish.\n{% enddocs %}"
