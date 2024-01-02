@@ -59,7 +59,7 @@ class JinjaBlock:
     def from_file(cls, path: Path, block_type: str, name: str) -> "JinjaBlock":
         """Find a specific Jinja block within a file, based on the block type and the name."""
 
-        file_content = open(path).read()
+        file_content = path.read_text()
         start, end = cls.find_block_range(file_content, block_type, name)
         content = cls.isolate_content(file_content=file_content, start=start, end=end)
 
