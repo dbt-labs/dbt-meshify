@@ -5,7 +5,7 @@ models:
     description: Customer data with basic cleaning and transformation applied, one row per customer.
     columns:
       - name: customer_id
-        description: The unique key for each customer.
+        description: "{{ doc('customer_id') }}"
         tests:
           - not_null
           - unique

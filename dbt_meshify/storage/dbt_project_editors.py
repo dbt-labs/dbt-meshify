@@ -22,6 +22,7 @@ from dbt_meshify.change import (
 from dbt_meshify.dbt_projects import DbtSubProject
 from dbt_meshify.storage.file_content_editors import NamedList, filter_empty_dict_items
 from dbt_meshify.storage.file_manager import YAMLFileManager, yaml
+from dbt_meshify.storage.jinja_blocks import JinjaBlock
 from dbt_meshify.utilities.contractor import Contractor
 from dbt_meshify.utilities.dependencies import DependenciesUpdater
 from dbt_meshify.utilities.grouper import ResourceGrouper
@@ -141,7 +142,12 @@ class DbtSubprojectCreator:
             f"Identifying operations required to split {subproject.name} from {subproject.parent_project.name}."
         )
 
-        for unique_id in subproject.resources | subproject.custom_macros | subproject.groups:
+        for unique_id in (
+            subproject.resources
+            | subproject.custom_macros
+            | subproject.groups
+            | subproject.referenced_docs
+        ):
             resource = subproject.get_manifest_node(unique_id)
             if not resource:
                 raise KeyError(f"Resource {unique_id} not found in manifest")
@@ -182,10 +188,20 @@ class DbtSubprojectCreator:
                 ):
                     change_set.extend(reference_updater.update_parent_refs(resource))
 
-            elif resource.resource_type in ["macro", "group"]:
+            elif resource.resource_type in ["macro", "group", "doc"]:
                 if hasattr(resource, "patch_path") and resource.patch_path:
                     change_set.add(self.copy_resource_yml(resource))
-                change_set.add(self.copy_resource(resource))
+
+                if resource.unique_id in self.subproject.parent_project.jinja_blocks:
+                    change_set.add(
+                        self.copy_jinja_block(
+                            resource,
+                            self.subproject.parent_project.jinja_blocks[resource.unique_id],
+                        )
+                    )
+
+                else:
+                    change_set.add(self.copy_resource(resource))
 
             else:
                 logger.debug(
@@ -235,6 +251,17 @@ class DbtSubprojectCreator:
             identifier=resource.name,
             path=self.subproject.resolve_file_path(resource),
             source=self.subproject.parent_project.resolve_file_path(resource),
+        )
+
+    def copy_jinja_block(self, resource: Resource, jinja_block: JinjaBlock) -> FileChange:
+        """Move an existing jinja block to a new project"""
+
+        return FileChange(
+            operation=Operation.Append,
+            entity_type=EntityType.Code,
+            identifier=resource.name,
+            path=self.subproject.resolve_file_path(resource),
+            data=jinja_block.content,
         )
 
     def copy_resource(self, resource: Resource) -> FileChange:
