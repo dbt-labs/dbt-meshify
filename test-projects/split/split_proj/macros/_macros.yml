@@ -1,3 +1,5 @@
 macros:
   - name: cents_to_dollars
     description: Converts cents to dollars
+  - name: dollars_to_cents
+    description: Converts dollars to cents
