@@ -474,7 +474,7 @@ class DbtSubProject(BaseDbtProject, PathedProject):
             node = self.get_manifest_node(unique_id)
 
             if node is None:
-                continue
+                raise Exception(f"Unable to find referenced node {node}")
 
             if hasattr(node, "raw_code"):
                 docs.update(find_doc_reference(node.raw_code))
