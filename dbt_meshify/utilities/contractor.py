@@ -17,7 +17,6 @@ class Contractor:
 
         # create a mapping of the column name to its representation in the yml file to maintain the original case
         original_case = {column_name.lower(): column_name for column_name in model.columns.keys()}
-        print(original_case)
 
         if not model_catalog or not model_catalog.columns:
             columns = None
