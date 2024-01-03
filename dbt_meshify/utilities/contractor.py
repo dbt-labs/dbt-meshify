@@ -15,11 +15,17 @@ class Contractor:
         """Generate a ChangeSet that adds a contract to a Model."""
         model_catalog = self.project.get_catalog_entry(model.unique_id)
 
+        # create a mapping of the column name to its representation in the yml file to maintain the original case
+        original_case = {column_name.lower(): column_name for column_name in model.columns.keys()}
+
         if not model_catalog or not model_catalog.columns:
             columns = None
         else:
             columns = [
-                {"name": name.lower(), "data_type": value.type.lower()}
+                {
+                    "name": original_case.get(name.lower()) or name.lower(),
+                    "data_type": value.type.lower(),
+                }
                 for name, value in model_catalog.columns.items()
             ]
 

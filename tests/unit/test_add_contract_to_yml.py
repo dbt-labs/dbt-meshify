@@ -3,7 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 from dbt.contracts.files import FileHash
-from dbt.contracts.graph.nodes import ModelNode, NodeType
+from dbt.contracts.graph.nodes import ColumnInfo, ModelNode, NodeType
 
 from dbt_meshify.change import ResourceChange
 from dbt_meshify.storage.file_content_editors import ResourceFileEditor
@@ -12,12 +12,14 @@ from dbt_meshify.utilities.contractor import Contractor
 from ..dbt_project_fixtures import shared_model_catalog_entry
 from ..sql_and_yml_fixtures import (
     expected_contract_yml_all_col,
+    expected_contract_yml_all_col_all_caps,
     expected_contract_yml_no_col,
     expected_contract_yml_no_entry,
     expected_contract_yml_one_col,
     expected_contract_yml_one_col_one_test,
     expected_contract_yml_other_model,
     model_yml_all_col,
+    model_yml_all_col_all_caps,
     model_yml_no_col_no_version,
     model_yml_one_col,
     model_yml_one_col_one_test,
@@ -55,9 +57,38 @@ def model() -> ModelNode:
 
 
 @pytest.fixture
+def all_cap_model() -> ModelNode:
+    return ModelNode(
+        database=None,
+        resource_type=NodeType.Model,
+        checksum=FileHash("foo", "foo"),
+        schema="foo",
+        name=model_name,
+        package_name="foo",
+        path="models/_models.yml",
+        original_file_path=f"models/{model_name}.sql",
+        unique_id="model.foo.foo",
+        columns={
+            "ID": ColumnInfo.from_dict({"name": "ID", "description": "this is the id column"}),
+            "COLLEAGUE": ColumnInfo.from_dict(
+                {"name": "COLLEAGUE", "description": "this is the colleague column"}
+            ),
+        },
+        fqn=["foo", "foo"],
+        alias="foo",
+    )
+
+
+@pytest.fixture
 def change(project, model) -> ResourceChange:
     contractor = Contractor(project=project)
     return contractor.generate_contract(model)
+
+
+@pytest.fixture
+def all_cap_model_change(project, all_cap_model) -> ResourceChange:
+    contractor = Contractor(project=project)
+    return contractor.generate_contract(all_cap_model)
 
 
 class TestAddContractToYML:
@@ -86,3 +117,9 @@ class TestAddContractToYML:
     def test_add_contract_to_yml_other_model(self, change):
         yml_dict = ResourceFileEditor.update_resource(read_yml(model_yml_other_model), change)
         assert yml_dict == read_yml(expected_contract_yml_other_model)
+
+    def test_add_contract_to_yml_all_caps_columns(self, all_cap_model_change):
+        yml_dict = ResourceFileEditor.update_resource(
+            read_yml(model_yml_all_col_all_caps), all_cap_model_change
+        )
+        assert yml_dict == read_yml(expected_contract_yml_all_col_all_caps)

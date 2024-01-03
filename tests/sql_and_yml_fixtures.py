@@ -56,6 +56,18 @@ models:
       - name: colleague
         description: "this is the colleague column"
 """
+
+model_yml_all_col_all_caps = """
+models:
+  - name: shared_model
+    description: "this is a test model"
+    columns:
+      - name: ID
+        description: "this is the id column"
+      - name: COLLEAGUE
+        description: "this is the colleague column"
+"""
+
 expected_contract_yml_no_col = """
 models:
   - name: shared_model
@@ -134,6 +146,22 @@ models:
         description: "this is the id column"
         data_type: integer
       - name: colleague
+        description: "this is the colleague column"
+        data_type: varchar
+"""
+
+expected_contract_yml_all_col_all_caps = """
+models:
+  - name: shared_model
+    description: "this is a test model"
+    config:
+      contract:
+        enforced: true
+    columns:
+      - name: ID
+        description: "this is the id column"
+        data_type: integer
+      - name: COLLEAGUE
         description: "this is the colleague column"
         data_type: varchar
 """
