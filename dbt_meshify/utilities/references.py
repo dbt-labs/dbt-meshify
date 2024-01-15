@@ -2,7 +2,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from dbt.contracts.graph.nodes import CompiledNode, Exposure, Resource
+from dbt.contracts.graph.nodes import CompiledNode, Exposure, Resource, SemanticModel
 from loguru import logger
 
 from dbt_meshify.change import (
@@ -141,19 +141,25 @@ class ReferenceUpdater:
 
         return new_code
 
-    def update_exposure_depends_on(
-        self, project_name: str, upstream_resource_name: str, exposure: Exposure
+    def update_yml_resource_references(
+        self,
+        project_name: str,
+        upstream_resource_name: str,
+        resource: Union[Exposure, SemanticModel],
     ) -> Dict[str, Any]:
-        refs = exposure.refs
-        ref_to_update = f"ref('{upstream_resource_name}')"
         new_ref = f"ref('{project_name}', '{upstream_resource_name}')"
+        if isinstance(resource, SemanticModel):
+            # we can return early, since semantic models only have one ref and no depends_on
+            return {"model": new_ref}
+        refs = resource.refs
+        ref_to_update = f"ref('{upstream_resource_name}')"
         str_refs = []
         for ref in refs:
             package_clause = f"'{ref.package}', " if ref.package else ""
             name_clause = f"'{ref.name}'"
             version_clause = f", v={ref.name}" if ref.version else ""
             str_ref = f"ref({package_clause}{name_clause}{version_clause})"
-            if ref != ref_to_update:
+            if str_ref != ref_to_update:
                 str_refs.append(str_ref)
         str_refs.append(new_ref)
         return {"depends_on": str_refs}
@@ -185,15 +191,16 @@ class ReferenceUpdater:
             )
 
         else:
-            if isinstance(downstream_node, Exposure):
-                data = self.update_exposure_depends_on(
+            if isinstance(downstream_node, Exposure) or isinstance(downstream_node, SemanticModel):
+                is_exposure = isinstance(downstream_node, Exposure)
+                data = self.update_yml_resource_references(
                     project_name=project_name,
                     upstream_resource_name=upstream_node.name,
-                    exposure=downstream_node,
+                    resource=downstream_node,
                 )
                 change = ResourceChange(
                     operation=Operation.Update,
-                    entity_type=EntityType.Exposure,
+                    entity_type=EntityType.Exposure if is_exposure else EntityType.SemanticModel,
                     identifier=downstream_node.name,
                     path=downstream_project.resolve_file_path(downstream_node),
                     data=data,
