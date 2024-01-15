@@ -90,7 +90,11 @@ class ResourceGrouper:
 
         logger.info(f"Selected {len(nodes)} resources: {nodes}")
         # Check if any of the selected nodes are already in a group of a different name. If so, raise an exception.
-        nodes = set(filter(lambda x: not x.startswith("source"), nodes))
+        nodes = set(
+            filter(
+                lambda x: not x.startswith("source") and not x.startswith("semantic_model"), nodes
+            )
+        )
         for node in nodes:
             existing_group = self.project.manifest.nodes[node].config.group
 
