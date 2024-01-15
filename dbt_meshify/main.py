@@ -547,7 +547,7 @@ def create_group(
     project = DbtProject.from_directory(path, read_catalog)
 
     if group_yml_path is None:
-        existing_paths = project.group_definition_files()
+        existing_paths = project.group_definition_files
         if len(existing_paths) > 1:
             raise FatalMeshifyException(
                 "Unable to pick which group YAML file to use. Please specify one using the --group-yml-path argument."
