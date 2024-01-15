@@ -1,0 +1,15 @@
+exposures:
+  - name: crazy_growth_dashboard
+    label: Crazy Growth Dashboard
+    type: dashboard
+    maturity: high
+    url: https://bi.tool/dashboards/1
+    description: >
+      Did someone say "exponential growth"?
+
+    depends_on:
+      - ref('orders')
+
+    owner:
+      name: Derrick White
+      email: data@celtics.com
