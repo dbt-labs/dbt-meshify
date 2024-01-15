@@ -547,7 +547,15 @@ def create_group(
     project = DbtProject.from_directory(path, read_catalog)
 
     if group_yml_path is None:
-        group_yml_path = (path / Path("models/_groups.yml")).resolve()
+        existing_paths = project.group_definition_files()
+        if len(existing_paths) > 1:
+            raise FatalMeshifyException(
+                "Unable to pick which group YAML file to use. Please specify one using the --group-yml-path argument."
+            )
+        if len(existing_paths) == 1:
+            group_yml_path = existing_paths[0]
+        else:
+            group_yml_path = (path / Path("models/_groups.yml")).resolve()
     else:
         group_yml_path = Path(group_yml_path).resolve()
     logger.info(f"Creating new model group in file {group_yml_path.name}")
