@@ -352,3 +352,40 @@ def test_command_raises_exception_invalid_paths():
 
     assert result.exit_code != 0
     assert "does not contain a dbt project" in result.stdout
+
+
+def test_split_updates_exposure_depends_on():
+    """
+    Test that splitting out a project downstream of the base project splits as expected
+    """
+    setup_test_project(src_project_path, dest_project_path)
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "split",
+            "my_new_project",
+            "--project-path",
+            dest_project_path,
+            "--select",
+            "+orders",
+        ],
+    )
+
+    assert result.exit_code == 0
+    # selected model is moved to subdirectory
+    assert (
+        Path(dest_project_path) / "my_new_project" / "models" / "marts" / "orders.sql"
+    ).exists()
+    x_proj_ref = "ref('my_new_project', 'orders')"
+    exposure_yml = yaml.safe_load(
+        (Path(dest_project_path) / "models" / "marts" / "__exposures.yml").read_text()
+    )
+    exposure = [
+        exposure
+        for exposure in exposure_yml["exposures"]
+        if exposure["name"] == "crazy_growth_dashboard"
+    ][0]
+    assert x_proj_ref in exposure["depends_on"]
+
+    teardown_test_project(dest_project_path)
