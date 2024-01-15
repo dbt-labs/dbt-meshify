@@ -1,0 +1,39 @@
+semantic_models:
+  - name: orders
+    defaults:
+      agg_time_dimension: ordered_at
+    description: |
+      Order fact table. This table is at the order grain with one row per order.
+    model: ref('orders')
+    entities:
+      - name: order_id
+        type: primary
+      - name: location
+        type: foreign
+        expr: location_id
+    dimensions:
+      - name: ordered_at
+        expr: ordered_at
+        type: time
+        type_params:
+          time_granularity: day
+      - name: order_total_dim
+        type: categorical
+        expr: order_total
+      - name: is_food_order
+        type: categorical
+      - name: is_drink_order
+        type: categorical
+    measures:
+      - name: order_total
+        description: The total amount for each order including taxes.
+        agg: sum
+      - name: order_count
+        expr: 1
+        agg: sum
+      - name: tax_paid
+        description: The total tax paid on each order.
+        agg: sum
+      - name: order_cost
+        description: The cost for each order item. Cost is calculated as a sum of the supply cost for each order item.
+        agg: sum
