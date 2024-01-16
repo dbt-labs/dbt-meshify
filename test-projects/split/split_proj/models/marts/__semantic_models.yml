@@ -1,5 +1,6 @@
 semantic_models:
-  - name: orders
+    # having the same name for the semantic model and the model will not work with the tests we have as written
+  - name: orders_semantic_model
     defaults:
       agg_time_dimension: ordered_at
     description: |
