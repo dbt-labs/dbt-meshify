@@ -397,13 +397,12 @@ class TestSplitCommand:
         ).exists()
         old_ref = "ref('orders')"
         x_proj_ref = "ref('my_new_project', 'orders')"
-        assert 1 == 1
-        # sm_yml = yaml.safe_load(
-        #     (Path(dest_project_path) / "models" / "marts" / "__semantic_models.yml").read_text()
-        # )
-        # sm = [sm for sm in sm_yml["semantic_models"] if sm["name"] == "orders"][0]
-        # assert x_proj_ref == sm["model"]
-        # assert old_ref != sm["model"]
+        sm_yml = yaml.safe_load(
+            (Path(dest_project_path) / "models" / "marts" / "__semantic_models.yml").read_text()
+        )
+        sm = [sm for sm in sm_yml["semantic_models"] if sm["name"] == "orders_semantic_model"][0]
+        assert x_proj_ref == sm["model"]
+        assert old_ref != sm["model"]
 
         teardown_test_project(dest_project_path)
 
