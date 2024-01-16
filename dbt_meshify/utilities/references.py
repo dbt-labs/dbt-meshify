@@ -157,7 +157,7 @@ class ReferenceUpdater:
         for ref in refs:
             package_clause = f"'{ref.package}', " if ref.package else ""
             name_clause = f"'{ref.name}'"
-            version_clause = f", v={ref.name}" if ref.version else ""
+            version_clause = f", v={ref.version}" if ref.version else ""
             str_ref = f"ref({package_clause}{name_clause}{version_clause})"
             if str_ref != ref_to_update:
                 str_refs.append(str_ref)
