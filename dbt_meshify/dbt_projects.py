@@ -398,14 +398,11 @@ class DbtProject(BaseDbtProject, PathedProject):
         if self._group_definition_files is not None:
             return self._group_definition_files
 
-        paths: Dict[Path, int] = {}
-        for group in self.manifest.groups.values():
-            path = self.path / Path(group.original_file_path)
-            paths[path] = paths.get(path, 0) + 1
+        paths: Set[Path] = {
+            self.path / Path(group.original_file_path) for group in self.manifest.groups.values()
+        }
+        self._group_definition_files = list(paths)
 
-        self._group_definition_files = list(
-            map(lambda x: x[0], sorted(paths.items(), key=lambda x: x[1]))
-        )
         return self._group_definition_files
 
 
