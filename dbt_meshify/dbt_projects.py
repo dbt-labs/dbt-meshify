@@ -3,7 +3,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
-from typing import Any, Dict, MutableMapping, Optional, Set, Union
+from typing import Any, Dict, List, MutableMapping, Optional, Set, Union
 
 import yaml
 from dbt.contracts.graph.manifest import Manifest
@@ -309,6 +309,7 @@ class DbtProject(BaseDbtProject, PathedProject):
         self.path = path
         self.dbt = dbt
         resources = self.select_resources(output_key="unique_id")
+        self._group_definition_files: Optional[List[Path]] = None
 
         super().__init__(manifest, project, catalog, name, resources)
         self.jinja_blocks: Dict[str, JinjaBlock] = self.find_jinja_blocks()
@@ -389,6 +390,20 @@ class DbtProject(BaseDbtProject, PathedProject):
         self.register_relationship(project_name, subproject_resources)
 
         return subproject
+
+    @property
+    def group_definition_files(self) -> List[Path]:
+        """A list of files that contain group definitions, in order of how many groups are present."""
+
+        if self._group_definition_files is not None:
+            return self._group_definition_files
+
+        paths: Set[Path] = {
+            self.path / Path(group.original_file_path) for group in self.manifest.groups.values()
+        }
+        self._group_definition_files = list(paths)
+
+        return self._group_definition_files
 
 
 class DbtSubProject(BaseDbtProject, PathedProject):

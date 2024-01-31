@@ -99,3 +99,88 @@ def test_read_catalog_group():
     assert result.exit_code != 0
     assert "dbt docs generate" not in result.stdout
     teardown_test_project(dest_path_string)
+
+
+def test_group_name_group_file():
+    """Verify that providing a group yaml path results in a group yml being created at the appropriate path."""
+    setup_test_project(src_path_string, dest_path_string)
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "group",
+            "test_group",
+            "--owner-name",
+            "Teenage Mutant Jinja Turtles",
+            "--select",
+            "+order",
+            "--project-path",
+            dest_path_string,
+            "--group-yml-path",
+            str(Path(dest_path_string) / "models" / "test_groups.yml"),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert (Path(dest_path_string) / "models" / "test_groups.yml").exists()
+    teardown_test_project(dest_path_string)
+
+
+def test_group_raises_exception_ambiguous_group_file():
+    """The group command raises an exception if there are multiple group files present and `--group-yml-path` is not specified."""
+    setup_test_project(src_path_string, dest_path_string)
+
+    for index in range(2):
+        group_yaml = Path(dest_path_string) / "models" / f"groups_{index}.yml"
+        with open(group_yaml, "w") as file:
+            file.write(f"groups:\n - name: group_{index}\n   owner:\n     email: foo@example.com")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "group",
+            "test_group",
+            "--owner-name",
+            "Teenage Mutant Jinja Turtles",
+            "--select",
+            "+order",
+            "--project-path",
+            dest_path_string,
+        ],
+    )
+
+    assert result.exit_code != 0
+    assert "Unable to pick which group YAML" in result.stdout
+    teardown_test_project(dest_path_string)
+
+
+def test_defining_group_yaml_disambiguates_group_file():
+    """The group command will not raise an exception if there are multiple group files present and `--group-yml-path` is specified."""
+    setup_test_project(src_path_string, dest_path_string)
+
+    for index in range(2):
+        group_yaml = Path(dest_path_string) / "models" / f"groups_{index}.yml"
+        with open(group_yaml, "w") as file:
+            file.write(f"groups:\n - name: group_{index}\n   owner:\n     email: foo@example.com")
+
+    runner = CliRunner()
+    result = runner.invoke(
+        cli,
+        [
+            "group",
+            "test_group",
+            "--owner-name",
+            "Teenage Mutant Jinja Turtles",
+            "--select",
+            "+order",
+            "--project-path",
+            dest_path_string,
+            "--group-yml-path",
+            str(Path(dest_path_string) / "models" / "test_groups.yml"),
+        ],
+    )
+
+    assert result.exit_code == 0
+    assert (Path(dest_path_string) / "models" / "test_groups.yml").exists()
+    teardown_test_project(dest_path_string)
