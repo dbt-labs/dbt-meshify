@@ -182,30 +182,29 @@ class ReferenceUpdater:
                 model_code=code,
             )
 
-            change = FileChange(
+            return FileChange(
                 operation=Operation.Update,
                 entity_type=EntityType.Code,
                 identifier=downstream_node.name,
                 path=downstream_project.resolve_file_path(downstream_node),
                 data=updated_code,
             )
-            return change
 
-        if isinstance(downstream_node, Exposure) or isinstance(downstream_node, SemanticModel):
+        elif isinstance(downstream_node, Exposure) or isinstance(downstream_node, SemanticModel):
             is_exposure = isinstance(downstream_node, Exposure)
             data = self.update_yml_resource_references(
                 project_name=project_name,
                 upstream_resource_name=upstream_node.name,
                 resource=downstream_node,
             )
-            change = ResourceChange(
+            return ResourceChange(
                 operation=Operation.Update,
                 entity_type=EntityType.Exposure if is_exposure else EntityType.SemanticModel,
                 identifier=downstream_node.name,
                 path=downstream_project.resolve_file_path(downstream_node),
                 data=data,
             )
-        return change
+        raise Exception("Invalid node type provided to generate_reference_update.")
 
     def update_child_refs(
         self,
