@@ -189,23 +189,22 @@ class ReferenceUpdater:
                 path=downstream_project.resolve_file_path(downstream_node),
                 data=updated_code,
             )
+            return change
 
-        else:
-            if isinstance(downstream_node, Exposure) or isinstance(downstream_node, SemanticModel):
-                is_exposure = isinstance(downstream_node, Exposure)
-                data = self.update_yml_resource_references(
-                    project_name=project_name,
-                    upstream_resource_name=upstream_node.name,
-                    resource=downstream_node,
-                )
-                change = ResourceChange(
-                    operation=Operation.Update,
-                    entity_type=EntityType.Exposure if is_exposure else EntityType.SemanticModel,
-                    identifier=downstream_node.name,
-                    path=downstream_project.resolve_file_path(downstream_node),
-                    data=data,
-                )
-
+        if isinstance(downstream_node, Exposure) or isinstance(downstream_node, SemanticModel):
+            is_exposure = isinstance(downstream_node, Exposure)
+            data = self.update_yml_resource_references(
+                project_name=project_name,
+                upstream_resource_name=upstream_node.name,
+                resource=downstream_node,
+            )
+            change = ResourceChange(
+                operation=Operation.Update,
+                entity_type=EntityType.Exposure if is_exposure else EntityType.SemanticModel,
+                identifier=downstream_node.name,
+                path=downstream_project.resolve_file_path(downstream_node),
+                data=data,
+            )
         return change
 
     def update_child_refs(
