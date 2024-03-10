@@ -1,8 +1,8 @@
 import re
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Set, Union
 
-from dbt.contracts.graph.nodes import CompiledNode
+from dbt.contracts.graph.nodes import CompiledNode, Macro
 from loguru import logger
 
 from dbt_meshify.change import ChangeSet, EntityType, FileChange, Operation
@@ -138,14 +138,16 @@ class ReferenceUpdater:
     def generate_reference_update(
         self,
         project_name: str,
-        upstream_node: CompiledNode,
-        downstream_node: CompiledNode,
+        upstream_node: Union[CompiledNode, Macro],
+        downstream_node: Union[CompiledNode, Macro],
         downstream_project: PathedProject,
         code: str,
     ) -> FileChange:
         """Generate FileChanges that update the references in the downstream_node's code."""
 
-        updated_code = self.ref_update_methods[downstream_node.language](
+        language = downstream_node.language if hasattr(downstream_node, "language") else "sql"
+
+        updated_code = self.ref_update_methods[language](
             model_name=upstream_node.name,
             project_name=project_name,
             model_code=code,
@@ -157,6 +159,45 @@ class ReferenceUpdater:
             identifier=downstream_node.name,
             path=downstream_project.resolve_file_path(downstream_node),
             data=updated_code,
+        )
+
+    def update_macro_refs(
+        self,
+        resource: Macro,
+    ) -> Optional[FileChange]:
+        """Generate a set of FileChanges to update references within a macro"""
+
+        # If we're accidentally operating in a root project, do not rewrite anything.
+        if isinstance(self.project, DbtProject):
+            return None
+
+        pattern = re.compile(r"{{\s*ref\s*\(\s*['\"]([a-zA-Z_]+)['\"](?:,\s*(v=\d+))?\s*\)\s*}}")
+        matches = re.search(pattern, resource.macro_sql)
+
+        if matches is None:
+            return None
+
+        model_name = matches.group(1)
+        model_id = f"model.{self.project.parent_project.name}.{model_name}"
+
+        # Check if the model is part of the original project.
+        if model_id not in self.project.parent_project.resources:
+            raise ValueError(
+                f"Unable to find {model_id} in the parent project. How did we get here?"
+            )
+
+        # Check if the model is part of the new project. If it is, then return None.
+        # We don't want to rewrite the ref for a model already in this project..
+        if model_id in self.project.resources:
+            logger.debug(f"Model {model_id} exists in the new project! Skipping.")
+            return None
+
+        return self.generate_reference_update(
+            project_name=self.project.parent_project.name,
+            upstream_node=self.project.parent_project.models[model_id],
+            downstream_node=resource,
+            code=resource.macro_sql,
+            downstream_project=self.project.parent_project,
         )
 
     def update_child_refs(
