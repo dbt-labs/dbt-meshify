@@ -197,7 +197,7 @@ class ReferenceUpdater:
             upstream_node=self.project.parent_project.models[model_id],
             downstream_node=resource,
             code=resource.macro_sql,
-            downstream_project=self.project.parent_project,
+            downstream_project=self.project,
         )
 
     def update_child_refs(
