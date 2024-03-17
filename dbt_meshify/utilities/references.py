@@ -180,7 +180,7 @@ class ReferenceUpdater:
     ) -> Union[FileChange, ResourceChange]:
         """Generate FileChanges that update the references in the downstream_node's code."""
 
-        if isinstance(downstream_node, CompiledNode):
+        if isinstance(downstream_node, CompiledNode) or isinstance(downstream_node, Macro):
             language = downstream_node.language if hasattr(downstream_node, "language") else "sql"
             updated_code = self.ref_update_methods[language](
                 model_name=upstream_node.name,
