@@ -339,6 +339,78 @@ class TestSplitCommand:
 
         teardown_test_project(dest_project_path)
 
+    def test_split_updates_exposure_depends_on(self):
+        """
+        Test that splitting out a project downstream of the base project splits as expected
+        """
+        setup_test_project(src_project_path, dest_project_path)
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "split",
+                "my_new_project",
+                "--project-path",
+                dest_project_path,
+                "--select",
+                "+orders",
+            ],
+        )
+
+        assert result.exit_code == 0
+        # selected model is moved to subdirectory
+        assert (
+            Path(dest_project_path) / "my_new_project" / "models" / "marts" / "orders.sql"
+        ).exists()
+        old_ref = "ref('orders')"
+        x_proj_ref = "ref('my_new_project', 'orders')"
+        exposure_yml = yaml.safe_load(
+            (Path(dest_project_path) / "models" / "marts" / "__exposures.yml").read_text()
+        )
+        exposure = [
+            exposure
+            for exposure in exposure_yml["exposures"]
+            if exposure["name"] == "crazy_growth_dashboard"
+        ][0]
+        assert x_proj_ref in exposure["depends_on"]
+        assert old_ref not in exposure["depends_on"]
+
+        teardown_test_project(dest_project_path)
+
+    def test_split_updates_semantic_model_model(self):
+        """
+        Test that splitting out a project downstream of the base project splits as expected
+        """
+        setup_test_project(src_project_path, dest_project_path)
+        runner = CliRunner()
+        result = runner.invoke(
+            cli,
+            [
+                "split",
+                "my_new_project",
+                "--project-path",
+                dest_project_path,
+                "--select",
+                "+orders",
+            ],
+        )
+
+        assert result.exit_code == 0
+        # selected model is moved to subdirectory
+        assert (
+            Path(dest_project_path) / "my_new_project" / "models" / "marts" / "orders.sql"
+        ).exists()
+        old_ref = "ref('orders')"
+        x_proj_ref = "ref('my_new_project', 'orders')"
+        sm_yml = yaml.safe_load(
+            (Path(dest_project_path) / "models" / "marts" / "__semantic_models.yml").read_text()
+        )
+        sm = [sm for sm in sm_yml["semantic_models"] if sm["name"] == "orders_semantic_model"][0]
+        assert x_proj_ref == sm["model"]
+        assert old_ref != sm["model"]
+
+        teardown_test_project(dest_project_path)
+
 
 def test_command_raises_exception_invalid_paths():
     """Verify that proving an invalid project path raises the correct error."""
