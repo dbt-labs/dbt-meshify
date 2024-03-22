@@ -45,7 +45,7 @@ Let's say you want to add a new version to the customers model, which is current
 You can run the following command:
 
 ```bash
-dbt-meshify version --select customers
+dbt-meshify operation add-version --select customers
 ```
 
 This will add a version to the `customers` model for your current version, and will add a new version for breaking change you wish to implement:
