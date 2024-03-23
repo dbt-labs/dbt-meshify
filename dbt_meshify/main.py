@@ -25,6 +25,7 @@ from .cli import (
     create_path,
     exclude,
     exclude_projects,
+    get_version,
     group_yml_path,
     latest,
     owner,
@@ -72,14 +73,26 @@ def logger_operation_level_filter(record):
 
 
 # define cli group
-@click.group()
+@click.group(invoke_without_command=True)
 @click.option("--dry-run", is_flag=True)
 @click.option("--debug", is_flag=True)
-def cli(dry_run: bool, debug: bool):
+@click.option("--version", is_flag=True, help="Show version information and exit")
+@click.pass_context
+def cli(ctx, dry_run: bool, debug: bool, version: bool):
     log_level = "DEBUG" if debug else "INFO"
 
     logger.add(sys.stdout, format=log_format, filter=logger_log_level_filter, level=log_level)
     logger.add(sys.stdout, format=operation_format, filter=logger_operation_level_filter)
+
+    # If the --version flag has been provided, print the version number and exit.
+    if version:
+        print(get_version())
+        exit(0)
+
+    # If a command has not been provided, print the help text and exit.
+    if ctx.invoked_subcommand is None:
+        print(ctx.get_help())
+        exit(0)
 
 
 @cli.result_callback()

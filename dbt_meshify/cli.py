@@ -116,7 +116,7 @@ def owner(func):
 
     @functools.wraps(func)
     def wrapper_decorator(*args, **kwargs):
-        if kwargs.get('owner_name') is None and kwargs.get('owner_email') is None:
+        if kwargs.get("owner_name") is None and kwargs.get("owner_email") is None:
             raise click.UsageError(
                 "Groups require an Owner to be defined using --owner-name and/or --owner-email."
             )
@@ -136,3 +136,10 @@ class TupleCompatibleCommand(click.Command):
         pieces = self.collect_usage_pieces(ctx)
         pieces = pieces[1:] + [pieces[0]]
         formatter.write_usage(ctx.command_path, " ".join(pieces))
+
+
+def get_version() -> str:
+    """Get the current package version number."""
+    import importlib.metadata
+
+    return importlib.metadata.version("dbt-meshify")
