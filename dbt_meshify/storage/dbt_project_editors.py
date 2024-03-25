@@ -4,6 +4,7 @@ from typing import Dict, Optional, Set
 from dbt.contracts.graph.nodes import (
     CompiledNode,
     GenericTestNode,
+    Macro,
     ModelNode,
     NodeType,
     Resource,
@@ -199,6 +200,11 @@ class DbtSubprojectCreator:
                             self.subproject.parent_project.jinja_blocks[resource.unique_id],
                         )
                     )
+
+                    if isinstance(resource, Macro) and resource.macro_sql:
+                        changes = reference_updater.update_macro_refs(resource)
+                        if changes:
+                            change_set.add(changes)
 
                 else:
                     change_set.add(self.copy_resource(resource))

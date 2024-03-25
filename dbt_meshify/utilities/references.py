@@ -2,7 +2,13 @@ import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from dbt.contracts.graph.nodes import CompiledNode, Exposure, Resource, SemanticModel
+from dbt.contracts.graph.nodes import (
+    CompiledNode,
+    Exposure,
+    Macro,
+    Resource,
+    SemanticModel,
+)
 from loguru import logger
 
 from dbt_meshify.change import (
@@ -167,16 +173,16 @@ class ReferenceUpdater:
     def generate_reference_update(
         self,
         project_name: str,
-        upstream_node: CompiledNode,
-        downstream_node: Union[Resource, CompiledNode],
+        upstream_node: Union[CompiledNode, Macro],
+        downstream_node: Union[Resource, CompiledNode, Macro],
         downstream_project: PathedProject,
         code: str,
     ) -> Union[FileChange, ResourceChange]:
         """Generate FileChanges that update the references in the downstream_node's code."""
 
-        change: Union[FileChange, ResourceChange]
-        if isinstance(downstream_node, CompiledNode):
-            updated_code = self.ref_update_methods[downstream_node.language](
+        if isinstance(downstream_node, CompiledNode) or isinstance(downstream_node, Macro):
+            language = downstream_node.language if hasattr(downstream_node, "language") else "sql"
+            updated_code = self.ref_update_methods[language](
                 model_name=upstream_node.name,
                 project_name=project_name,
                 model_code=code,
@@ -205,6 +211,52 @@ class ReferenceUpdater:
                 data=data,
             )
         raise Exception("Invalid node type provided to generate_reference_update.")
+
+    def update_macro_refs(
+        self,
+        resource: Macro,
+    ) -> Optional[FileChange]:
+        """Generate a set of FileChanges to update references within a macro"""
+
+        # If we're accidentally operating in a root project, do not rewrite anything.
+        if isinstance(self.project, DbtProject):
+            return None
+
+        pattern = re.compile(r"{{\s*ref\s*\(\s*['\"]([a-zA-Z_]+)['\"](?:,\s*(v=\d+))?\s*\)\s*}}")
+        matches = re.search(pattern, resource.macro_sql)
+
+        if matches is None:
+            return None
+
+        model_name = matches.group(1)
+        model_id = f"model.{self.project.parent_project.name}.{model_name}"
+
+        # Check if the model is part of the original project.
+        if model_id not in self.project.parent_project.resources:
+            raise ValueError(
+                f"Unable to find {model_id} in the parent project. How did we get here?"
+            )
+
+        # Check if the model is part of the new project. If it is, then return None.
+        # We don't want to rewrite the ref for a model already in this project..
+        if model_id in self.project.resources:
+            logger.debug(f"Model {model_id} exists in the new project! Skipping.")
+            return None
+
+        change = self.generate_reference_update(
+            project_name=self.project.parent_project.name,
+            upstream_node=self.project.parent_project.models[model_id],
+            downstream_node=resource,
+            code=resource.macro_sql,
+            downstream_project=self.project,
+        )
+
+        if not isinstance(change, FileChange):
+            raise TypeError(
+                "Incorrect change type returned during macro ref updating. Expected FileChange, but found ResourceChange"
+            )
+
+        return change
 
     def update_child_refs(
         self,

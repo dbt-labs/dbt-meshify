@@ -14,7 +14,8 @@ customers as (
 
 orders_mart as (
 
-    select * from {{ ref('orders') }}
+    -- Redirect is a proxy for `ref`, used to test ref rewrites in macros.
+    select * from {{ redirect() }}
 
 ),
 

@@ -50,6 +50,11 @@ class TestSplitCommand:
             in (Path(dest_project_path) / "my_new_project" / "models" / "docs.md").read_text()
         )
 
+        # Updated references in a moved macro
+        redirect_path = Path(dest_project_path) / "my_new_project" / "macros" / "redirect.sql"
+        assert (redirect_path).exists()
+        assert "ref('split_proj', 'orders')" in redirect_path.read_text()
+
     def test_split_one_model_one_source(self, project):
         runner = CliRunner()
         result = runner.invoke(
