@@ -27,5 +27,5 @@ def test_no_command_prints_help():
 
     assert result.exit_code == 0
 
-    help_result = result = runner.invoke(cli, ["--help"])
+    help_result = runner.invoke(cli, ["--help"])
     assert result.stdout == help_result.stdout
