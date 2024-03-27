@@ -19,7 +19,7 @@ line-length = 120
 
 [tool.poetry]
 name = "dbt-meshify"
-version = "0.5.2"
+version = "0.5.3"
 description = "a package to upgrade dbt packages to the dbt mesh framework"
 authors = [
     "Dave Connors <dave.connors@fishtownanalytics.com>",
