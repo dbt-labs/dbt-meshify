@@ -14,6 +14,7 @@ from dbt.contracts.graph.nodes import (
 )
 from dbt.node_types import AccessType
 from loguru import logger
+from regex import D
 
 from dbt_meshify.change import (
     ChangeSet,
@@ -118,10 +119,16 @@ class DbtSubprojectCreator:
         """
         Writes the dbt_project.yml file for the subproject in the specified subdirectory
         """
+
+        # Read a starter `dbt_project.yml` file as a baseline
+        starter_path: Path = get_starter_project_path() / "dbt_project.yml"
+        starter_dbt_project = YAMLFileManager.read_file(starter_path)
+
         contents = self.subproject.project.to_dict()
+
         # was getting a weird serialization error from ruamel on this value
         # it's been deprecated, so no reason to keep it
-        contents.pop("version")
+        # contents.pop("version")
         # this one appears in the project yml, but i don't think it should be written
         contents.pop("query-comment")
         contents = filter_empty_dict_items(contents)
@@ -134,12 +141,22 @@ class DbtSubprojectCreator:
             if max([len(version) for version in contents["require-dbt-version"]]) == 1:
                 contents["require-dbt-version"] = "".join(contents["require-dbt-version"])
 
+        for key, value in contents.items():
+            if value is None:
+                continue
+
+            if isinstance(value, (list, dict, tuple)):
+                if len(value) == 0:
+                    continue
+
+            starter_dbt_project[key] = value
+
         return FileChange(
             operation=Operation.Add,
             entity_type=EntityType.Code,
             identifier="dbt_project.yml",
             path=self.subproject.path / Path("dbt_project.yml"),
-            data=yaml.dump(contents),
+            data=yaml.dump(starter_dbt_project),
         )
 
     def copy_packages_yml_file(self) -> FileChange:

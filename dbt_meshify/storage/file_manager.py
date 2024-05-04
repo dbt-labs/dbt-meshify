@@ -18,6 +18,7 @@ class DbtYAML(YAML):
         self.preserve_quotes = True
         self.width = 4096
         self.indent(mapping=2, sequence=4, offset=2)
+        self.default_flow_style = False
 
     def dump(self, data, stream=None, **kw):
         inefficient = False
