@@ -2,9 +2,13 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
-from dbt_meshify.change import EntityType, FileChange, ResourceChange
+from dbt_meshify.change import DirectoryChange, EntityType, FileChange, ResourceChange
 from dbt_meshify.exceptions import FileEditorException
-from dbt_meshify.storage.file_manager import RawFileManager, YAMLFileManager
+from dbt_meshify.storage.file_manager import (
+    DirectoryManager,
+    RawFileManager,
+    YAMLFileManager,
+)
 
 
 class NamedList(dict):
@@ -87,6 +91,18 @@ def safe_update(original: Dict[Any, Any], update: Dict[Any, Any]) -> Dict[Any, A
         elif value is not None:
             original[key] = value
     return original
+
+
+class DirectoryEditor:
+    """A helper class used to perform filesystem operations on Directories"""
+
+    @staticmethod
+    def copy(change: DirectoryChange):
+        """Copy a file from one location to another."""
+        if change.source is None:
+            raise FileEditorException("None source value provided in Copy operation.")
+
+        DirectoryManager.copy_directory(change.source, change.path, change.ignore_function)
 
 
 class RawFileEditor:

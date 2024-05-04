@@ -2,7 +2,7 @@ import dataclasses
 import os
 from enum import Enum
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Protocol
+from typing import Callable, Dict, Iterable, List, Optional, Protocol
 
 
 class Operation(str, Enum):
@@ -46,6 +46,7 @@ class EntityType(str, Enum):
     SemanticModel = "semantic_model"
     Project = "project"
     Code = "code"
+    Directory = "directory"
 
     def pluralize(self) -> str:
         if self is self.Analysis:
@@ -95,6 +96,14 @@ class ResourceChange(BaseChange):
             f"`{self.source_name + '.' if self.source_name else ''}{self.identifier}` "
             f"{prepositions[self.operation]} {self.path.relative_to(os.getcwd())}"
         )
+
+
+@dataclasses.dataclass
+class DirectoryChange(BaseChange):
+    """A DirectoryChange represents a unit of work that should be performed on a Directory in a dbt project."""
+
+    source: Optional[Path] = None
+    ignore_function: Optional[Callable] = None
 
 
 @dataclasses.dataclass

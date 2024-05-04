@@ -1,4 +1,6 @@
+import shutil
 from pathlib import Path
+from tracemalloc import start
 from typing import Dict, Optional, Set
 
 from dbt.contracts.graph.nodes import (
@@ -15,6 +17,7 @@ from loguru import logger
 
 from dbt_meshify.change import (
     ChangeSet,
+    DirectoryChange,
     EntityType,
     FileChange,
     Operation,
@@ -28,6 +31,20 @@ from dbt_meshify.utilities.contractor import Contractor
 from dbt_meshify.utilities.dependencies import DependenciesUpdater
 from dbt_meshify.utilities.grouper import ResourceGrouper
 from dbt_meshify.utilities.references import ReferenceUpdater
+
+
+def get_starter_project_path() -> Path:
+    """Obtain the path of a dbt starter project on the local filesystem."""
+
+    from importlib import resources
+
+    import dbt.include.starter_project
+
+    starter_path = Path(str(resources.files(dbt.include.starter_project)))
+    assert starter_path is not None
+    assert (starter_path / "dbt_project.yml").exists()
+
+    return starter_path
 
 
 class DbtSubprojectCreator:
@@ -84,6 +101,18 @@ class DbtSubprojectCreator:
             )
         )
         return boundary_models
+
+    def create_starter_project(self) -> DirectoryChange:
+        """Create a new starter project using the default stored in dbt-core"""
+
+        return DirectoryChange(
+            operation=Operation.Copy,
+            entity_type=EntityType.Directory,
+            identifier=str(self.subproject.path),
+            path=self.subproject.path,
+            source=get_starter_project_path(),
+            ignore_function=shutil.ignore_patterns("__init__.py", "__pycache__", "**/*.pyc"),
+        )
 
     def write_project_file(self) -> FileChange:
         """
@@ -142,6 +171,8 @@ class DbtSubprojectCreator:
         logger.info(
             f"Identifying operations required to split {subproject.name} from {subproject.parent_project.name}."
         )
+
+        change_set.add(self.create_starter_project())
 
         for unique_id in (
             subproject.resources
