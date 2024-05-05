@@ -4,7 +4,7 @@ import pytest
 import yaml
 
 from dbt_meshify.storage.file_content_editors import ResourceFileEditor
-from dbt_meshify.utilities.versioner import ModelVersioner
+from dbt_meshify.utilities.versioner import LatestVersionBehavior, ModelVersioner
 
 from ..dbt_project_fixtures import model, project  # noqa: F401
 from ..sql_and_yml_fixtures import (
@@ -59,7 +59,9 @@ class TestAddContractToYML:
         self, model, project, file_manager  # noqa: F811
     ):
         versioner = ModelVersioner(project=project, file_manager=file_manager)
-        changes = list(versioner.bump_version(model))
+        changes = list(
+            versioner.bump_version(model, latest_version_behavior=LatestVersionBehavior.Increment)
+        )
         yml_dict = ResourceFileEditor.update_resource(
             properties=read_yml(model_yml_increment_version), change=changes[0]
         )
@@ -70,7 +72,9 @@ class TestAddContractToYML:
         self, model, project, file_manager  # noqa: F811
     ):
         versioner = ModelVersioner(project=project, file_manager=file_manager)
-        changes = list(versioner.bump_version(model, prerelease=True))
+        changes = list(
+            versioner.bump_version(model, latest_version_behavior=LatestVersionBehavior.Prerelease)
+        )
         yml_dict = ResourceFileEditor.update_resource(
             properties=read_yml(model_yml_increment_version), change=changes[0]
         )
@@ -81,7 +85,13 @@ class TestAddContractToYML:
         self, model, project, file_manager  # noqa: F811
     ):
         versioner = ModelVersioner(project=project, file_manager=file_manager)
-        changes = list(versioner.bump_version(model, defined_in="daves_model", prerelease=True))
+        changes = list(
+            versioner.bump_version(
+                model,
+                latest_version_behavior=LatestVersionBehavior.Prerelease,
+                defined_in="daves_model",
+            )
+        )
         yml_dict = ResourceFileEditor.update_resource(
             properties=read_yml(model_yml_increment_version), change=changes[0]
         )

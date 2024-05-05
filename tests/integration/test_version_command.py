@@ -10,6 +10,7 @@ from dbt_meshify.main import cli
 from tests.dbt_project_utils import setup_test_project, teardown_test_project
 
 from ..sql_and_yml_fixtures import (
+    expected_versioned_model_yml_increment_latest_version,
     expected_versioned_model_yml_increment_prerelease_version,
     expected_versioned_model_yml_increment_prerelease_version_with_second_prerelease,
     expected_versioned_model_yml_increment_version_no_prerelease,
@@ -239,10 +240,17 @@ def test_bump_version_fails_when_no_versions_present(
             expected_versioned_model_yml_increment_prerelease_version,
             ["shared_model_v1.sql", "shared_model_v2.sql"],
             ["shared_model_v1.sql", "shared_model_v2.sql", "shared_model_v3.sql"],
+            ["--increment"],
+        ),
+        (
+            expected_versioned_model_yml_increment_version_with_prerelease,
+            expected_versioned_model_yml_increment_latest_version,
+            ["shared_model_v1.sql", "shared_model_v2.sql"],
+            ["shared_model_v1.sql", "shared_model_v2.sql", "shared_model_v3.sql"],
             ["--latest"],
         ),
     ],
-    ids=["1", "2", "3", "4", "5"],
+    ids=["1", "2", "3", "4", "5", "6"],
 )
 def test_bump_version_in_yml(
     start_yml, end_yml, start_files, expected_files, command_options, project

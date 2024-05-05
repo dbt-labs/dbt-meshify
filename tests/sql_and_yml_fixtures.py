@@ -262,6 +262,17 @@ models:
       - v: 3
 """
 
+expected_versioned_model_yml_increment_latest_version = """
+models:
+  - name: shared_model
+    latest_version: 3
+    description: "this is a test model"
+    versions:
+      - v: 1
+      - v: 2
+      - v: 3
+"""
+
 expected_versioned_model_yml_prerelease_defined_in = """
 models:
   - name: shared_model
