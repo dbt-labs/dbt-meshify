@@ -18,7 +18,7 @@ from dbt_meshify.change_set_processor import (
 from dbt_meshify.storage.dbt_project_editors import DbtSubprojectCreator
 from dbt_meshify.utilities.contractor import Contractor
 from dbt_meshify.utilities.linker import Linker
-from dbt_meshify.utilities.versioner import ModelVersioner
+from dbt_meshify.utilities.versioner import LatestVersionBehavior, ModelVersioner
 
 from .cli import (
     TupleCompatibleCommand,
@@ -27,6 +27,7 @@ from .cli import (
     exclude_projects,
     get_version,
     group_yml_path,
+    increment,
     latest,
     owner,
     owner_email,
@@ -373,6 +374,7 @@ def add_version(
 @select
 @selector
 @latest
+@increment
 @click.option("--defined-in", default=None)
 def bump_version(
     select,
@@ -380,12 +382,25 @@ def bump_version(
     project_path,
     selector,
     latest: bool,
+    increment: bool,
     defined_in: Optional[Path],
     read_catalog,
 ) -> List[ChangeSet]:
     """
     Create new model versions for all selected models.
     """
+
+    if latest and increment:
+        raise FatalMeshifyException(
+            "Cannot specify both --latest and --prerelease. Please choose one or the other."
+        )
+
+    latest_version_behavior = LatestVersionBehavior.Prerelease
+    if latest:
+        latest_version_behavior = LatestVersionBehavior.Latest
+    elif increment:
+        latest_version_behavior = LatestVersionBehavior.Increment
+
     path = Path(project_path).expanduser().resolve()
 
     logger.info(f"Reading dbt project at {path}")
@@ -412,7 +427,9 @@ def bump_version(
                 continue
 
             changes: ChangeSet = versioner.bump_version(
-                model=model_node, prerelease=not (latest), defined_in=defined_in
+                model=model_node,
+                latest_version_behavior=latest_version_behavior,
+                defined_in=defined_in,
             )
             change_set.extend(changes)
 
@@ -429,6 +446,7 @@ def bump_version(
 @select
 @selector
 @latest
+@increment
 @click.option("--defined-in", default=None)
 def version(
     select,
@@ -436,12 +454,24 @@ def version(
     project_path,
     selector,
     latest: bool,
+    increment: bool,
     defined_in: Optional[Path],
     read_catalog,
 ) -> List[ChangeSet]:
     """
     Increment the models to the next version, and create in the initial version if it has not yet been defined.
     """
+    if latest and increment:
+        raise FatalMeshifyException(
+            "Cannot specify both --latest and --prerelease. Please choose one or the other."
+        )
+
+    latest_version_behavior = LatestVersionBehavior.Prerelease
+    if latest:
+        latest_version_behavior = LatestVersionBehavior.Latest
+    elif increment:
+        latest_version_behavior = LatestVersionBehavior.Increment
+
     path = Path(project_path).expanduser().resolve()
 
     logger.info(f"Reading dbt project at {path}")
@@ -474,7 +504,7 @@ def version(
                     versioner.bump_version(
                         model=model_node,
                         defined_in=defined_in,
-                        prerelease=not (latest),
+                        latest_version_behavior=latest_version_behavior,
                     )
                 )
 
@@ -498,7 +528,7 @@ def version(
                 bump_change: ChangeSet = versioner.bump_version(
                     model=model_node,
                     defined_in=defined_in,
-                    prerelease=not (latest),
+                    latest_version_behavior=latest_version_behavior,
                     model_override=model_add_change.data,
                 )
 

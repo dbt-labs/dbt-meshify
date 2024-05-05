@@ -107,7 +107,14 @@ latest = click.option(
     "--latest",
     "-l",
     is_flag=True,
-    help="Makes the newest version the latest version when incrementing model versions",
+    help="Makes the newest version the latest version when creating model versions",
+)
+
+increment = click.option(
+    "--increment",
+    "--i",
+    is_flag=True,
+    help="Increments the latest_version setting by 1 when creating model versions",
 )
 
 
