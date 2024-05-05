@@ -126,9 +126,6 @@ class DbtSubprojectCreator:
 
         contents = self.subproject.project.to_dict()
 
-        # was getting a weird serialization error from ruamel on this value
-        # it's been deprecated, so no reason to keep it
-        # contents.pop("version")
         # this one appears in the project yml, but i don't think it should be written
         contents.pop("query-comment")
         contents = filter_empty_dict_items(contents)
