@@ -3,7 +3,7 @@
 
 import shutil
 from pathlib import Path
-from typing import Any, Dict, List, Protocol
+from typing import Any, Callable, Dict, List, Optional, Protocol
 
 from dbt.contracts.util import Identifier
 from ruamel.yaml import YAML
@@ -18,6 +18,7 @@ class DbtYAML(YAML):
         self.preserve_quotes = True
         self.width = 4096
         self.indent(mapping=2, sequence=4, offset=2)
+        self.default_flow_style = False
 
     def dump(self, data, stream=None, **kw):
         inefficient = False
@@ -41,6 +42,21 @@ class FileManager(Protocol):
     def write_file(self, path: Path, content: Any) -> None:
         """Write content to a file."""
         pass
+
+
+class DirectoryManager:
+    """DirectoryManager is a FileManager for operating on directories in the filesystem"""
+
+    @staticmethod
+    def copy_directory(
+        source_path: Path, target_path: Path, ignore_function: Optional[Callable] = None
+    ) -> None:
+        """Copy a directory from source to target"""
+
+        if not target_path.parent.exists():
+            target_path.parent.mkdir(parents=True, exist_ok=True)
+
+        shutil.copytree(source_path, target_path, symlinks=True, ignore=ignore_function)
 
 
 class RawFileManager:

@@ -4,7 +4,14 @@ from typing import Iterable
 from loguru import logger
 
 from dbt_meshify.change import Change, ChangeSet, EntityType
-from dbt_meshify.storage.file_content_editors import RawFileEditor, ResourceFileEditor
+from dbt_meshify.storage.file_content_editors import (
+    DirectoryEditor,
+    RawFileEditor,
+    ResourceFileEditor,
+)
+
+# Enumeration of valid File Editors
+FILE_EDITORS = {EntityType.Code: RawFileEditor, EntityType.Directory: DirectoryEditor}
 
 
 class ChangeSetProcessorException(BaseException):
@@ -24,9 +31,7 @@ class ChangeSetProcessor:
 
     def write(self, change: Change) -> None:
         """Commit a Change to the file system."""
-        file_editor = (
-            RawFileEditor() if change.entity_type == EntityType.Code else ResourceFileEditor()
-        )
+        file_editor = FILE_EDITORS.get(change.entity_type, ResourceFileEditor)()
 
         file_editor.__getattribute__(change.operation)(change)
 
