@@ -9,6 +9,7 @@ from tests.dbt_project_utils import setup_test_project, teardown_test_project
 
 src_project_path = "test-projects/split/split_proj"
 dest_project_path = "test-projects/split/temp_proj"
+project_path: Path = Path(dest_project_path) / "my_new_project"
 
 
 @pytest.fixture
@@ -34,26 +35,26 @@ class TestSplitCommand:
         )
 
         assert result.exit_code == 0
-        assert (
-            Path(dest_project_path) / "my_new_project" / "models" / "marts" / "customers.sql"
-        ).exists()
+        assert (project_path / "models" / "marts" / "customers.sql").exists()
         x_proj_ref = "{{ ref('split_proj', 'stg_customers') }}"
-        child_sql = (
-            Path(dest_project_path) / "my_new_project" / "models" / "marts" / "customers.sql"
-        ).read_text()
+        child_sql = (project_path / "models" / "marts" / "customers.sql").read_text()
         assert x_proj_ref in child_sql
 
         # Copied a referenced docs block
-        assert (Path(dest_project_path) / "my_new_project" / "models" / "docs.md").exists()
-        assert (
-            "customer_id"
-            in (Path(dest_project_path) / "my_new_project" / "models" / "docs.md").read_text()
-        )
+        assert (project_path / "models" / "docs.md").exists()
+        assert "customer_id" in (project_path / "models" / "docs.md").read_text()
 
         # Updated references in a moved macro
-        redirect_path = Path(dest_project_path) / "my_new_project" / "macros" / "redirect.sql"
+        redirect_path = project_path / "macros" / "redirect.sql"
         assert (redirect_path).exists()
         assert "ref('split_proj', 'orders')" in redirect_path.read_text()
+
+        # Starter project assets exist.
+        assert (project_path / "analyses").exists()
+        assert (project_path / "macros").exists()
+        assert (project_path / "seeds").exists()
+        assert (project_path / "snapshots").exists()
+        assert (project_path / "tests").exists()
 
     def test_split_one_model_one_source(self, project):
         runner = CliRunner()
@@ -70,19 +71,13 @@ class TestSplitCommand:
         )
 
         assert result.exit_code == 0
-        assert (
-            Path(dest_project_path) / "my_new_project" / "models" / "staging" / "stg_orders.sql"
-        ).exists()
-        assert (
-            Path(dest_project_path) / "my_new_project" / "models" / "staging" / "__sources.yml"
-        ).exists()
+        assert (project_path / "models" / "staging" / "stg_orders.sql").exists()
+        assert (project_path / "models" / "staging" / "__sources.yml").exists()
         source_yml = yaml.safe_load(
             (Path(dest_project_path) / "models" / "staging" / "__sources.yml").read_text()
         )
         new_source_yml = yaml.safe_load(
-            (
-                Path(dest_project_path) / "my_new_project" / "models" / "staging" / "__sources.yml"
-            ).read_text()
+            (project_path / "models" / "staging" / "__sources.yml").read_text()
         )
 
         assert len(source_yml["sources"][0]["tables"]) == 5
@@ -116,35 +111,25 @@ class TestSplitCommand:
             / "stg_order_items.sql"
         ).exists()
         # moved source
-        assert (
-            Path(dest_project_path) / "my_new_project" / "models" / "staging" / "__sources.yml"
-        ).exists()
+        assert (project_path / "models" / "staging" / "__sources.yml").exists()
         # copied custom macro
-        assert (
-            Path(dest_project_path) / "my_new_project" / "macros" / "cents_to_dollars.sql"
-        ).exists()
+        assert (project_path / "macros" / "cents_to_dollars.sql").exists()
 
         # Confirm that we did not bring over an unreferenced dollars_to_cents macro
         assert (
             "dollars_to_cents"
-            not in (
-                Path(dest_project_path) / "my_new_project" / "macros" / "cents_to_dollars.sql"
-            ).read_text()
+            not in (project_path / "macros" / "cents_to_dollars.sql").read_text()
         )
 
         # copied custom macro parents too!
-        assert (
-            Path(dest_project_path) / "my_new_project" / "macros" / "type_numeric.sql"
-        ).exists()
+        assert (project_path / "macros" / "type_numeric.sql").exists()
 
         # assert only one source moved
         source_yml = yaml.safe_load(
             (Path(dest_project_path) / "models" / "staging" / "__sources.yml").read_text()
         )
         new_source_yml = yaml.safe_load(
-            (
-                Path(dest_project_path) / "my_new_project" / "models" / "staging" / "__sources.yml"
-            ).read_text()
+            (project_path / "models" / "staging" / "__sources.yml").read_text()
         )
         assert len(source_yml["sources"][0]["tables"]) == 5
         assert len(new_source_yml["sources"][0]["tables"]) == 1
@@ -200,17 +185,13 @@ class TestSplitCommand:
 
         assert result.exit_code == 0
         # selected model is moved to subdirectory
-        assert (
-            Path(dest_project_path) / "my_new_project" / "models" / "staging" / "stg_orders.sql"
-        ).exists()
+        assert (project_path / "models" / "staging" / "stg_orders.sql").exists()
         x_proj_ref = "{{ ref('split_proj', 'stg_order_items') }}"
-        child_sql = (
-            Path(dest_project_path) / "my_new_project" / "models" / "marts" / "orders.sql"
-        ).read_text()
+        child_sql = (project_path / "models" / "marts" / "orders.sql").read_text()
         # split model is updated to reference the parent project
         assert x_proj_ref in child_sql
         # dependencies.yml is moved to subdirectory, not the parent project
-        assert (Path(dest_project_path) / "my_new_project" / "dependencies.yml").exists()
+        assert (project_path / "dependencies.yml").exists()
         assert not (Path(dest_project_path) / "dependencies.yml").exists()
         teardown_test_project(dest_project_path)
 
@@ -255,16 +236,9 @@ class TestSplitCommand:
         )
 
         assert result.exit_code == 0
-        assert (
-            Path(dest_project_path) / "my_new_project" / "models" / "marts" / "leaf_node.sql"
-        ).exists()
+        assert (project_path / "models" / "marts" / "leaf_node.sql").exists()
         # this is lazy, but this should be the only model in that yml file
-        assert (
-            "access: public"
-            in (
-                Path(dest_project_path) / "my_new_project" / "models" / "marts" / "__models.yml"
-            ).read_text()
-        )
+        assert "access: public" in (project_path / "models" / "marts" / "__models.yml").read_text()
 
     def test_split_upstream_multiple_boundary_parents(self):
         """
@@ -287,9 +261,7 @@ class TestSplitCommand:
 
         assert result.exit_code == 0
         # selected model is moved to subdirectory
-        assert (
-            Path(dest_project_path) / "my_new_project" / "models" / "staging" / "stg_orders.sql"
-        ).exists()
+        assert (project_path / "models" / "staging" / "stg_orders.sql").exists()
         x_proj_ref_1 = "{{ ref('my_new_project', 'stg_orders') }}"
         x_proj_ref_2 = "{{ ref('my_new_project', 'stg_order_items') }}"
         child_sql = (Path(dest_project_path) / "models" / "marts" / "orders.sql").read_text()
@@ -319,17 +291,13 @@ class TestSplitCommand:
 
         assert result.exit_code == 0
         # selected model is moved to subdirectory
-        assert (
-            Path(dest_project_path) / "my_new_project" / "models" / "marts" / "orders.sql"
-        ).exists()
+        assert (project_path / "models" / "marts" / "orders.sql").exists()
         x_proj_ref_1 = "{{ ref('split_proj', 'stg_orders') }}"
         x_proj_ref_2 = "{{ ref('split_proj', 'stg_order_items') }}"
         x_proj_ref_3 = "{{ ref('split_proj', 'stg_products') }}"
         x_proj_ref_4 = "{{ ref('split_proj', 'stg_locations') }}"
         x_proj_ref_5 = "{{ ref('split_proj', 'stg_supplies') }}"
-        child_sql = (
-            Path(dest_project_path) / "my_new_project" / "models" / "marts" / "orders.sql"
-        ).read_text()
+        child_sql = (project_path / "models" / "marts" / "orders.sql").read_text()
         # downstream model has all cross project refs updated
         assert x_proj_ref_1 in child_sql
         assert x_proj_ref_2 in child_sql
@@ -359,9 +327,7 @@ class TestSplitCommand:
 
         assert result.exit_code == 0
         # selected model is moved to subdirectory
-        assert (
-            Path(dest_project_path) / "my_new_project" / "models" / "marts" / "orders.sql"
-        ).exists()
+        assert (project_path / "models" / "marts" / "orders.sql").exists()
         old_ref = "ref('orders')"
         x_proj_ref = "ref('my_new_project', 'orders')"
         exposure_yml = yaml.safe_load(
@@ -397,9 +363,7 @@ class TestSplitCommand:
 
         assert result.exit_code == 0
         # selected model is moved to subdirectory
-        assert (
-            Path(dest_project_path) / "my_new_project" / "models" / "marts" / "orders.sql"
-        ).exists()
+        assert (project_path / "models" / "marts" / "orders.sql").exists()
         old_ref = "ref('orders')"
         x_proj_ref = "ref('my_new_project', 'orders')"
         sm_yml = yaml.safe_load(
