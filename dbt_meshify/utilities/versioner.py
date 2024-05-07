@@ -18,7 +18,7 @@ from dbt_meshify.storage.file_manager import FileManager, YAMLFileManager
 
 
 class LatestVersionBehavior(str, Enum):
-    """An operation describes the type of work being performed."""
+    """The type of behavior applied to `latest_version` when updating model versions"""
 
     Prerelease = "prerelease"
     Increment = "increment"
@@ -171,7 +171,6 @@ class ModelVersioner:
             LatestVersionBehavior.Latest: greatest_version + 1,
         }
 
-        # import ipdb; ipdb.set_trace()
 
         new_latest_version_number = latest_version_number_map[latest_version_behavior]
         # Setup the new version definitions

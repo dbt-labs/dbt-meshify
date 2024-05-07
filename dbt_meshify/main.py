@@ -392,7 +392,7 @@ def bump_version(
 
     if latest and increment:
         raise FatalMeshifyException(
-            "Cannot specify both --latest and --prerelease. Please choose one or the other."
+            "Cannot specify both --latest and --increment. Please choose one or the other."
         )
 
     latest_version_behavior = LatestVersionBehavior.Prerelease
@@ -463,7 +463,7 @@ def version(
     """
     if latest and increment:
         raise FatalMeshifyException(
-            "Cannot specify both --latest and --prerelease. Please choose one or the other."
+            "Cannot specify both --latest and --increment. Please choose one or the other."
         )
 
     latest_version_behavior = LatestVersionBehavior.Prerelease
