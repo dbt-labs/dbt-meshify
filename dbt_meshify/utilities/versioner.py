@@ -1,3 +1,4 @@
+from enum import Enum
 from pathlib import Path
 from typing import Any, Dict, Optional, Union
 
@@ -14,6 +15,14 @@ from dbt_meshify.change import (
 from dbt_meshify.dbt_projects import DbtProject, DbtSubProject
 from dbt_meshify.storage.file_content_editors import NamedList, safe_update
 from dbt_meshify.storage.file_manager import FileManager, YAMLFileManager
+
+
+class LatestVersionBehavior(str, Enum):
+    """The type of behavior applied to `latest_version` when updating model versions"""
+
+    Prerelease = "prerelease"
+    Increment = "increment"
+    Latest = "latest"
 
 
 class ModelVersionerException(Exception):
@@ -127,7 +136,7 @@ class ModelVersioner:
     def bump_version(
         self,
         model: ModelNode,
-        prerelease: bool = False,
+        latest_version_behavior: LatestVersionBehavior = LatestVersionBehavior.Prerelease,
         defined_in: Optional[Path] = None,
         model_override: Optional[Dict] = None,
     ) -> ChangeSet:
@@ -149,12 +158,21 @@ class ModelVersioner:
             )
 
         # Within dbt-core, if unset `latest_version` defaults to the greatest version identifier.
-        latest_version = model_yml.get("latest_version", greatest_version)
-
-        # Bump versions
+        current_latest_version = model_yml.get("latest_version", greatest_version)
         new_greatest_version_number = greatest_version + 1
-        new_latest_version_number = latest_version if prerelease else latest_version + 1
 
+        # if prerelease, the latest version is unchanged
+        # if increment, the latest version is incremented by 1
+        # if latest, the latest version is set to the greatest version + 1 (newly created version)
+
+        latest_version_number_map = {
+            LatestVersionBehavior.Prerelease: current_latest_version,
+            LatestVersionBehavior.Increment: current_latest_version + 1,
+            LatestVersionBehavior.Latest: greatest_version + 1,
+        }
+
+
+        new_latest_version_number = latest_version_number_map[latest_version_behavior]
         # Setup the new version definitions
         new_version_data: Dict[str, Any] = {"v": new_greatest_version_number}
         if defined_in:
