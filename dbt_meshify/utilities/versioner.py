@@ -171,7 +171,6 @@ class ModelVersioner:
             LatestVersionBehavior.Latest: greatest_version + 1,
         }
 
-
         new_latest_version_number = latest_version_number_map[latest_version_behavior]
         # Setup the new version definitions
         new_version_data: Dict[str, Any] = {"v": new_greatest_version_number}

@@ -24,7 +24,7 @@ class JinjaBlock:
         end_line = None
 
         for match in re.finditer(
-            r"{%-?\s+" + block_type + r"\s+" + name + r"([(a-zA-Z0-9=,_ )]*)\s-?%}",
+            r"{%-?\s*" + block_type + r"\s*" + name + r"\s*([(a-zA-Z0-9=,_ \'\")]*)\s*-?%}",
             file_content,
             re.MULTILINE,
         ):
@@ -36,7 +36,7 @@ class JinjaBlock:
             raise Exception(f"Unable to find a {block_type} block with the name {name}.")
 
         for match in re.finditer(
-            r"{%-?\s+end" + block_type + r"\s+-?%}", file_content, re.MULTILINE
+            r"{%-?\s*end" + block_type + r"\s*-?%}", file_content, re.MULTILINE
         ):
             end = match.span()[1]  # .span() gives tuple (start, end)
             new_end_line = end  # file_content[:start].count("\n")
