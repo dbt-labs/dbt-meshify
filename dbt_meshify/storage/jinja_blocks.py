@@ -25,7 +25,6 @@ class JinjaBlock:
 
         for match in re.finditer(
             r"{%-?\s*" + block_type + r"\s*" + name + r"\s*([(a-zA-Z0-9=,_ \'\")]*)\s*-?%}",
-            # r"\s*\((.*?)\)\s*-?%}"
             file_content,
             re.MULTILINE,
         ):
