@@ -140,7 +140,7 @@ class BaseDbtProject:
             return self._models
 
         self._models = {
-            node_name: node
+            node_name: node  # type: ignore
             for node_name, node in self.manifest.nodes.items()
             if node.resource_type == "model" and isinstance(node, ModelNode)
         }
@@ -328,11 +328,16 @@ class DbtProject(BaseDbtProject, PathedProject):
             )
 
         for unique_id, macro in self.manifest.macros.items():
+            block_type = "macro"
+            name = macro.name
             if macro.package_name != self.name:
                 continue
+            if "tests/generic/" in macro.path:
+                block_type = "test"
+                name = macro.name[5:]
 
             blocks[unique_id] = JinjaBlock.from_file(
-                path=self.path / macro.original_file_path, block_type="macro", name=macro.name
+                path=self.path / macro.original_file_path, block_type=block_type, name=name
             )
 
         return blocks
