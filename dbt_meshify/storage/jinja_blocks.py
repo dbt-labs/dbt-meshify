@@ -23,8 +23,16 @@ class JinjaBlock:
         start_line = None
         end_line = None
 
+        if block_type == "macro":
+            block_type_new = "(macro|test)"
+            name_new = f"({name}|{name[5:]})"
+        else:
+            block_type_new = block_type
+            name_new = name
+
+        pattern = r"{%-?[\s\n]+" + block_type_new + r"[\s\n]+" + name_new + r"([(a-zA-Z0-9=,_ \[\]{}'\s\n)]*)[\s\n]*-?%}" 
         for match in re.finditer(
-            r"{%-?\s+" + block_type + r"\s+" + name + r"([(a-zA-Z0-9=,_ )]*)\s-?%}",
+            pattern,
             file_content,
             re.MULTILINE,
         ):
@@ -36,7 +44,7 @@ class JinjaBlock:
             raise Exception(f"Unable to find a {block_type} block with the name {name}.")
 
         for match in re.finditer(
-            r"{%-?\s+end" + block_type + r"\s+-?%}", file_content, re.MULTILINE
+            r"{%-?\s+end" + block_type_new + r"\s+-?%}", file_content, re.MULTILINE
         ):
             end = match.span()[1]  # .span() gives tuple (start, end)
             new_end_line = end  # file_content[:start].count("\n")
