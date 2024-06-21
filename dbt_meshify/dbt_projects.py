@@ -330,11 +330,18 @@ class DbtProject(BaseDbtProject, PathedProject):
         for unique_id, macro in self.manifest.macros.items():
             block_type = "macro"
             name = macro.name
+            top_level_folder = macro.path.split("/")[0]
+
             if macro.package_name != self.name:
                 continue
-            if "tests/generic/" in macro.path:
+            if (
+                top_level_folder in self.project.test_paths
+                if self.project.test_paths
+                else ["tests"]
+            ):
                 block_type = "test"
-                name = macro.name[5:]
+                index = len(top_level_folder)
+                name = macro.name[index:]
 
             blocks[unique_id] = JinjaBlock.from_file(
                 path=self.path / macro.original_file_path, block_type=block_type, name=name
