@@ -340,8 +340,7 @@ class DbtProject(BaseDbtProject, PathedProject):
                 else ["tests"]
             ):
                 block_type = "test"
-                index = len(top_level_folder)
-                name = macro.name[index:]
+                name = macro.name[5:]
 
             blocks[unique_id] = JinjaBlock.from_file(
                 path=self.path / macro.original_file_path, block_type=block_type, name=name
