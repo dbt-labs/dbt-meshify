@@ -68,6 +68,14 @@ simple_macro = """\
 {% endmacro %}
 """
 
+simple_custom_generic_test = """\
+
+
+{% test my_custom_test(model) %}
+  select * from {{ model }} where false
+{% endtest %}
+"""
+
 simple_macro_no_spaces = """\
 
 
@@ -176,3 +184,7 @@ class TestJinjaBlock:
             content
             == "{% docs potato_name %}\nThe name of the customer's favorite potato dish.\n{% enddocs %}"
         )
+
+    def test_from_file_extracts_custom_generic_test(self):
+        range = JinjaBlock.find_block_range(simple_custom_generic_test, "test", "my_custom_test")
+        assert range == (2, 88)
