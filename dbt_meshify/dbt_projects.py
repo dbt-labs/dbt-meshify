@@ -330,9 +330,15 @@ class DbtProject(BaseDbtProject, PathedProject):
         for unique_id, macro in self.manifest.macros.items():
             block_type = "macro"
             name = macro.name
+            top_level_folder = macro.path.split("/")[0]
+
             if macro.package_name != self.name:
                 continue
-            if "tests/generic/" in macro.path:
+            if (
+                top_level_folder in self.project.test_paths
+                if self.project.test_paths
+                else ["tests"]
+            ):
                 block_type = "test"
                 name = macro.name[5:]
 
