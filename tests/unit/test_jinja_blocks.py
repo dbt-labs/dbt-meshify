@@ -116,6 +116,44 @@ simple_macro_int_defaults = """\
 {% endmacro %}
 """
 
+simple_macro_empty_list_defaults = """\
+
+
+{% macro test_macro(num=[]) %}
+  {{ num }}
+{% endmacro %}
+"""
+
+simple_macro_empty_bracket_defaults = """\
+
+
+{% macro test_macro(num={}) %}
+  {{ num }}
+{% endmacro %}
+"""
+
+simple_macro_empty_string_defaults = """\
+
+
+{% macro test_macro(num='') %}
+  {{ num }}
+{% endmacro %}
+"""
+
+simple_macro_new_line_args = """\
+
+
+{% macro test_macro(
+    num='',
+    list=[],
+    dict={},
+    int=8,
+    string='dave'
+    ) %}
+  {{ num }}
+{% endmacro %}
+"""
+
 
 class TestJinjaBlock:
     def test_from_file_detects_block_range(self):
@@ -167,6 +205,28 @@ class TestJinjaBlock:
     def test_from_file_detects_block_range_simple_macro_int_defaults(self):
         range = JinjaBlock.find_block_range(simple_macro_int_defaults, "macro", "test_macro")
         assert range == (2, 58)
+
+    def test_from_file_detects_block_range_simple_macro_empty_list_defaults(self):
+        range = JinjaBlock.find_block_range(
+            simple_macro_empty_list_defaults, "macro", "test_macro"
+        )
+        assert range == (2, 59)
+
+    def test_from_file_detects_block_range_simple_macro_empty_bracket_defaults(self):
+        range = JinjaBlock.find_block_range(
+            simple_macro_empty_bracket_defaults, "macro", "test_macro"
+        )
+        assert range == (2, 59)
+
+    def test_from_file_detects_block_range_simple_macro_empty_string_defaults(self):
+        range = JinjaBlock.find_block_range(
+            simple_macro_empty_string_defaults, "macro", "test_macro"
+        )
+        assert range == (2, 59)
+
+    def test_from_file_detects_block_range_simple_macro_new_line_args(self):
+        range = JinjaBlock.find_block_range(simple_macro_new_line_args, "macro", "test_macro")
+        assert range == (2, 125)
 
     def test_from_file_extracts_content(self):
         content = JinjaBlock.isolate_content(string, 2, 72)

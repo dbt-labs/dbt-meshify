@@ -24,7 +24,11 @@ class JinjaBlock:
         end_line = None
 
         for match in re.finditer(
-            r"{%-?\s*" + block_type + r"\s*" + name + r"\s*([(a-zA-Z0-9=,_ \'\")]*)\s*-?%}",
+            r"{%-?[\s\n]*"
+            + block_type
+            + r"[\s\n]*"
+            + name
+            + r"([(a-zA-Z0-9=,_ \[\]{}\"'\s\n)]*)[\s\n]*-?%}",
             file_content,
             re.MULTILINE,
         ):
